@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ModeToggle } from "@/components/mode-toggle";
 
 import {
   Sidebar,
@@ -171,6 +172,9 @@ export function AppSidebar() {
               Nutrition Assistant
             </span>
           </div>
+          <div className="ml-auto">
+            <ModeToggle />
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -183,7 +187,7 @@ export function AppSidebar() {
                 className={cn(
                   "w-full px-4",
                   pathname === item.href &&
-                    "bg-sidebar-accent text-sidebar-accent-foreground"
+                  "bg-sidebar-accent text-sidebar-accent-foreground"
                 )}
               >
                 <Link href={item.href}>
