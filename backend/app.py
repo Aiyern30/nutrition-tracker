@@ -265,6 +265,8 @@ def analyze_food():
         if not data:
             return jsonify({"error": "No data provided"}), 400
 
+        lang = data.get("lang", "en") 
+
         # If image is provided - use ERNIE vision
         if 'image' in data:
             image_data = data['image']
@@ -274,8 +276,7 @@ def analyze_food():
             
             additional_context = data.get('description', '')
             
-            # Analyze with ERNIE vision model
-            nutrition_data = analyze_image_with_ernie(image_data, additional_context)
+            nutrition_data = analyze_image_with_ernie(image_data, additional_context, lang=lang)
             
             # Extract detected text if available
             detected_text = nutrition_data.get('detected_text', '')
@@ -296,7 +297,8 @@ def analyze_food():
 
         # If only description is provided - use ERNIE text model
         elif 'description' in data:
-            nutrition_data = analyze_text_with_ernie(data['description'])
+            # Pass lang here too!
+            nutrition_data = analyze_text_with_ernie(data['description'], lang=lang)
             return jsonify({
                 "success": True,
                 "nutrition": nutrition_data
