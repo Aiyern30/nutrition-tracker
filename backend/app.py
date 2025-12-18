@@ -40,20 +40,19 @@ def analyze_with_ernie(prompt_text):
         messages = [
             {"role": "user", "content": prompt_text}
         ]
+        # Do not use stream=True
         response = client.chat.completions.create(
             model="ernie-5.0-thinking-preview",
             messages=messages,
-            max_completion_tokens=2048
+            max_completion_tokens=2048,
+            stream=False  # <- important
         )
 
-        # Extract text from streamed response
-        result_text = ""
-        for chunk in response:
-            if not chunk.choices or len(chunk.choices) == 0:
-                continue
-            if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content:
-                result_text += chunk.choices[0].delta.content
-        return result_text.strip()
+        # Extract result text
+        if response.choices and len(response.choices) > 0:
+            return response.choices[0].message.content.strip()
+        else:
+            return ""
     except Exception as e:
         raise Exception(f"ERNIE Analysis Error: {str(e)}")
 
