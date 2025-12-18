@@ -297,9 +297,7 @@ export default function ChatPage() {
               >
                 <span className="text-xs">New Chat</span>
               </Button>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-5 w-5" />
-              </Button>
+              
             </div>
           </div>
         </header>
