@@ -57,12 +57,19 @@ interface Profile {
   goal_type: string;
   dietary_restrictions: string[];
   disliked_foods: string[];
+  height: number | null;
+  weight: number | null;
+  meal_reminders: boolean;
+  weekly_summary: boolean;
+  ai_insights: boolean;
+  theme: string;
+  language: string;
+  units: string;
   created_at: string;
 }
 
 export default function ProfilePage() {
-  const { setTheme, theme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const { setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -83,6 +90,14 @@ export default function ProfilePage() {
     goal_type: "maintenance",
     dietary_restrictions: [] as string[],
     disliked_foods: [] as string[],
+    height: null as number | null,
+    weight: null as number | null,
+    meal_reminders: true,
+    weekly_summary: true,
+    ai_insights: true,
+    theme: "system",
+    language: "en",
+    units: "metric",
   });
 
   const [newRestriction, setNewRestriction] = useState("");
@@ -126,17 +141,29 @@ export default function ProfilePage() {
           goal_type: data.goal_type,
           dietary_restrictions: data.dietary_restrictions || [],
           disliked_foods: data.disliked_foods || [],
+          height: data.height,
+          weight: data.weight,
+          meal_reminders: data.meal_reminders ?? true,
+          weekly_summary: data.weekly_summary ?? true,
+          ai_insights: data.ai_insights ?? true,
+          theme: data.theme || "system",
+          language: data.language || "en",
+          units: data.units || "metric",
         });
+
+        // Apply theme from profile
+        if (data.theme) {
+          setTheme(data.theme);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load profile");
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, setTheme]);
 
   useEffect(() => {
-    setMounted(true);
     fetchProfile();
   }, [fetchProfile]);
 
@@ -161,6 +188,8 @@ export default function ProfilePage() {
           daily_water_goal: formData.daily_water_goal,
           activity_level: formData.activity_level,
           goal_type: formData.goal_type,
+          height: formData.height,
+          weight: formData.weight,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
@@ -171,6 +200,45 @@ export default function ProfilePage() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update goals");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateSettings = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          meal_reminders: formData.meal_reminders,
+          weekly_summary: formData.weekly_summary,
+          ai_insights: formData.ai_insights,
+          theme: formData.theme,
+          language: formData.language,
+          units: formData.units,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      // Update UI theme immediately
+      setTheme(formData.theme);
+
+      setSuccess("Settings updated successfully!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update settings"
+      );
     } finally {
       setSaving(false);
     }
@@ -372,9 +440,6 @@ export default function ProfilePage() {
                       : "Recently"}
                   </p>
                 </div>
-                <Button variant="outline" className="bg-transparent">
-                  Edit Profile
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -402,6 +467,50 @@ export default function ProfilePage() {
                   placeholder="Enter your name"
                 />
               </div>
+
+              {/* Height and Weight */}
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="height">
+                    Height ({formData.units === "metric" ? "cm" : "in"})
+                  </Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    value={formData.height || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        height: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
+                      })
+                    }
+                    placeholder={formData.units === "metric" ? "170" : "67"}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="weight">
+                    Weight ({formData.units === "metric" ? "kg" : "lbs"})
+                  </Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.1"
+                    value={formData.weight || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        weight: e.target.value
+                          ? parseFloat(e.target.value)
+                          : null,
+                      })
+                    }
+                    placeholder={formData.units === "metric" ? "70.0" : "154.3"}
+                  />
+                </div>
+              </div>
+
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="calorie-goal">Daily Calorie Goal</Label>
@@ -594,7 +703,12 @@ export default function ProfilePage() {
                     Get reminded to log your meals
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={formData.meal_reminders}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, meal_reminders: checked })
+                  }
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -604,7 +718,12 @@ export default function ProfilePage() {
                     Receive a weekly nutrition report
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={formData.weekly_summary}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, weekly_summary: checked })
+                  }
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -614,8 +733,21 @@ export default function ProfilePage() {
                     Get personalized suggestions from AI
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={formData.ai_insights}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, ai_insights: checked })
+                  }
+                />
               </div>
+              <Separator />
+              <Button
+                onClick={handleUpdateSettings}
+                disabled={saving}
+                className="w-full mt-4"
+              >
+                {saving ? "Updating..." : "Save Notification Settings"}
+              </Button>
             </CardContent>
           </Card>
 
@@ -629,14 +761,23 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Moon className="h-4 w-4" />
-                  <Label>Dark Mode</Label>
+                  <Label>Theme</Label>
                 </div>
-                <Switch
-                  checked={mounted && theme === "dark"}
-                  onCheckedChange={(checked) =>
-                    setTheme(checked ? "dark" : "light")
+                <Select
+                  value={formData.theme}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, theme: value })
                   }
-                />
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -644,22 +785,30 @@ export default function ProfilePage() {
                   <Globe className="h-4 w-4" />
                   <Label>Language</Label>
                 </div>
-                <Select defaultValue="en">
+                <Select
+                  value={formData.language}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, language: value })
+                  }
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
+                    <SelectItem value="zh">中文</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <Label>Units</Label>
-                <Select defaultValue="metric">
+                <Select
+                  value={formData.units}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, units: value })
+                  }
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -669,6 +818,14 @@ export default function ProfilePage() {
                   </SelectContent>
                 </Select>
               </div>
+              <Separator />
+              <Button
+                onClick={handleUpdateSettings}
+                disabled={saving}
+                className="w-full mt-4"
+              >
+                {saving ? "Updating..." : "Save App Settings"}
+              </Button>
             </CardContent>
           </Card>
 

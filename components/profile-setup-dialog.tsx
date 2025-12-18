@@ -43,6 +43,8 @@ export function ProfileSetupDialog({ open, userId }: ProfileSetupDialogProps) {
     daily_water_goal: 8,
     activity_level: "moderate",
     goal_type: "maintenance",
+    height: null as number | null,
+    weight: null as number | null,
   });
 
   const handleSubmit = async () => {
@@ -116,6 +118,40 @@ export function ProfileSetupDialog({ open, userId }: ProfileSetupDialogProps) {
               }
               placeholder="Enter your name"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="height">Height (cm)</Label>
+              <Input
+                id="height"
+                type="number"
+                value={formData.height || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    height: e.target.value ? parseInt(e.target.value) : null,
+                  })
+                }
+                placeholder="170"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input
+                id="weight"
+                type="number"
+                step="0.1"
+                value={formData.weight || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    weight: e.target.value ? parseFloat(e.target.value) : null,
+                  })
+                }
+                placeholder="70.0"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

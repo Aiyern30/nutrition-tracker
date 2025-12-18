@@ -2,6 +2,7 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import {
   Home,
   MessageSquare,
@@ -80,9 +81,9 @@ interface UserProfile {
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { setTheme } = useTheme();
   const supabase = createClient();
   const [user, setUser] = useState<UserProfile | null>(null);
-  console.log("User in Sidebar:", user);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -91,7 +92,6 @@ export function AppSidebar() {
         const {
           data: { user: authUser },
         } = await supabase.auth.getUser();
-        console.log("Supabase getUser:", authUser);
 
         if (authUser) {
           setUser({
@@ -103,6 +103,17 @@ export function AppSidebar() {
               "User",
             avatar_url: authUser.user_metadata?.avatar_url,
           });
+
+          // Load theme from profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("theme")
+            .eq("id", authUser.id)
+            .single();
+
+          if (profile?.theme) {
+            setTheme(profile.theme);
+          }
         }
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -117,16 +128,16 @@ export function AppSidebar() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (
+      async (
         _event: any,
         session: {
           user: {
+            id: string;
             email: string;
             user_metadata: { full_name: any; name: any; avatar_url: any };
           };
         }
       ) => {
-        console.log("onAuthStateChange session:", session);
         if (session?.user) {
           setUser({
             email: session.user.email || "",
@@ -137,6 +148,21 @@ export function AppSidebar() {
               "User",
             avatar_url: session.user.user_metadata?.avatar_url,
           });
+
+          // Load theme from profile
+          try {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("theme")
+              .eq("id", session.user.id)
+              .single();
+
+            if (profile?.theme) {
+              setTheme(profile.theme);
+            }
+          } catch (error) {
+            console.error("Error loading theme:", error);
+          }
         } else {
           setUser(null);
         }
@@ -146,7 +172,7 @@ export function AppSidebar() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase.auth]); // Remove supabase from dependency array
+  }, [supabase, setTheme]);
 
   const handleLogout = async () => {
     try {
@@ -187,7 +213,7 @@ export function AppSidebar() {
                 className={cn(
                   "w-full px-4",
                   pathname === item.href &&
-                  "bg-sidebar-accent text-sidebar-accent-foreground"
+                    "bg-sidebar-accent text-sidebar-accent-foreground"
                 )}
               >
                 <Link href={item.href}>
