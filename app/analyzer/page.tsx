@@ -60,6 +60,7 @@ export default function AnalyzerPage() {
   const [description, setDescription] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<NutritionResult | null>(null);
+  console.log("result:", result);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [ocrResults, setOcrResults] = useState<OCRResult[]>([]);
   const [activeTab, setActiveTab] = useState("image");
@@ -205,8 +206,14 @@ export default function AnalyzerPage() {
 
       if (!user) {
         setError("Please log in to save foods");
+        setIsSaving(false);
         return;
       }
+
+      // Use a timeout to detect slow operations
+      const timeoutId = setTimeout(() => {
+        console.warn("Insert operation is taking longer than expected...");
+      }, 3000);
 
       const { data, error: insertError } = await supabase
         .from("analyzed_foods")
@@ -232,7 +239,12 @@ export default function AnalyzerPage() {
         .select("id, is_favorite")
         .single();
 
-      if (insertError) throw insertError;
+      clearTimeout(timeoutId);
+
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw insertError;
+      }
 
       if (data) {
         setSavedFoodId(data.id);
@@ -243,10 +255,10 @@ export default function AnalyzerPage() {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
+      console.error("Save error:", err);
       setError(
         err instanceof Error ? err.message : "Failed to save to tracker"
       );
-      console.error("Save error:", err);
     } finally {
       setIsSaving(false);
     }
@@ -694,7 +706,7 @@ export default function AnalyzerPage() {
                   {saveSuccess && (
                     <div className="rounded-lg border border-primary/50 bg-primary/10 p-3 text-sm text-primary flex items-center gap-2">
                       <CheckCircle className="h-4 w-4" />
-                      {isFavorite 
+                      {isFavorite
                         ? "Successfully saved to favorites!"
                         : t.analyzer.results.successMessage}
                     </div>
