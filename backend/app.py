@@ -364,6 +364,145 @@ def chat():
 def health_check():
     return jsonify({"status": "healthy"}), 200
 
+@app.route('/generate-meal-plan', methods=['POST'])
+def generate_meal_plan():
+    """Generate a structured meal plan using ERNIE"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        user_profile = data.get('profile', {})
+        date = data.get('date', '')
+        lang = data.get('language', 'en')
+
+        # Construct prompt based on user profile
+        profile_text = f"""
+        Profile:
+        - Daily Calorie Goal: {user_profile.get('daily_calorie_goal', 2000)} kcal
+        - Protein Goal: {user_profile.get('daily_protein_goal', 150)}g
+        - Carbs Goal: {user_profile.get('daily_carbs_goal', 200)}g
+        - Fats Goal: {user_profile.get('daily_fats_goal', 65)}g
+        - Dietary Restrictions: {', '.join(user_profile.get('dietary_restrictions', []))}
+        - Disliked Foods: {', '.join(user_profile.get('disliked_foods', []))}
+        - Goal: {user_profile.get('goal_type', 'maintenance')}
+        """
+
+        if lang == 'zh':
+            prompt = f"""你是一位专业的营养师。请根据以下用户档案，为 {date} 制定一份详细的每日膳食计划。
+            
+            {profile_text}
+
+            请生成一份结构化的膳食计划，包含早餐、午餐、晚餐和加餐（可选）。
+            
+            输出必须是严格的 JSON 格式，如下所示：
+            {{
+                "date": "YYYY-MM-DD",
+                "summary": "通过一两句话总结今天的计划（中文）",
+                "total_nutrition": {{
+                    "calories": 总卡路里,
+                    "protein": 总蛋白质(g),
+                    "carbs": 总碳水(g),
+                    "fats": 总脂肪(g)
+                }},
+                "meals": [
+                    {{
+                        "type": "早餐",
+                        "name": "餐食名称",
+                        "description": "简短描述",
+                        "items": ["食物1", "食物2"],
+                        "nutrition": {{
+                            "calories": int,
+                            "protein": int,
+                            "carbs": int,
+                            "fats": int
+                        }},
+                        "tips": "烹饪或食用建议"
+                    }},
+                    // ... 其他餐食 (午餐, 晚餐, 加餐)
+                ]
+            }}
+            
+            只输出 JSON。不要输出其他文本。
+            """
+        else:
+            prompt = f"""You are a professional nutritionist. Please create a detailed daily meal plan for {date} based on the following user profile.
+
+            {profile_text}
+
+            Generate a structured meal plan including Breakfast, Lunch, Dinner, and optionally Snacks.
+
+            The output must be in strict JSON format as follows:
+            {{
+                "date": "YYYY-MM-DD",
+                "summary": "A brief 1-2 sentence summary of the day's plan",
+                "total_nutrition": {{
+                    "calories": total_calories_int,
+                    "protein": total_protein_g,
+                    "carbs": total_carbs_g,
+                    "fats": total_fats_g
+                }},
+                "meals": [
+                    {{
+                        "type": "Breakfast",
+                        "name": "Meal Name",
+                        "description": "Short description",
+                        "items": ["Item 1", "Item 2"],
+                        "nutrition": {{
+                            "calories": int,
+                            "protein": int,
+                            "carbs": int,
+                            "fats": int
+                        }},
+                        "tips": "Preparation or eating tip"
+                    }},
+                    // ... other meals (Lunch, Dinner, Snack)
+                ]
+            }}
+
+            Output ONLY valid JSON. No markdown formatting or other text.
+            """
+
+        messages = [
+            {"role": "user", "content": prompt}
+        ]
+
+        response = client.chat.completions.create(
+            model="ernie-5.0-thinking-preview",
+            messages=messages,
+            max_completion_tokens=4096,
+            stream=False
+        )
+
+        if response.choices and len(response.choices) > 0:
+            result_text = response.choices[0].message.content.strip()
+            
+            # Clean up potential markdown code blocks
+            if result_text.startswith("```json"):
+                result_text = result_text[7:]
+            if result_text.endswith("```"):
+                result_text = result_text[:-3]
+            
+            start_idx = result_text.find('{')
+            end_idx = result_text.rfind('}') + 1
+            
+            if start_idx != -1 and end_idx > start_idx:
+                json_str = result_text[start_idx:end_idx]
+                meal_plan = json.loads(json_str)
+                return jsonify({
+                    "success": True,
+                    "plan": meal_plan
+                }), 200
+            else:
+                print(f"Failed to parse JSON: {result_text}")
+                return jsonify({"error": "Could not parse JSON from ERNIE response"}), 500
+        else:
+            return jsonify({"error": "No response from ERNIE"}), 500
+
+    except Exception as e:
+        print(f"Error in generate_meal_plan: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     print("="*60)
     print("Starting ERNIE Vision API Server...")
