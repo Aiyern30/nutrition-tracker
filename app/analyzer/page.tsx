@@ -302,19 +302,19 @@ export default function AnalyzerPage() {
                           </p>
                         </div>
                       ) : (
-                        <div className="relative">
+                        <div className="relative h-48 w-full rounded-lg overflow-hidden border">
                           <Image
-                            className="rounded-lg w-full h-48 object-cover"
-                            width={192}
-                            height={192}
                             src={selectedImage}
                             alt="selected food"
+                            fill
+                            className="object-cover"
                           />
                           <Button
                             size="icon"
                             variant="destructive"
-                            className="absolute right-2 top-2"
+                            className="absolute top-2 right-2 z-10"
                             onClick={handleRemoveImage}
+                            type="button"
                           >
                             <X className="h-4 w-4" />
                           </Button>
