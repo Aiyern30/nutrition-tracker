@@ -1,65 +1,234 @@
-import Image from "next/image";
+/* eslint-disable react/no-unescaped-entities */
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { StatCard } from "@/components/stat-card";
+import { CalorieRing } from "@/components/calorie-ring";
+import { MacroBar } from "@/components/macro-bar";
+import {
+  Flame,
+  Droplets,
+  TrendingUp,
+  MessageSquare,
+  ScanSearch,
+  Utensils,
+  PlusCircle,
+  AlertCircle,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import Link from "next/link";
 
-export default function Home() {
+export default function DashboardPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
+          <SidebarTrigger />
+          <div className="flex flex-1 items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold">Dashboard</h1>
+              <p className="text-sm text-muted-foreground">
+                Good morning! Here's your nutrition overview
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 space-y-6 p-6">
+          {/* Disclaimer Alert */}
+          <Alert className="border-accent/50 bg-accent/5">
+            <AlertCircle className="h-4 w-4 text-accent" />
+            <AlertDescription className="text-sm text-foreground">
+              This app provides nutritional information for educational purposes
+              only and is not a substitute for professional medical advice.
+            </AlertDescription>
+          </Alert>
+
+          {/* Stats Grid */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Daily Calories"
+              value="1,458"
+              subtitle="542 remaining"
+              icon={Flame}
+              trend={{ value: 5, isPositive: false }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <StatCard
+              title="Water Intake"
+              value="6 / 8"
+              subtitle="glasses today"
+              icon={Droplets}
+            />
+            <StatCard
+              title="Diet Score"
+              value="B+"
+              subtitle="Good balance"
+              icon={TrendingUp}
+              trend={{ value: 8, isPositive: true }}
+            />
+            <StatCard
+              title="Streak"
+              value="7 days"
+              subtitle="Keep it up!"
+              icon={TrendingUp}
+            />
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Daily Summary */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Today's Summary</CardTitle>
+                <CardDescription>
+                  Track your nutrition progress throughout the day
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex flex-col items-center gap-6 md:flex-row md:justify-around">
+                  <CalorieRing consumed={1458} goal={2000} />
+                  <div className="w-full max-w-md space-y-4">
+                    <MacroBar
+                      label="Protein"
+                      current={65}
+                      goal={150}
+                      color="primary"
+                    />
+                    <MacroBar
+                      label="Carbs"
+                      current={180}
+                      goal={250}
+                      color="accent"
+                    />
+                    <MacroBar
+                      label="Fats"
+                      current={42}
+                      goal={65}
+                      color="chart-3"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>What would you like to do?</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  asChild
+                  className="w-full justify-start bg-transparent"
+                  variant="outline"
+                >
+                  <Link href="/chat">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Ask AI a Question
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  className="w-full justify-start bg-transparent"
+                  variant="outline"
+                >
+                  <Link href="/tracker">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Log a Meal
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  className="w-full justify-start bg-transparent"
+                  variant="outline"
+                >
+                  <Link href="/analyzer">
+                    <ScanSearch className="mr-2 h-4 w-4" />
+                    Analyze Food
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  className="w-full justify-start bg-transparent"
+                  variant="outline"
+                >
+                  <Link href="/meal-planner">
+                    <Utensils className="mr-2 h-4 w-4" />
+                    Get Meal Plan
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>
+                Your latest nutrition interactions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[
+                  {
+                    time: "2 hours ago",
+                    action: "Logged lunch",
+                    details: "Grilled chicken salad - 450 cal",
+                  },
+                  {
+                    time: "5 hours ago",
+                    action: "Analyzed food",
+                    details: "Greek yogurt with berries",
+                  },
+                  {
+                    time: "Yesterday",
+                    action: "Generated meal plan",
+                    details: "7-day balanced diet",
+                  },
+                  {
+                    time: "Yesterday",
+                    action: "Asked AI",
+                    details: "Best protein sources for vegans",
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-4 rounded-lg border p-3"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-medium">{item.action}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {item.details}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {item.time}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
