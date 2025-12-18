@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   SidebarProvider,
   SidebarInset,
@@ -61,7 +62,10 @@ export default function AnalyzerPage() {
   const [ocrResults, setOcrResults] = useState<OCRResult[]>([]);
   const [activeTab, setActiveTab] = useState("image");
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const supabase = createClient();
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -171,6 +175,59 @@ export default function AnalyzerPage() {
       handleAnalyzeImage();
     } else {
       handleAnalyzeDescription();
+    }
+  };
+
+  const handleAddToTracker = async () => {
+    if (!result) return;
+
+    setIsSaving(true);
+    setError(null);
+    setSaveSuccess(false);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setError("Please log in to save foods");
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from("analyzed_foods")
+        .insert({
+          user_id: user.id,
+          food_name: result.name,
+          food_description: description || null,
+          food_category: result.category,
+          calories: result.calories,
+          protein: result.protein,
+          carbs: result.carbs,
+          fats: result.fats,
+          fiber: result.fiber,
+          sugar: result.sugar,
+          sodium: result.sodium,
+          serving_size: result.serving_size || null,
+          confidence_level: result.confidence,
+          ai_explanation: result.explanation || null,
+          health_benefits: result.benefits.join(" • "),
+          considerations: result.considerations.join(" • "),
+          is_favorite: false,
+        });
+
+      if (insertError) throw insertError;
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to save to tracker"
+      );
+      console.error("Save error:", err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -516,11 +573,30 @@ export default function AnalyzerPage() {
                     </Card>
                   </div>
 
+                  {saveSuccess && (
+                    <div className="rounded-lg border border-primary/50 bg-primary/10 p-3 text-sm text-primary">
+                      ✓ Successfully added to tracker!
+                    </div>
+                  )}
+
                   {/* Action Buttons */}
                   <div className="flex flex-wrap gap-3">
-                    <Button variant="default">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add to Tracker
+                    <Button
+                      variant="default"
+                      onClick={handleAddToTracker}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add to Tracker
+                        </>
+                      )}
                     </Button>
                     <Button variant="outline">
                       <Heart className="mr-2 h-4 w-4" />
