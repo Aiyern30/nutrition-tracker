@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -15,7 +16,6 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Session } from "@supabase/supabase-js";
 
 import {
   Sidebar,
@@ -81,6 +81,7 @@ export function AppSidebar() {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<UserProfile | null>(null);
+  console.log("User in Sidebar:", user);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export function AppSidebar() {
         const {
           data: { user: authUser },
         } = await supabase.auth.getUser();
+        console.log("Supabase getUser:", authUser);
 
         if (authUser) {
           setUser({
@@ -113,26 +115,37 @@ export function AppSidebar() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((session: Session | null) => {
-      if (session?.user) {
-        setUser({
-          email: session.user.email || "",
-          name:
-            session.user.user_metadata?.full_name ||
-            session.user.user_metadata?.name ||
-            session.user.email?.split("@")[0] ||
-            "User",
-          avatar_url: session.user.user_metadata?.avatar_url,
-        });
-      } else {
-        setUser(null);
+    } = supabase.auth.onAuthStateChange(
+      (
+        _event: any,
+        session: {
+          user: {
+            email: string;
+            user_metadata: { full_name: any; name: any; avatar_url: any };
+          };
+        }
+      ) => {
+        console.log("onAuthStateChange session:", session);
+        if (session?.user) {
+          setUser({
+            email: session.user.email || "",
+            name:
+              session.user.user_metadata?.full_name ||
+              session.user.user_metadata?.name ||
+              session.user.email?.split("@")[0] ||
+              "User",
+            avatar_url: session.user.user_metadata?.avatar_url,
+          });
+        } else {
+          setUser(null);
+        }
       }
-    });
+    );
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase.auth]); // Remove supabase from dependency array
 
   const handleLogout = async () => {
     try {
@@ -168,7 +181,7 @@ export function AppSidebar() {
                 asChild
                 isActive={pathname === item.href}
                 className={cn(
-                  "w-full",
+                  "w-full px-4",
                   pathname === item.href &&
                     "bg-sidebar-accent text-sidebar-accent-foreground"
                 )}
