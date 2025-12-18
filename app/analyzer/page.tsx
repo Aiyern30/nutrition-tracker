@@ -1,6 +1,6 @@
 "use client";
-
-import { useState } from "react";
+import Image from "next/image";
+import { useState, useRef } from "react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,6 +25,10 @@ import {
   Heart,
   Plus,
   MessageSquare,
+  Upload,
+  X,
+  FileImage,
+  Loader2,
 } from "lucide-react";
 
 interface NutritionResult {
@@ -38,44 +41,137 @@ interface NutritionResult {
   fiber: number;
   sugar: number;
   sodium: number;
+  serving_size?: string;
   confidence: "high" | "medium" | "low";
   benefits: string[];
   considerations: string[];
+  explanation?: string;
+}
+
+interface OCRResult {
+  text: string;
+  confidence: number;
 }
 
 export default function AnalyzerPage() {
   const [description, setDescription] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<NutritionResult | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [ocrResults, setOcrResults] = useState<OCRResult[]>([]);
+  const [activeTab, setActiveTab] = useState("image");
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+        setError(null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setOcrResults([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAnalyzeImage = async () => {
+    if (!selectedImage) {
+      setError("Please upload an image first");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setError(null);
+    setOcrResults([]);
+
+    try {
+      const response = await fetch("http://localhost:5000/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: selectedImage,
+          description: description,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to analyze image");
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOcrResults(data.ocr_results || []);
+        setResult(data.nutrition);
+      } else {
+        throw new Error("Analysis failed");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to analyze food");
+      console.error("Analysis error:", err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleAnalyzeDescription = async () => {
+    if (!description.trim()) {
+      setError("Please enter a food description");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setError(null);
+
+    try {
+      const response = await fetch("http://localhost:5000/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          description: description,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to analyze description");
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setResult(data.nutrition);
+      } else {
+        throw new Error("Analysis failed");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to analyze food");
+      console.error("Analysis error:", err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleAnalyze = () => {
-    setIsAnalyzing(true);
-    setTimeout(() => {
-      setResult({
-        name: "Grilled Chicken Breast with Steamed Broccoli",
-        category: "Protein & Vegetables",
-        calories: 285,
-        protein: 48,
-        carbs: 12,
-        fats: 6,
-        fiber: 4,
-        sugar: 2,
-        sodium: 320,
-        confidence: "high",
-        benefits: [
-          "High protein content supports muscle growth and repair",
-          "Rich in vitamins C and K from broccoli",
-          "Low in calories, ideal for weight management",
-          "Contains essential amino acids",
-        ],
-        considerations: [
-          "May be high in sodium depending on seasoning",
-          "Contains common allergen: poultry",
-          "Best consumed fresh for maximum nutrients",
-        ],
-      });
-      setIsAnalyzing(false);
-    }, 1500);
+    if (activeTab === "image") {
+      handleAnalyzeImage();
+    } else {
+      handleAnalyzeDescription();
+    }
   };
 
   return (
@@ -88,7 +184,7 @@ export default function AnalyzerPage() {
             <div>
               <h1 className="text-xl font-semibold">Food Analyzer</h1>
               <p className="text-sm text-muted-foreground">
-                Analyze foods and predict nutritional values with AI
+                Analyze foods with AI using images or descriptions
               </p>
             </div>
           </div>
@@ -105,11 +201,97 @@ export default function AnalyzerPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="description" className="w-full">
+                <Tabs
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                  className="w-full"
+                >
                   <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="image">
+                      <FileImage className="mr-2 h-4 w-4" />
+                      Image
+                    </TabsTrigger>
                     <TabsTrigger value="description">Description</TabsTrigger>
-                    <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
                   </TabsList>
+
+                  <TabsContent value="image" className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Upload Food Image</Label>
+
+                      {!selectedImage ? (
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:border-muted-foreground/50 hover:bg-muted"
+                        >
+                          <Upload className="mb-4 h-10 w-10 text-muted-foreground" />
+                          <p className="text-sm font-medium">
+                            Click to upload image
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            PNG, JPG up to 10MB
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <Image
+                            className="absolute right-2 top-2 h-6 w-6 text-white"
+                            width={192}
+                            height={192}
+                            src={selectedImage}
+                            alt="selected food"
+                          />
+
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="absolute right-2 top-2"
+                            onClick={handleRemoveImage}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Additional Description (Optional)</Label>
+                      <Textarea
+                        placeholder="e.g., serving size, preparation method..."
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        rows={3}
+                        className="resize-none"
+                      />
+                    </div>
+
+                    {ocrResults.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Detected Text (OCR)</Label>
+                        <div className="max-h-32 overflow-y-auto rounded-lg border bg-muted p-3">
+                          {ocrResults.map((ocr, idx) => (
+                            <div
+                              key={idx}
+                              className="mb-2 flex items-start justify-between text-xs"
+                            >
+                              <span className="flex-1">{ocr.text}</span>
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                {(ocr.confidence * 100).toFixed(0)}%
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
                   <TabsContent value="description" className="space-y-4">
                     <div className="space-y-2">
                       <Label>Describe your food</Label>
@@ -125,40 +307,30 @@ export default function AnalyzerPage() {
                       </p>
                     </div>
                   </TabsContent>
-                  <TabsContent value="ingredients" className="space-y-4">
-                    <div className="space-y-3">
-                      <Label>Add ingredients</Label>
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-3 gap-2">
-                          <Input
-                            placeholder="Ingredient"
-                            className="col-span-2"
-                          />
-                          <Input placeholder="Amount" />
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full bg-transparent"
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Ingredient
-                        </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
                 </Tabs>
+
+                {error && (
+                  <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
 
                 <Button
                   onClick={handleAnalyze}
-                  disabled={!description.trim() || isAnalyzing}
+                  disabled={
+                    isAnalyzing ||
+                    (activeTab === "image" && !selectedImage) ||
+                    (activeTab === "description" && !description.trim())
+                  }
                   className="mt-6 w-full"
                   size="lg"
                 >
                   {isAnalyzing ? (
                     <>
-                      <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
-                      Analyzing...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {activeTab === "image"
+                        ? "Processing Image..."
+                        : "Analyzing..."}
                     </>
                   ) : (
                     <>
@@ -173,7 +345,7 @@ export default function AnalyzerPage() {
             {/* Results Panel */}
             <div className="space-y-6 lg:col-span-2">
               {!result ? (
-                <Card className="flex h-150 items-center justify-center">
+                <Card className="flex h-100 items-center justify-center">
                   <CardContent className="text-center">
                     <div className="flex flex-col items-center space-y-4">
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -184,8 +356,8 @@ export default function AnalyzerPage() {
                           Ready to Analyze
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          Enter a food description to get instant nutrition
-                          information
+                          Upload a food image or enter a description to get
+                          instant nutrition information
                         </p>
                       </div>
                     </div>
@@ -215,6 +387,11 @@ export default function AnalyzerPage() {
                               {result.confidence} confidence
                             </Badge>
                           </div>
+                          {result.serving_size && (
+                            <p className="text-sm text-muted-foreground">
+                              Serving: {result.serving_size}
+                            </p>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="text-4xl font-bold text-primary">
@@ -251,7 +428,7 @@ export default function AnalyzerPage() {
                             <p className="text-sm text-muted-foreground">
                               Carbs
                             </p>
-                            <p className="text-2xl font-bold text-accent">
+                            <p className="text-2xl font-bold text-orange-500">
                               {result.carbs}g
                             </p>
                           </div>
@@ -259,7 +436,7 @@ export default function AnalyzerPage() {
                             <p className="text-sm text-muted-foreground">
                               Fats
                             </p>
-                            <p className="text-2xl font-bold text-chart-3">
+                            <p className="text-2xl font-bold text-yellow-500">
                               {result.fats}g
                             </p>
                           </div>
@@ -286,6 +463,20 @@ export default function AnalyzerPage() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Explanation */}
+                  {result.explanation && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Analysis</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          {result.explanation}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Health Benefits */}
                   <div className="grid gap-6 md:grid-cols-2">
@@ -331,11 +522,11 @@ export default function AnalyzerPage() {
                       <Plus className="mr-2 h-4 w-4" />
                       Add to Tracker
                     </Button>
-                    <Button variant="outline" className="bg-transparent">
+                    <Button variant="outline">
                       <Heart className="mr-2 h-4 w-4" />
                       Save to Favorites
                     </Button>
-                    <Button variant="outline" className="bg-transparent">
+                    <Button variant="outline">
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Ask AI About This
                     </Button>
