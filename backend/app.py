@@ -6,6 +6,7 @@ import base64
 import io
 from PIL import Image
 import numpy as np
+import json
 
 app = Flask(__name__)
 CORS(app)
@@ -37,22 +38,61 @@ def extract_text_from_image(image_data):
 def analyze_with_ernie(prompt_text):
     """Analyze text using Baidu Studio ERNIE model"""
     try:
+        # Create a structured prompt
+        full_prompt = f"""Analyze the following food information and extract nutritional data.
+
+Food Information:
+{prompt_text}
+
+Please provide a JSON response with the following structure:
+{{
+  "name": "Food name",
+  "category": "Food category",
+  "calories": integer,
+  "protein": integer (in grams),
+  "carbs": integer (in grams),
+  "fats": integer (in grams),
+  "fiber": integer (in grams),
+  "sugar": integer (in grams),
+  "sodium": integer (in mg),
+  "serving_size": "serving size description",
+  "confidence": "high/medium/low",
+  "benefits": ["benefit 1", "benefit 2", "benefit 3"],
+  "considerations": ["consideration 1", "consideration 2"],
+  "explanation": "Brief explanation of the analysis"
+}}
+
+Respond ONLY with valid JSON, no other text."""
+
         messages = [
-            {"role": "user", "content": prompt_text}
+            {"role": "user", "content": full_prompt}
         ]
-        # Do not use stream=True
+        
         response = client.chat.completions.create(
             model="ernie-5.0-thinking-preview",
             messages=messages,
             max_completion_tokens=2048,
-            stream=False  # <- important
+            stream=False
         )
 
-        # Extract result text
         if response.choices and len(response.choices) > 0:
-            return response.choices[0].message.content.strip()
+            result_text = response.choices[0].message.content.strip()
+            
+            # Try to extract JSON from response
+            start_idx = result_text.find('{')
+            end_idx = result_text.rfind('}') + 1
+            
+            if start_idx != -1 and end_idx > start_idx:
+                json_str = result_text[start_idx:end_idx]
+                nutrition_data = json.loads(json_str)
+                return nutrition_data
+            else:
+                raise Exception("Could not parse JSON from ERNIE response")
         else:
-            return ""
+            raise Exception("No response from ERNIE")
+            
+    except json.JSONDecodeError as e:
+        raise Exception(f"JSON parsing error: {str(e)}")
     except Exception as e:
         raise Exception(f"ERNIE Analysis Error: {str(e)}")
 
@@ -71,28 +111,35 @@ def analyze_food():
                 image_data = image_data.split(',')[1]
             image_bytes = base64.b64decode(image_data)
             ocr_results = extract_text_from_image(image_bytes)
+            
+            # Format OCR results for frontend
+            formatted_ocr = [{"text": text, "confidence": 0.9} for text in ocr_results]
+            
             prompt_text = " ".join(ocr_results)
             if 'description' in data:
                 prompt_text += f"\nUser description: {data['description']}"
-            ernie_result = analyze_with_ernie(prompt_text)
+            
+            nutrition_data = analyze_with_ernie(prompt_text)
+            
             return jsonify({
                 "success": True,
-                "ocr_results": ocr_results,
-                "ernie_result": ernie_result
+                "ocr_results": formatted_ocr,
+                "nutrition": nutrition_data
             }), 200
 
         # If only description is provided
         elif 'description' in data:
-            ernie_result = analyze_with_ernie(data['description'])
+            nutrition_data = analyze_with_ernie(data['description'])
             return jsonify({
                 "success": True,
-                "ernie_result": ernie_result
+                "nutrition": nutrition_data
             }), 200
 
         else:
             return jsonify({"error": "No image or description provided"}), 400
 
     except Exception as e:
+        print(f"Error in analyze_food: {str(e)}")  # Add logging
         return jsonify({"error": str(e)}), 500
 
 @app.route('/health', methods=['GET'])
