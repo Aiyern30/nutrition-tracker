@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Bot, User, AlertCircle, Settings, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   id: string;
@@ -261,15 +263,37 @@ export default function ChatPage() {
                       </div>
                     )}
                     <div
-                      className={`max-w-[80%] space-y-2 rounded-2xl px-4 py-3 ${message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border"
+                      className={`max-w-[85%] space-y-2 rounded-2xl px-5 py-4 ${message.role === "user"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-card border shadow-sm"
                         }`}
                     >
-                      <p className="text-sm leading-relaxed">
-                        {message.content}
-                      </p>
-                      <p className="text-xs opacity-70">
+                      <div className={message.role === "assistant" ? "prose prose-sm dark:prose-invert max-w-none text-foreground" : ""}>
+                        {message.role === "assistant" ? (
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-foreground">{children}</p>,
+                              ul: ({ children }) => <ul className="mb-2 space-y-1 list-disc pl-4 text-foreground">{children}</ul>,
+                              ol: ({ children }) => <ol className="mb-2 space-y-1 list-decimal pl-4 text-foreground">{children}</ol>,
+                              li: ({ children }) => <li className="text-sm pl-1">{children}</li>,
+                              h1: ({ children }) => <h1 className="text-base font-bold mb-2 mt-3 text-foreground">{children}</h1>,
+                              h2: ({ children }) => <h2 className="text-sm font-bold mb-1 mt-2 text-foreground">{children}</h2>,
+                              h3: ({ children }) => <h3 className="text-xs font-bold mb-1 mt-2 uppercase tracking-wide text-muted-foreground">{children}</h3>,
+                              strong: ({ children }) => <span className="font-bold text-foreground">{children}</span>,
+                              blockquote: ({ children }) => <blockquote className="border-l-2 border-primary pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
+                              code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                        ) : (
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                            {message.content}
+                          </p>
+                        )}
+                      </div>
+                      <p className={`text-[10px] opacity-50 mt-2 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                         {message.timestamp.toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
