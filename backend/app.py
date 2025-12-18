@@ -1,32 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from paddleocr import PaddleOCR
 from openai import OpenAI
-import base64
-import io
-from PIL import Image
-import numpy as np
 import json
-import cv2
 
 app = Flask(__name__)
 CORS(app)
-
-# Initialize PaddleOCR for both English and Chinese (remove show_log)
-ocr_en = PaddleOCR(
-    use_angle_cls=True,
-    lang='en',
-    det_db_thresh=0.3,
-    det_db_box_thresh=0.5,
-    text_recognition_batch_size=6
-)
-ocr_ch = PaddleOCR(
-    use_angle_cls=True,
-    lang='ch',
-    det_db_thresh=0.3,
-    det_db_box_thresh=0.5,
-    text_recognition_batch_size=6
-)
 
 # Initialize OpenAI-compatible client for Baidu Studio
 client = OpenAI(
@@ -34,107 +12,104 @@ client = OpenAI(
     base_url="https://aistudio.baidu.com/llm/lmapi/v3"
 )
 
-def preprocess_image(image_data):
-    """Preprocess image for better OCR results"""
+def analyze_image_with_ernie(image_base64, additional_context=""):
+    """Analyze food image directly using ERNIE vision model"""
     try:
-        # Convert to PIL Image
-        img = Image.open(io.BytesIO(image_data))
+        prompt = f"""You are a nutrition expert. Analyze this food image and extract comprehensive nutritional information.
+
+{f"Additional Context: {additional_context}" if additional_context else ""}
+
+Please examine the image carefully and look for:
+1. The food item(s) visible in the image
+2. Any visible nutritional labels or text (including Chinese text)
+3. Serving size information
+4. Package details if visible
+
+Provide a detailed JSON response with the following structure:
+{{
+  "name": "Food name (in English)",
+  "category": "Food category (e.g., Sauce, Snack, Beverage, Meal, etc.)",
+  "calories": integer (kcal per serving),
+  "protein": integer (grams per serving),
+  "carbs": integer (grams per serving),
+  "fats": integer (grams per serving),
+  "fiber": integer (grams per serving, use 0 if not listed),
+  "sugar": integer (grams per serving, use 0 if not listed),
+  "sodium": integer (mg per serving),
+  "serving_size": "serving size description",
+  "confidence": "high/medium/low",
+  "benefits": ["health benefit 1", "health benefit 2", "health benefit 3"],
+  "considerations": ["dietary consideration 1", "consideration 2"],
+  "explanation": "Brief explanation of what you see in the image and nutritional analysis",
+  "detected_text": "Any text visible on the packaging or label"
+}}
+
+Important:
+- If you see a nutrition facts table, extract exact values
+- If nutritional table shows "per 100g", calculate serving size based on typical portions
+- Translate any Chinese text you see
+- If fiber or sugar are not listed, use 0
+- Be as accurate as possible based on what's visible in the image
+- Respond ONLY with valid JSON, no other text."""
+
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_base64}"
+                        }
+                    }
+                ]
+            }
+        ]
         
-        # Convert to numpy array
-        img_array = np.array(img)
-        
-        # Convert RGB to BGR for OpenCV
-        if len(img_array.shape) == 3 and img_array.shape[2] == 3:
-            img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
-        
-        # Resize if image is too large
-        height, width = img_array.shape[:2]
-        max_dimension = 2000
-        if max(height, width) > max_dimension:
-            scale = max_dimension / max(height, width)
-            new_width = int(width * scale)
-            new_height = int(height * scale)
-            img_array = cv2.resize(img_array, (new_width, new_height))
-        
-        # Enhance contrast
-        lab = cv2.cvtColor(img_array, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-        l = clahe.apply(l)
-        enhanced = cv2.merge([l, a, b])
-        enhanced = cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
-        
-        return enhanced
+        response = client.chat.completions.create(
+            model="ernie-5.0-thinking-preview",  # Use the vision-capable model
+            messages=messages,
+            max_completion_tokens=4096,
+            stream=False
+        )
+
+        if response.choices and len(response.choices) > 0:
+            result_text = response.choices[0].message.content.strip()
+            
+            # Extract JSON from response
+            start_idx = result_text.find('{')
+            end_idx = result_text.rfind('}') + 1
+            
+            if start_idx != -1 and end_idx > start_idx:
+                json_str = result_text[start_idx:end_idx]
+                nutrition_data = json.loads(json_str)
+                return nutrition_data
+            else:
+                raise Exception("Could not parse JSON from ERNIE response")
+        else:
+            raise Exception("No response from ERNIE")
+            
+    except json.JSONDecodeError as e:
+        raise Exception(f"JSON parsing error: {str(e)}")
     except Exception as e:
-        print(f"Preprocessing error: {str(e)}")
-        # Return original if preprocessing fails
-        img = Image.open(io.BytesIO(image_data))
-        return np.array(img)
+        raise Exception(f"ERNIE Vision Analysis Error: {str(e)}")
 
-def extract_text_from_image(image_data):
-    """Extract text from image using PaddleOCR (both EN and CH)"""
+def analyze_text_with_ernie(description):
+    """Analyze food description using ERNIE text model"""
     try:
-        img_array = preprocess_image(image_data)
+        full_prompt = f"""Analyze the following food description and provide nutritional information.
 
-        # Remove cls=True, use default API
-        result_en = ocr_en.ocr(img_array)
-        result_ch = ocr_ch.ocr(img_array)
-
-        def extract_lines(result):
-            lines = []
-            if result and len(result) > 0:
-                for line in result[0]:
-                    if line:
-                        text = line[1][0]
-                        confidence = line[1][1]
-                        if confidence > 0.5 and len(text.strip()) > 0:
-                            lines.append({
-                                "text": text,
-                                "confidence": round(confidence, 2)
-                            })
-            return lines
-
-        # Combine and deduplicate results
-        lines_en = extract_lines(result_en)
-        lines_ch = extract_lines(result_ch)
-        seen = set()
-        combined = []
-        for item in lines_en + lines_ch:
-            key = (item["text"], item["confidence"])
-            if key not in seen:
-                seen.add(key)
-                combined.append(item)
-
-        return combined
-    except Exception as e:
-        print(f"OCR Error: {str(e)}")
-        raise Exception(f"OCR Error: {str(e)}")
-
-def analyze_with_ernie(prompt_text, ocr_data=None):
-    """Analyze text using Baidu Studio ERNIE model"""
-    try:
-        # Create a more detailed prompt for Chinese food packages
-        if ocr_data:
-            ocr_text = "\n".join([f"{item['text']} (confidence: {item['confidence']})" for item in ocr_data])
-            full_prompt = f"""You are a nutrition expert analyzing food packaging information. The following text was extracted from a food package (may contain Chinese text):
-
-OCR Extracted Text:
-{ocr_text}
-
-Additional Context:
-{prompt_text if prompt_text else "No additional context provided"}
-
-Please analyze this food product and provide comprehensive nutritional information. If the text is in Chinese, translate and analyze it. Look for:
-- Product name
-- Nutritional facts table (每100克/per 100g)
-- Ingredients list
-- Serving size information
-- Any health claims or warnings
+Food Description:
+{description}
 
 Provide a JSON response with the following structure:
 {{
-  "name": "Food name (in English)",
-  "category": "Food category (e.g., Sauce, Snack, Beverage, etc.)",
+  "name": "Food name",
+  "category": "Food category",
   "calories": integer (kcal per serving),
   "protein": integer (grams per serving),
   "carbs": integer (grams per serving),
@@ -146,36 +121,7 @@ Provide a JSON response with the following structure:
   "confidence": "high/medium/low",
   "benefits": ["health benefit 1", "health benefit 2", "health benefit 3"],
   "considerations": ["dietary consideration 1", "consideration 2"],
-  "explanation": "Brief explanation of the nutritional analysis and any notable ingredients"
-}}
-
-Important: 
-- Convert all nutritional values to per serving amounts
-- If nutritional table shows "per 100g", calculate serving size based on typical portions
-- Be accurate with the nutritional values extracted from the label
-- Respond ONLY with valid JSON, no other text."""
-        else:
-            full_prompt = f"""Analyze the following food information and extract nutritional data.
-
-Food Information:
-{prompt_text}
-
-Please provide a JSON response with the following structure:
-{{
-  "name": "Food name",
-  "category": "Food category",
-  "calories": integer,
-  "protein": integer (in grams),
-  "carbs": integer (in grams),
-  "fats": integer (in grams),
-  "fiber": integer (in grams),
-  "sugar": integer (in grams),
-  "sodium": integer (in mg),
-  "serving_size": "serving size description",
-  "confidence": "high/medium/low",
-  "benefits": ["benefit 1", "benefit 2", "benefit 3"],
-  "considerations": ["consideration 1", "consideration 2"],
-  "explanation": "Brief explanation of the analysis"
+  "explanation": "Brief explanation of the nutritional analysis"
 }}
 
 Respond ONLY with valid JSON, no other text."""
@@ -194,7 +140,6 @@ Respond ONLY with valid JSON, no other text."""
         if response.choices and len(response.choices) > 0:
             result_text = response.choices[0].message.content.strip()
             
-            # Try to extract JSON from response
             start_idx = result_text.find('{')
             end_idx = result_text.rfind('}') + 1
             
@@ -214,39 +159,44 @@ Respond ONLY with valid JSON, no other text."""
 
 @app.route('/analyze', methods=['POST'])
 def analyze_food():
-    """Analyze food from image or description"""
+    """Analyze food from image or description using ERNIE"""
     try:
         data = request.json
         if not data:
             return jsonify({"error": "No data provided"}), 400
 
-        # If image is provided
+        # If image is provided - use ERNIE vision
         if 'image' in data:
             image_data = data['image']
+            # Remove data URL prefix if present
             if ',' in image_data:
                 image_data = image_data.split(',')[1]
-            image_bytes = base64.b64decode(image_data)
             
-            # Extract text with confidence scores
-            ocr_results = extract_text_from_image(image_bytes)
+            additional_context = data.get('description', '')
             
-            # Combine OCR text for analysis
-            prompt_text = " ".join([item['text'] for item in ocr_results])
-            if 'description' in data and data['description']:
-                prompt_text += f"\nUser description: {data['description']}"
+            # Analyze with ERNIE vision model
+            nutrition_data = analyze_image_with_ernie(image_data, additional_context)
             
-            # Analyze with ERNIE, passing OCR data for better context
-            nutrition_data = analyze_with_ernie(prompt_text, ocr_results)
+            # Extract detected text if available
+            detected_text = nutrition_data.get('detected_text', '')
+            ocr_results = []
+            if detected_text:
+                # Split text into lines for display
+                lines = detected_text.split('\n')
+                ocr_results = [
+                    {"text": line.strip(), "confidence": 0.95} 
+                    for line in lines if line.strip()
+                ]
             
             return jsonify({
                 "success": True,
-                "ocr_results": ocr_results,  # Now includes confidence scores
+                "ocr_results": ocr_results,
                 "nutrition": nutrition_data
             }), 200
 
-        # If only description is provided
+        # If only description is provided - use ERNIE text model
         elif 'description' in data:
-            nutrition_data = analyze_with_ernie(data['description'])
+            nutrition_data = analyze_text_with_ernie(data['description'])
             return jsonify({
                 "success": True,
                 "nutrition": nutrition_data
@@ -265,6 +215,6 @@ def health_check():
 
 if __name__ == '__main__':
     print("="*60)
-    print("Starting PaddleOCR + Baidu Studio ERNIE API Server...")
+    print("Starting ERNIE Vision API Server...")
     print("="*60)
     app.run(host='0.0.0.0', port=5000, debug=True)
