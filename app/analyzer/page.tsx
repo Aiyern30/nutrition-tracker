@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 import Image from "next/image";
 import { useState, useRef } from "react";
@@ -64,6 +65,7 @@ export default function AnalyzerPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isAddedToTracker, setIsAddedToTracker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
@@ -171,6 +173,10 @@ export default function AnalyzerPage() {
   };
 
   const handleAnalyze = () => {
+    // Reset tracker state when analyzing new food
+    setIsAddedToTracker(false);
+    setSaveSuccess(false);
+
     if (activeTab === "image") {
       handleAnalyzeImage();
     } else {
@@ -219,6 +225,7 @@ export default function AnalyzerPage() {
 
       if (insertError) throw insertError;
 
+      setIsAddedToTracker(true);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
@@ -401,8 +408,34 @@ export default function AnalyzerPage() {
 
             {/* Results Panel */}
             <div className="space-y-6 lg:col-span-2">
-              {!result ? (
-                <Card className="flex h-100 items-center justify-center">
+              {isAnalyzing ? (
+                <Card className="flex min-h-100 items-center justify-center">
+                  <CardContent className="text-center">
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="relative">
+                        <div className="h-16 w-16 rounded-full border-4 border-primary/20"></div>
+                        <div className="absolute inset-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-primary"></div>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-semibold">
+                          Analyzing Your Food...
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {activeTab === "image"
+                            ? "Processing image and extracting nutrition data"
+                            : "Analyzing description and calculating nutrients"}
+                        </p>
+                        <div className="flex items-center justify-center gap-1 pt-2">
+                          <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]"></div>
+                          <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]"></div>
+                          <div className="h-2 w-2 animate-bounce rounded-full bg-primary"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : !result ? (
+                <Card className="flex min-h-100 items-center justify-center">
                   <CardContent className="text-center">
                     <div className="flex flex-col items-center space-y-4">
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -412,10 +445,34 @@ export default function AnalyzerPage() {
                         <h3 className="text-xl font-semibold">
                           Ready to Analyze
                         </h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground max-w-md">
                           Upload a food image or enter a description to get
-                          instant nutrition information
+                          instant nutrition information powered by AI
                         </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-4 text-left">
+                        <div className="flex items-start gap-2">
+                          <FileImage className="h-5 w-5 text-primary mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium">
+                              Image Analysis
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Upload photos of your meals
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className="h-5 w-5 text-primary mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium">
+                              Text Description
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Describe what you're eating
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -574,30 +631,38 @@ export default function AnalyzerPage() {
                   </div>
 
                   {saveSuccess && (
-                    <div className="rounded-lg border border-primary/50 bg-primary/10 p-3 text-sm text-primary">
-                      ✓ Successfully added to tracker!
+                    <div className="rounded-lg border border-primary/50 bg-primary/10 p-3 text-sm text-primary flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Successfully added to tracker!
                     </div>
                   )}
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap gap-3">
-                    <Button
-                      variant="default"
-                      onClick={handleAddToTracker}
-                      disabled={isSaving}
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add to Tracker
-                        </>
-                      )}
-                    </Button>
+                    {!isAddedToTracker ? (
+                      <Button
+                        variant="default"
+                        onClick={handleAddToTracker}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add to Tracker
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button variant="default" disabled>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Added to Tracker
+                      </Button>
+                    )}
                     <Button variant="outline">
                       <Heart className="mr-2 h-4 w-4" />
                       Save to Favorites
