@@ -67,6 +67,8 @@ export default function AnalyzerPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isAddedToTracker, setIsAddedToTracker] = useState(false);
+  const [savedFoodId, setSavedFoodId] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
@@ -179,6 +181,8 @@ export default function AnalyzerPage() {
     // Reset tracker state when analyzing new food
     setIsAddedToTracker(false);
     setSaveSuccess(false);
+    setSavedFoodId(null);
+    setIsFavorite(false);
 
     if (activeTab === "image") {
       handleAnalyzeImage();
@@ -204,7 +208,7 @@ export default function AnalyzerPage() {
         return;
       }
 
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from("analyzed_foods")
         .insert({
           user_id: user.id,
@@ -224,9 +228,16 @@ export default function AnalyzerPage() {
           health_benefits: result.benefits.join(" • "),
           considerations: result.considerations.join(" • "),
           is_favorite: false,
-        });
+        })
+        .select("id, is_favorite")
+        .single();
 
       if (insertError) throw insertError;
+
+      if (data) {
+        setSavedFoodId(data.id);
+        setIsFavorite(data.is_favorite);
+      }
 
       setIsAddedToTracker(true);
       setSaveSuccess(true);
@@ -236,6 +247,33 @@ export default function AnalyzerPage() {
         err instanceof Error ? err.message : "Failed to save to tracker"
       );
       console.error("Save error:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAddToFavorite = async () => {
+    if (!savedFoodId) return;
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const { error: updateError } = await supabase
+        .from("analyzed_foods")
+        .update({ is_favorite: true })
+        .eq("id", savedFoodId);
+
+      if (updateError) throw updateError;
+
+      setIsFavorite(true);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to save to favorites"
+      );
+      console.error("Save favorite error:", err);
     } finally {
       setIsSaving(false);
     }
@@ -656,7 +694,9 @@ export default function AnalyzerPage() {
                   {saveSuccess && (
                     <div className="rounded-lg border border-primary/50 bg-primary/10 p-3 text-sm text-primary flex items-center gap-2">
                       <CheckCircle className="h-4 w-4" />
-                      {t.analyzer.results.successMessage}
+                      {isFavorite 
+                        ? "Successfully saved to favorites!"
+                        : t.analyzer.results.successMessage}
                     </div>
                   )}
 
@@ -681,15 +721,38 @@ export default function AnalyzerPage() {
                         )}
                       </Button>
                     ) : (
-                      <Button variant="default" disabled>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        {t.analyzer.buttons.addedToTracker}
-                      </Button>
+                      <>
+                        <Button variant="default" disabled>
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          {t.analyzer.buttons.addedToTracker}
+                        </Button>
+                        {!isFavorite && (
+                          <Button
+                            variant="outline"
+                            onClick={handleAddToFavorite}
+                            disabled={isSaving}
+                          >
+                            {isSaving ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                {t.analyzer.buttons.saving}
+                              </>
+                            ) : (
+                              <>
+                                <Heart className="mr-2 h-4 w-4" />
+                                {t.analyzer.buttons.saveToFavorites}
+                              </>
+                            )}
+                          </Button>
+                        )}
+                        {isFavorite && (
+                          <Button variant="outline" disabled>
+                            <Heart className="mr-2 h-4 w-4 fill-current" />
+                            Saved to Favorites
+                          </Button>
+                        )}
+                      </>
                     )}
-                    <Button variant="outline">
-                      <Heart className="mr-2 h-4 w-4" />
-                      {t.analyzer.buttons.saveToFavorites}
-                    </Button>
                     <Button variant="outline">
                       <MessageSquare className="mr-2 h-4 w-4" />
                       {t.analyzer.buttons.askAI}
