@@ -13,6 +13,106 @@
     "signIn": "Sign In",
     "getStarted": "Get started"
   },
+  "profile": {
+    "title": "Profile & Settings",
+    "subtitle": "Manage your account and preferences",
+    "welcome": "Welcome",
+    "memberSince": "Member since",
+    "freePlan": "Free Plan",
+    "dayStreak": "day streak",
+    "editProfile": "Edit Profile",
+    "personalGoals": {
+      "title": "Personal Goals",
+      "subtitle": "Set your nutrition and health objectives",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Enter your name",
+      "height": "Height",
+      "weight": "Weight",
+      "dailyCalorieGoal": "Daily Calorie Goal",
+      "dailyProteinGoal": "Daily Protein Goal (g)",
+      "dailyCarbsGoal": "Daily Carbs Goal (g)",
+      "dailyFatsGoal": "Daily Fats Goal (g)",
+      "activityLevel": "Activity Level",
+      "primaryGoal": "Primary Goal",
+      "updateGoals": "Update Goals",
+      "updating": "Updating...",
+      "activityLevels": {
+        "sedentary": "Sedentary",
+        "light": "Lightly Active",
+        "moderate": "Moderately Active",
+        "active": "Very Active",
+        "veryActive": "Extra Active"
+      },
+      "goals": {
+        "weightLoss": "Weight Loss",
+        "maintenance": "Maintain Weight",
+        "muscleGain": "Muscle Gain",
+        "health": "General Health"
+      }
+    },
+    "dietaryPreferences": {
+      "title": "Dietary Preferences",
+      "subtitle": "Customize your meal recommendations",
+      "allergiesRestrictions": "Allergies & Restrictions",
+      "addRestriction": "Add dietary restriction",
+      "foodsToAvoid": "Foods to Avoid",
+      "addDislikedFood": "Add disliked food",
+      "add": "Add"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "Manage your notification preferences",
+      "mealReminders": "Meal Reminders",
+      "mealRemindersDesc": "Get reminded to log your meals",
+      "weeklySummary": "Weekly Summary",
+      "weeklySummaryDesc": "Receive a weekly nutrition report",
+      "aiInsights": "AI Insights",
+      "aiInsightsDesc": "Get personalized suggestions from AI",
+      "saveSettings": "Save Notification Settings"
+    },
+    "appSettings": {
+      "title": "App Settings",
+      "subtitle": "Customize your app experience",
+      "theme": "Theme",
+      "language": "Language",
+      "units": "Units",
+      "saveSettings": "Save App Settings",
+      "themes": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "languages": {
+        "en": "English",
+        "zh": "中文"
+      },
+      "unitsOptions": {
+        "metric": "Metric",
+        "imperial": "Imperial"
+      }
+    },
+    "legal": {
+      "title": "About & Legal",
+      "disclaimer": "Important Disclaimer:",
+      "disclaimerText": "This app provides nutritional information and dietary guidance for educational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider before making any dietary changes, especially if you have medical conditions or concerns.",
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "helpSupport": "Help & Support"
+    },
+    "messages": {
+      "goalsUpdated": "Goals updated successfully!",
+      "restrictionAdded": "Dietary restriction added!",
+      "foodAdded": "Disliked food added!",
+      "settingsUpdated": "Settings updated successfully!",
+      "loadError": "Failed to load profile",
+      "updateError": "Failed to update goals",
+      "addRestrictionError": "Failed to add restriction",
+      "removeRestrictionError": "Failed to remove restriction",
+      "addFoodError": "Failed to add food",
+      "removeFoodError": "Failed to remove food",
+      "saveSettingsError": "Failed to update settings"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "saving": "Saving...",

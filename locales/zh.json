@@ -13,6 +13,106 @@
     "signIn": "登录",
     "getStarted": "开始使用"
   },
+  "profile": {
+    "title": "个人资料与设置",
+    "subtitle": "管理您的账户和偏好设置",
+    "welcome": "欢迎",
+    "memberSince": "注册时间",
+    "freePlan": "免费计划",
+    "dayStreak": "天连续打卡",
+    "editProfile": "编辑资料",
+    "personalGoals": {
+      "title": "个人目标",
+      "subtitle": "设置您的营养和健康目标",
+      "displayName": "显示名称",
+      "displayNamePlaceholder": "输入您的名字",
+      "height": "身高",
+      "weight": "体重",
+      "dailyCalorieGoal": "每日卡路里目标",
+      "dailyProteinGoal": "每日蛋白质目标 (克)",
+      "dailyCarbsGoal": "每日碳水化合物目标 (克)",
+      "dailyFatsGoal": "每日脂肪目标 (克)",
+      "activityLevel": "活动水平",
+      "primaryGoal": "主要目标",
+      "updateGoals": "更新目标",
+      "updating": "更新中...",
+      "activityLevels": {
+        "sedentary": "久坐不动",
+        "light": "轻度活动",
+        "moderate": "中等活动",
+        "active": "高度活动",
+        "veryActive": "极度活动"
+      },
+      "goals": {
+        "weightLoss": "减重",
+        "maintenance": "维持体重",
+        "muscleGain": "增肌",
+        "health": "一般健康"
+      }
+    },
+    "dietaryPreferences": {
+      "title": "饮食偏好",
+      "subtitle": "自定义您的膳食推荐",
+      "allergiesRestrictions": "过敏与限制",
+      "addRestriction": "添加饮食限制",
+      "foodsToAvoid": "要避免的食物",
+      "addDislikedFood": "添加不喜欢的食物",
+      "add": "添加"
+    },
+    "notifications": {
+      "title": "通知",
+      "subtitle": "管理您的通知偏好",
+      "mealReminders": "用餐提醒",
+      "mealRemindersDesc": "提醒您记录用餐",
+      "weeklySummary": "每周总结",
+      "weeklySummaryDesc": "接收每周营养报告",
+      "aiInsights": "AI 洞察",
+      "aiInsightsDesc": "获取个性化的 AI 建议",
+      "saveSettings": "保存通知设置"
+    },
+    "appSettings": {
+      "title": "应用设置",
+      "subtitle": "自定义您的应用体验",
+      "theme": "主题",
+      "language": "语言",
+      "units": "单位",
+      "saveSettings": "保存应用设置",
+      "themes": {
+        "light": "浅色",
+        "dark": "深色",
+        "system": "跟随系统"
+      },
+      "languages": {
+        "en": "English",
+        "zh": "中文"
+      },
+      "unitsOptions": {
+        "metric": "公制",
+        "imperial": "英制"
+      }
+    },
+    "legal": {
+      "title": "关于与法律",
+      "disclaimer": "重要免责声明：",
+      "disclaimerText": "本应用提供的营养信息和饮食指导仅供教育目的使用。这不能替代专业医疗建议、诊断或治疗。在进行任何饮食改变之前，尤其是如果您有医疗状况或疑虑，请务必咨询合格的医疗保健提供者。",
+      "privacyPolicy": "隐私政策",
+      "termsOfService": "服务条款",
+      "helpSupport": "帮助与支持"
+    },
+    "messages": {
+      "goalsUpdated": "目标更新成功！",
+      "restrictionAdded": "饮食限制已添加！",
+      "foodAdded": "不喜欢的食物已添加！",
+      "settingsUpdated": "设置更新成功！",
+      "loadError": "加载个人资料失败",
+      "updateError": "更新目标失败",
+      "addRestrictionError": "添加限制失败",
+      "removeRestrictionError": "移除限制失败",
+      "addFoodError": "添加食物失败",
+      "removeFoodError": "移除食物失败",
+      "saveSettingsError": "更新设置失败"
+    }
+  },
   "common": {
     "loading": "加载中...",
     "saving": "保存中...",

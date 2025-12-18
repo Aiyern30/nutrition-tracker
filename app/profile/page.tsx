@@ -71,8 +71,7 @@ interface Profile {
 
 export default function ProfilePage() {
   const { setTheme } = useTheme();
-  const { language, setLanguage: setAppLanguage } = useLanguage();
-
+  const { t, setLanguage: setAppLanguage } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -153,17 +152,20 @@ export default function ProfilePage() {
           units: data.units || "metric",
         });
 
-        // Apply theme from profile
+        // Apply theme and language from profile
         if (data.theme) {
           setTheme(data.theme);
         }
+        if (data.language) {
+          setAppLanguage(data.language as "en" | "zh");
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load profile");
+      setError(err instanceof Error ? err.message : t.profile.messages.loadError);
     } finally {
       setLoading(false);
     }
-  }, [supabase, setTheme]);
+  }, [supabase, setTheme, setAppLanguage, t]);
 
   useEffect(() => {
     fetchProfile();
@@ -198,10 +200,10 @@ export default function ProfilePage() {
 
       if (error) throw error;
 
-      setSuccess("Goals updated successfully!");
+      setSuccess(t.profile.messages.goalsUpdated);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update goals");
+      setError(err instanceof Error ? err.message : t.profile.messages.updateError);
     } finally {
       setSaving(false);
     }
@@ -236,12 +238,10 @@ export default function ProfilePage() {
       setTheme(formData.theme);
       setAppLanguage(formData.language as "en" | "zh");
 
-      setSuccess("Settings updated successfully!");
+      setSuccess(t.profile.messages.settingsUpdated);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update settings"
-      );
+      setError(err instanceof Error ? err.message : t.profile.messages.saveSettingsError);
     } finally {
       setSaving(false);
     }
@@ -270,11 +270,11 @@ export default function ProfilePage() {
 
       setFormData({ ...formData, dietary_restrictions: updated });
       setNewRestriction("");
-      setSuccess("Dietary restriction added!");
+      setSuccess(t.profile.messages.restrictionAdded);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to add restriction"
+        err instanceof Error ? err.message : t.profile.messages.addRestrictionError
       );
     }
   };
@@ -329,10 +329,10 @@ export default function ProfilePage() {
 
       setFormData({ ...formData, disliked_foods: updated });
       setNewDislikedFood("");
-      setSuccess("Disliked food added!");
+      setSuccess(t.profile.messages.foodAdded);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add food");
+      setError(err instanceof Error ? err.message : t.profile.messages.addFoodError);
     }
   };
 
@@ -377,9 +377,9 @@ export default function ProfilePage() {
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">Profile & Settings</h1>
+              <h1 className="text-xl font-semibold">{t.profile.title}</h1>
               <p className="text-sm text-muted-foreground">
-                Manage your account and preferences
+                {t.profile.subtitle}
               </p>
             </div>
           </div>
@@ -419,7 +419,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex-1 space-y-2">
                   <h2 className="text-2xl font-bold">
-                    Welcome, {formData.display_name || "User"}
+                    {t.profile.welcome}, {formData.display_name || "User"}
                   </h2>
                   {userEmail && (
                     <p className="text-sm text-muted-foreground">{userEmail}</p>
@@ -431,10 +431,10 @@ export default function ProfilePage() {
                     </Badge>
                   </div> */}
                   <p className="text-sm text-muted-foreground">
-                    Member since{" "}
+                    {t.profile.memberSince}{" "}
                     {profile?.created_at
                       ? new Date(profile.created_at).toLocaleDateString(
-                          "en-US",
+                          formData.language === "zh" ? "zh-CN" : "en-US",
                           {
                             month: "long",
                             year: "numeric",
@@ -452,22 +452,22 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                <CardTitle>Personal Goals</CardTitle>
+                <CardTitle>{t.profile.personalGoals.title}</CardTitle>
               </div>
               <CardDescription>
-                Set your nutrition and health objectives
+                {t.profile.personalGoals.subtitle}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="display-name">Display Name</Label>
+                <Label htmlFor="display-name">{t.profile.personalGoals.displayName}</Label>
                 <Input
                   id="display-name"
                   value={formData.display_name}
                   onChange={(e) =>
                     setFormData({ ...formData, display_name: e.target.value })
                   }
-                  placeholder="Enter your name"
+                  placeholder={t.profile.personalGoals.displayNamePlaceholder}
                 />
               </div>
 
@@ -475,7 +475,7 @@ export default function ProfilePage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="height">
-                    Height ({formData.units === "metric" ? "cm" : "in"})
+                    {t.profile.personalGoals.height} ({formData.units === "metric" ? "cm" : "in"})
                   </Label>
                   <Input
                     id="height"
@@ -484,9 +484,7 @@ export default function ProfilePage() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        height: e.target.value
-                          ? parseInt(e.target.value)
-                          : null,
+                        height: e.target.value ? parseInt(e.target.value) : null,
                       })
                     }
                     placeholder={formData.units === "metric" ? "170" : "67"}
@@ -494,7 +492,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="weight">
-                    Weight ({formData.units === "metric" ? "kg" : "lbs"})
+                    {t.profile.personalGoals.weight} ({formData.units === "metric" ? "kg" : "lbs"})
                   </Label>
                   <Input
                     id="weight"
@@ -504,9 +502,7 @@ export default function ProfilePage() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        weight: e.target.value
-                          ? parseFloat(e.target.value)
-                          : null,
+                        weight: e.target.value ? parseFloat(e.target.value) : null,
                       })
                     }
                     placeholder={formData.units === "metric" ? "70.0" : "154.3"}
@@ -516,7 +512,7 @@ export default function ProfilePage() {
 
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="calorie-goal">Daily Calorie Goal</Label>
+                  <Label htmlFor="calorie-goal">{t.profile.personalGoals.dailyCalorieGoal}</Label>
                   <Input
                     id="calorie-goal"
                     type="number"
@@ -530,7 +526,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="protein-goal">Daily Protein Goal (g)</Label>
+                  <Label htmlFor="protein-goal">{t.profile.personalGoals.dailyProteinGoal}</Label>
                   <Input
                     id="protein-goal"
                     type="number"
@@ -544,7 +540,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="carbs-goal">Daily Carbs Goal (g)</Label>
+                  <Label htmlFor="carbs-goal">{t.profile.personalGoals.dailyCarbsGoal}</Label>
                   <Input
                     id="carbs-goal"
                     type="number"
@@ -558,7 +554,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="fats-goal">Daily Fats Goal (g)</Label>
+                  <Label htmlFor="fats-goal">{t.profile.personalGoals.dailyFatsGoal}</Label>
                   <Input
                     id="fats-goal"
                     type="number"
@@ -572,7 +568,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="activity-level">Activity Level</Label>
+                  <Label htmlFor="activity-level">{t.profile.personalGoals.activityLevel}</Label>
                   <Select
                     value={formData.activity_level}
                     onValueChange={(value) =>
@@ -583,18 +579,16 @@ export default function ProfilePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sedentary">Sedentary</SelectItem>
-                      <SelectItem value="light">Lightly Active</SelectItem>
-                      <SelectItem value="moderate">
-                        Moderately Active
-                      </SelectItem>
-                      <SelectItem value="active">Very Active</SelectItem>
-                      <SelectItem value="very_active">Extra Active</SelectItem>
+                      <SelectItem value="sedentary">{t.profile.personalGoals.activityLevels.sedentary}</SelectItem>
+                      <SelectItem value="light">{t.profile.personalGoals.activityLevels.light}</SelectItem>
+                      <SelectItem value="moderate">{t.profile.personalGoals.activityLevels.moderate}</SelectItem>
+                      <SelectItem value="active">{t.profile.personalGoals.activityLevels.active}</SelectItem>
+                      <SelectItem value="very_active">{t.profile.personalGoals.activityLevels.veryActive}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="goal-type">Primary Goal</Label>
+                  <Label htmlFor="goal-type">{t.profile.personalGoals.primaryGoal}</Label>
                   <Select
                     value={formData.goal_type}
                     onValueChange={(value) =>
@@ -605,18 +599,16 @@ export default function ProfilePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weight_loss">Weight Loss</SelectItem>
-                      <SelectItem value="maintenance">
-                        Maintain Weight
-                      </SelectItem>
-                      <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
-                      <SelectItem value="health">General Health</SelectItem>
+                      <SelectItem value="weight_loss">{t.profile.personalGoals.goals.weightLoss}</SelectItem>
+                      <SelectItem value="maintenance">{t.profile.personalGoals.goals.maintenance}</SelectItem>
+                      <SelectItem value="muscle_gain">{t.profile.personalGoals.goals.muscleGain}</SelectItem>
+                      <SelectItem value="health">{t.profile.personalGoals.goals.health}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <Button onClick={handleUpdateGoals} disabled={saving}>
-                {saving ? "Updating..." : "Update Goals"}
+                {saving ? t.profile.personalGoals.updating : t.profile.personalGoals.updateGoals}
               </Button>
             </CardContent>
           </Card>
@@ -624,25 +616,25 @@ export default function ProfilePage() {
           {/* Dietary Preferences */}
           <Card>
             <CardHeader>
-              <CardTitle>Dietary Preferences</CardTitle>
+              <CardTitle>{t.profile.dietaryPreferences.title}</CardTitle>
               <CardDescription>
-                Customize your meal recommendations
+                {t.profile.dietaryPreferences.subtitle}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>Allergies & Restrictions</Label>
+                <Label>{t.profile.dietaryPreferences.allergiesRestrictions}</Label>
                 <div className="flex gap-2">
                   <Input
                     value={newRestriction}
                     onChange={(e) => setNewRestriction(e.target.value)}
-                    placeholder="Add dietary restriction"
+                    placeholder={t.profile.dietaryPreferences.addRestriction}
                     onKeyDown={(e) =>
                       e.key === "Enter" && addDietaryRestriction()
                     }
                   />
                   <Button onClick={addDietaryRestriction} type="button">
-                    Add
+                    {t.profile.dietaryPreferences.add}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -659,16 +651,16 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Foods to Avoid</Label>
+                <Label>{t.profile.dietaryPreferences.foodsToAvoid}</Label>
                 <div className="flex gap-2">
                   <Input
                     value={newDislikedFood}
                     onChange={(e) => setNewDislikedFood(e.target.value)}
-                    placeholder="Add disliked food"
+                    placeholder={t.profile.dietaryPreferences.addDislikedFood}
                     onKeyDown={(e) => e.key === "Enter" && addDislikedFood()}
                   />
                   <Button onClick={addDislikedFood} type="button">
-                    Add
+                    {t.profile.dietaryPreferences.add}
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -692,18 +684,18 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                <CardTitle>Notifications</CardTitle>
+                <CardTitle>{t.profile.notifications.title}</CardTitle>
               </div>
               <CardDescription>
-                Manage your notification preferences
+                {t.profile.notifications.subtitle}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Meal Reminders</Label>
+                  <Label>{t.profile.notifications.mealReminders}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get reminded to log your meals
+                    {t.profile.notifications.mealRemindersDesc}
                   </p>
                 </div>
                 <Switch
@@ -716,9 +708,9 @@ export default function ProfilePage() {
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Weekly Summary</Label>
+                  <Label>{t.profile.notifications.weeklySummary}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive a weekly nutrition report
+                    {t.profile.notifications.weeklySummaryDesc}
                   </p>
                 </div>
                 <Switch
@@ -731,9 +723,9 @@ export default function ProfilePage() {
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>AI Insights</Label>
+                  <Label>{t.profile.notifications.aiInsights}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get personalized suggestions from AI
+                    {t.profile.notifications.aiInsightsDesc}
                   </p>
                 </div>
                 <Switch
@@ -744,12 +736,8 @@ export default function ProfilePage() {
                 />
               </div>
               <Separator />
-              <Button
-                onClick={handleUpdateSettings}
-                disabled={saving}
-                className="w-full mt-4"
-              >
-                {saving ? "Updating..." : "Save Notification Settings"}
+              <Button onClick={handleUpdateSettings} disabled={saving} className="w-full mt-4">
+                {saving ? t.common.saving : t.profile.notifications.saveSettings}
               </Button>
             </CardContent>
           </Card>
@@ -757,14 +745,14 @@ export default function ProfilePage() {
           {/* App Settings */}
           <Card>
             <CardHeader>
-              <CardTitle>App Settings</CardTitle>
-              <CardDescription>Customize your app experience</CardDescription>
+              <CardTitle>{t.profile.appSettings.title}</CardTitle>
+              <CardDescription>{t.profile.appSettings.subtitle}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Moon className="h-4 w-4" />
-                  <Label>Theme</Label>
+                  <Label>{t.profile.appSettings.theme}</Label>
                 </div>
                 <Select
                   value={formData.theme}
@@ -776,9 +764,9 @@ export default function ProfilePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
+                    <SelectItem value="light">{t.profile.appSettings.themes.light}</SelectItem>
+                    <SelectItem value="dark">{t.profile.appSettings.themes.dark}</SelectItem>
+                    <SelectItem value="system">{t.profile.appSettings.themes.system}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -786,7 +774,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4" />
-                  <Label>Language</Label>
+                  <Label>{t.profile.appSettings.language}</Label>
                 </div>
                 <Select
                   value={formData.language}
@@ -798,14 +786,14 @@ export default function ProfilePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="zh">中文</SelectItem>
+                    <SelectItem value="en">{t.profile.appSettings.languages.en}</SelectItem>
+                    <SelectItem value="zh">{t.profile.appSettings.languages.zh}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
-                <Label>Units</Label>
+                <Label>{t.profile.appSettings.units}</Label>
                 <Select
                   value={formData.units}
                   onValueChange={(value) =>
@@ -816,18 +804,14 @@ export default function ProfilePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="metric">Metric</SelectItem>
-                    <SelectItem value="imperial">Imperial</SelectItem>
+                    <SelectItem value="metric">{t.profile.appSettings.unitsOptions.metric}</SelectItem>
+                    <SelectItem value="imperial">{t.profile.appSettings.unitsOptions.imperial}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Separator />
-              <Button
-                onClick={handleUpdateSettings}
-                disabled={saving}
-                className="w-full mt-4"
-              >
-                {saving ? "Updating..." : "Save App Settings"}
+              <Button onClick={handleUpdateSettings} disabled={saving} className="w-full mt-4">
+                {saving ? t.common.saving : t.profile.appSettings.saveSettings}
               </Button>
             </CardContent>
           </Card>
@@ -835,19 +819,13 @@ export default function ProfilePage() {
           {/* Legal & Support */}
           <Card>
             <CardHeader>
-              <CardTitle>About & Legal</CardTitle>
+              <CardTitle>{t.profile.legal.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Alert className="border-accent/50 bg-accent/5">
                 <AlertCircle className="h-4 w-4 text-accent" />
                 <AlertDescription className="text-sm">
-                  <strong>Important Disclaimer:</strong> This app provides
-                  nutritional information and dietary guidance for educational
-                  purposes only. It is not a substitute for professional medical
-                  advice, diagnosis, or treatment. Always consult with a
-                  qualified healthcare provider before making any dietary
-                  changes, especially if you have medical conditions or
-                  concerns.
+                  <strong>{t.profile.legal.disclaimer}</strong> {t.profile.legal.disclaimerText}
                 </AlertDescription>
               </Alert>
               <Button
@@ -855,21 +833,21 @@ export default function ProfilePage() {
                 className="w-full justify-start bg-transparent"
               >
                 <Shield className="mr-2 h-4 w-4" />
-                Privacy Policy
+                {t.profile.legal.privacyPolicy}
               </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start bg-transparent"
               >
                 <FileText className="mr-2 h-4 w-4" />
-                Terms of Service
+                {t.profile.legal.termsOfService}
               </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start bg-transparent"
               >
                 <HelpCircle className="mr-2 h-4 w-4" />
-                Help & Support
+                {t.profile.legal.helpSupport}
               </Button>
             </CardContent>
           </Card>
