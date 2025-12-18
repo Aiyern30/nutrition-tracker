@@ -113,6 +113,77 @@
       "saveSettingsError": "Failed to update settings"
     }
   },
+  "analyzer": {
+    "title": "Food Analyzer",
+    "subtitle": "Analyze foods with AI using images or descriptions",
+    "inputMethod": {
+      "title": "Input Method",
+      "subtitle": "Choose how to analyze your food",
+      "imageTab": "Image",
+      "descriptionTab": "Description"
+    },
+    "imageUpload": {
+      "title": "Upload Food Image",
+      "clickToUpload": "Click to upload image",
+      "fileTypes": "PNG, JPG up to 10MB",
+      "additionalDesc": "Additional Description (Optional)",
+      "additionalDescPlaceholder": "e.g., serving size, preparation method...",
+      "detectedText": "Detected Text (OCR)"
+    },
+    "descriptionInput": {
+      "title": "Describe your food",
+      "placeholder": "e.g., grilled chicken breast with steamed broccoli",
+      "hint": "Be as detailed as possible for accurate results"
+    },
+    "buttons": {
+      "analyzeFood": "Analyze Food",
+      "processingImage": "Processing Image...",
+      "analyzing": "Analyzing...",
+      "addToTracker": "Add to Tracker",
+      "saving": "Saving...",
+      "addedToTracker": "Added to Tracker",
+      "saveToFavorites": "Save to Favorites",
+      "askAI": "Ask AI About This"
+    },
+    "results": {
+      "readyTitle": "Ready to Analyze",
+      "readyDesc": "Upload a food image or enter a description to get instant nutrition information powered by AI",
+      "analyzingTitle": "Analyzing Your Food...",
+      "analyzingImageDesc": "Processing image and extracting nutrition data",
+      "analyzingTextDesc": "Analyzing description and calculating nutrients",
+      "imageAnalysis": "Image Analysis",
+      "imageAnalysisDesc": "Upload photos of your meals",
+      "textDescription": "Text Description",
+      "textDescriptionDesc": "Describe what you're eating",
+      "serving": "Serving",
+      "calories": "calories",
+      "confidence": "confidence",
+      "nutritionFacts": "Nutrition Facts",
+      "nutritionFactsDesc": "Detailed nutritional breakdown per serving",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fats": "Fats",
+      "fiber": "Fiber",
+      "sugar": "Sugar",
+      "sodium": "Sodium",
+      "analysis": "Analysis",
+      "healthBenefits": "Health Benefits",
+      "considerations": "Considerations",
+      "successMessage": "Successfully added to tracker!"
+    },
+    "confidenceLevels": {
+      "high": "high",
+      "medium": "medium",
+      "low": "low"
+    },
+    "categories": {
+      "sauce": "Sauce",
+      "snack": "Snack",
+      "beverage": "Beverage",
+      "meal": "Meal",
+      "seasoning": "Seasoning"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "saving": "Saving...",

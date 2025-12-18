@@ -1,8 +1,8 @@
-/* eslint-disable react/no-unescaped-entities */
 "use client";
 import Image from "next/image";
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/contexts/language-context";
 import {
   SidebarProvider,
   SidebarInset,
@@ -56,6 +56,7 @@ interface OCRResult {
 }
 
 export default function AnalyzerPage() {
+  const { t } = useLanguage();
   const [description, setDescription] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<NutritionResult | null>(null);
@@ -246,22 +247,22 @@ export default function AnalyzerPage() {
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">Food Analyzer</h1>
+              <h1 className="text-xl font-semibold">{t.analyzer.title}</h1>
               <p className="text-sm text-muted-foreground">
-                Analyze foods with AI using images or descriptions
+                {t.analyzer.subtitle}
               </p>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 space-y-6 p-6 lg:px-12 xl:px-24">
+        <main className="flex-1 space-y-6 p-6">
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Input Panel */}
             <Card className="lg:col-span-1 flex flex-col h-full">
               <CardHeader>
-                <CardTitle>Input Method</CardTitle>
+                <CardTitle>{t.analyzer.inputMethod.title}</CardTitle>
                 <CardDescription>
-                  Choose how to analyze your food
+                  {t.analyzer.inputMethod.subtitle}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col flex-1">
@@ -273,9 +274,11 @@ export default function AnalyzerPage() {
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="image">
                       <FileImage className="mr-2 h-4 w-4" />
-                      Image
+                      {t.analyzer.inputMethod.imageTab}
                     </TabsTrigger>
-                    <TabsTrigger value="description">Description</TabsTrigger>
+                    <TabsTrigger value="description">
+                      {t.analyzer.inputMethod.descriptionTab}
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent
@@ -283,7 +286,7 @@ export default function AnalyzerPage() {
                     className="space-y-4 flex-1 flex flex-col"
                   >
                     <div className="space-y-2">
-                      <Label>Upload Food Image</Label>
+                      <Label>{t.analyzer.imageUpload.title}</Label>
 
                       {!selectedImage ? (
                         <div
@@ -292,22 +295,21 @@ export default function AnalyzerPage() {
                         >
                           <Upload className="mb-4 h-10 w-10 text-muted-foreground" />
                           <p className="text-sm font-medium">
-                            Click to upload image
+                            {t.analyzer.imageUpload.clickToUpload}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            PNG, JPG up to 10MB
+                            {t.analyzer.imageUpload.fileTypes}
                           </p>
                         </div>
                       ) : (
                         <div className="relative">
                           <Image
-                            className="absolute right-2 top-2 h-6 w-6 text-white"
+                            className="rounded-lg w-full h-48 object-cover"
                             width={192}
                             height={192}
                             src={selectedImage}
                             alt="selected food"
                           />
-
                           <Button
                             size="icon"
                             variant="destructive"
@@ -329,9 +331,11 @@ export default function AnalyzerPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Additional Description (Optional)</Label>
+                      <Label>{t.analyzer.imageUpload.additionalDesc}</Label>
                       <Textarea
-                        placeholder="e.g., serving size, preparation method..."
+                        placeholder={
+                          t.analyzer.imageUpload.additionalDescPlaceholder
+                        }
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows={3}
@@ -341,38 +345,31 @@ export default function AnalyzerPage() {
 
                     {ocrResults.length > 0 && (
                       <div className="space-y-2 flex-1 flex flex-col">
-                        <Label>Detected Text (OCR)</Label>
+                        <Label>{t.analyzer.imageUpload.detectedText}</Label>
                         <Textarea
                           value={ocrResults.map((ocr) => ocr.text).join("\n")}
                           readOnly
                           className="resize-none min-h-45 max-h-80 flex-1 bg-muted border rounded-lg p-3 text-sm leading-relaxed"
-                          style={{ fontFamily: "inherit" }}
                         />
                       </div>
                     )}
-                    {/* Move the button to the bottom */}
+
                     <div className="mt-4 shrink-0">
                       <Button
                         onClick={handleAnalyze}
-                        disabled={
-                          isAnalyzing ||
-                          (activeTab === "image" && !selectedImage) ||
-                          (activeTab === "description" && !description.trim())
-                        }
+                        disabled={isAnalyzing || !selectedImage}
                         className="w-full h-12"
                         size="lg"
                       >
                         {isAnalyzing ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {activeTab === "image"
-                              ? "Processing Image..."
-                              : "Analyzing..."}
+                            {t.analyzer.buttons.processingImage}
                           </>
                         ) : (
                           <>
                             <Sparkles className="mr-2 h-4 w-4" />
-                            Analyze Food
+                            {t.analyzer.buttons.analyzeFood}
                           </>
                         )}
                       </Button>
@@ -381,26 +378,45 @@ export default function AnalyzerPage() {
 
                   <TabsContent value="description" className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Describe your food</Label>
+                      <Label>{t.analyzer.descriptionInput.title}</Label>
                       <Textarea
-                        placeholder="e.g., grilled chicken breast with steamed broccoli"
+                        placeholder={t.analyzer.descriptionInput.placeholder}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows={6}
                         className="resize-none"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Be as detailed as possible for accurate results
+                        {t.analyzer.descriptionInput.hint}
                       </p>
                     </div>
+
+                    {error && (
+                      <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                        {error}
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={handleAnalyze}
+                      disabled={isAnalyzing || !description.trim()}
+                      className="w-full h-12"
+                      size="lg"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t.analyzer.buttons.analyzing}
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          {t.analyzer.buttons.analyzeFood}
+                        </>
+                      )}
+                    </Button>
                   </TabsContent>
                 </Tabs>
-
-                {error && (
-                  <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                    {error}
-                  </div>
-                )}
               </CardContent>
             </Card>
 
@@ -416,12 +432,12 @@ export default function AnalyzerPage() {
                       </div>
                       <div className="space-y-2">
                         <h3 className="text-xl font-semibold">
-                          Analyzing Your Food...
+                          {t.analyzer.results.analyzingTitle}
                         </h3>
                         <p className="text-sm text-muted-foreground">
                           {activeTab === "image"
-                            ? "Processing image and extracting nutrition data"
-                            : "Analyzing description and calculating nutrients"}
+                            ? t.analyzer.results.analyzingImageDesc
+                            : t.analyzer.results.analyzingTextDesc}
                         </p>
                         <div className="flex items-center justify-center gap-1 pt-2">
                           <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]"></div>
@@ -441,11 +457,10 @@ export default function AnalyzerPage() {
                       </div>
                       <div className="space-y-2">
                         <h3 className="text-xl font-semibold">
-                          Ready to Analyze
+                          {t.analyzer.results.readyTitle}
                         </h3>
                         <p className="text-sm text-muted-foreground max-w-md">
-                          Upload a food image or enter a description to get
-                          instant nutrition information powered by AI
+                          {t.analyzer.results.readyDesc}
                         </p>
                       </div>
                       <div className="grid grid-cols-2 gap-4 pt-4 text-left">
@@ -453,10 +468,10 @@ export default function AnalyzerPage() {
                           <FileImage className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="text-sm font-medium">
-                              Image Analysis
+                              {t.analyzer.results.imageAnalysis}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Upload photos of your meals
+                              {t.analyzer.results.imageAnalysisDesc}
                             </p>
                           </div>
                         </div>
@@ -464,10 +479,10 @@ export default function AnalyzerPage() {
                           <MessageSquare className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="text-sm font-medium">
-                              Text Description
+                              {t.analyzer.results.textDescription}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Describe what you're eating
+                              {t.analyzer.results.textDescriptionDesc}
                             </p>
                           </div>
                         </div>
@@ -496,12 +511,14 @@ export default function AnalyzerPage() {
                                   : "outline"
                               }
                             >
-                              {result.confidence} confidence
+                              {t.analyzer.confidenceLevels[result.confidence]}{" "}
+                              {t.analyzer.results.confidence}
                             </Badge>
                           </div>
                           {result.serving_size && (
                             <p className="text-sm text-muted-foreground">
-                              Serving: {result.serving_size}
+                              {t.analyzer.results.serving}:{" "}
+                              {result.serving_size}
                             </p>
                           )}
                         </div>
@@ -510,7 +527,7 @@ export default function AnalyzerPage() {
                             {result.calories}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            calories
+                            {t.analyzer.results.calories}
                           </p>
                         </div>
                       </div>
@@ -520,9 +537,9 @@ export default function AnalyzerPage() {
                   {/* Nutrition Facts */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Nutrition Facts</CardTitle>
+                      <CardTitle>{t.analyzer.results.nutritionFacts}</CardTitle>
                       <CardDescription>
-                        Detailed nutritional breakdown per serving
+                        {t.analyzer.results.nutritionFactsDesc}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -530,7 +547,7 @@ export default function AnalyzerPage() {
                         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                           <div className="rounded-lg border bg-card p-4">
                             <p className="text-sm text-muted-foreground">
-                              Protein
+                              {t.analyzer.results.protein}
                             </p>
                             <p className="text-2xl font-bold text-primary">
                               {result.protein}g
@@ -538,7 +555,7 @@ export default function AnalyzerPage() {
                           </div>
                           <div className="rounded-lg border bg-card p-4">
                             <p className="text-sm text-muted-foreground">
-                              Carbs
+                              {t.analyzer.results.carbs}
                             </p>
                             <p className="text-2xl font-bold text-orange-500">
                               {result.carbs}g
@@ -546,7 +563,7 @@ export default function AnalyzerPage() {
                           </div>
                           <div className="rounded-lg border bg-card p-4">
                             <p className="text-sm text-muted-foreground">
-                              Fats
+                              {t.analyzer.results.fats}
                             </p>
                             <p className="text-2xl font-bold text-yellow-500">
                               {result.fats}g
@@ -556,16 +573,20 @@ export default function AnalyzerPage() {
 
                         <div className="grid grid-cols-3 gap-4 text-sm">
                           <div className="flex justify-between border-b py-2">
-                            <span className="text-muted-foreground">Fiber</span>
+                            <span className="text-muted-foreground">
+                              {t.analyzer.results.fiber}
+                            </span>
                             <span className="font-medium">{result.fiber}g</span>
                           </div>
                           <div className="flex justify-between border-b py-2">
-                            <span className="text-muted-foreground">Sugar</span>
+                            <span className="text-muted-foreground">
+                              {t.analyzer.results.sugar}
+                            </span>
                             <span className="font-medium">{result.sugar}g</span>
                           </div>
                           <div className="flex justify-between border-b py-2">
                             <span className="text-muted-foreground">
-                              Sodium
+                              {t.analyzer.results.sodium}
                             </span>
                             <span className="font-medium">
                               {result.sodium}mg
@@ -580,7 +601,7 @@ export default function AnalyzerPage() {
                   {result.explanation && (
                     <Card>
                       <CardHeader>
-                        <CardTitle>Analysis</CardTitle>
+                        <CardTitle>{t.analyzer.results.analysis}</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-muted-foreground">
@@ -596,7 +617,7 @@ export default function AnalyzerPage() {
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Heart className="h-5 w-5 text-primary" />
-                          Health Benefits
+                          {t.analyzer.results.healthBenefits}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -613,7 +634,9 @@ export default function AnalyzerPage() {
 
                     <Card>
                       <CardHeader>
-                        <CardTitle>Considerations</CardTitle>
+                        <CardTitle>
+                          {t.analyzer.results.considerations}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ul className="space-y-3">
@@ -631,7 +654,7 @@ export default function AnalyzerPage() {
                   {saveSuccess && (
                     <div className="rounded-lg border border-primary/50 bg-primary/10 p-3 text-sm text-primary flex items-center gap-2">
                       <CheckCircle className="h-4 w-4" />
-                      Successfully added to tracker!
+                      {t.analyzer.results.successMessage}
                     </div>
                   )}
 
@@ -646,21 +669,29 @@ export default function AnalyzerPage() {
                         {isSaving ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Saving...
+                            {t.analyzer.buttons.saving}
                           </>
                         ) : (
                           <>
                             <Plus className="mr-2 h-4 w-4" />
-                            Add to Tracker
+                            {t.analyzer.buttons.addToTracker}
                           </>
                         )}
                       </Button>
                     ) : (
                       <Button variant="default" disabled>
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Added to Tracker to Tracker
+                        {t.analyzer.buttons.addedToTracker}
                       </Button>
                     )}
+                    <Button variant="outline">
+                      <Heart className="mr-2 h-4 w-4" />
+                      {t.analyzer.buttons.saveToFavorites}
+                    </Button>
+                    <Button variant="outline">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      {t.analyzer.buttons.askAI}
+                    </Button>
                   </div>
                 </>
               )}

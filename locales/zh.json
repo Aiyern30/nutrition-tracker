@@ -113,6 +113,77 @@
       "saveSettingsError": "更新设置失败"
     }
   },
+  "analyzer": {
+    "title": "食物分析器",
+    "subtitle": "使用图像或描述通过 AI 分析食物",
+    "inputMethod": {
+      "title": "输入方式",
+      "subtitle": "选择如何分析您的食物",
+      "imageTab": "图片",
+      "descriptionTab": "描述"
+    },
+    "imageUpload": {
+      "title": "上传食物图片",
+      "clickToUpload": "点击上传图片",
+      "fileTypes": "PNG、JPG，最大 10MB",
+      "additionalDesc": "附加描述（可选）",
+      "additionalDescPlaceholder": "例如：份量、烹饪方法...",
+      "detectedText": "识别的文字 (OCR)"
+    },
+    "descriptionInput": {
+      "title": "描述您的食物",
+      "placeholder": "例如：烤鸡胸肉配蒸西兰花",
+      "hint": "尽可能详细以获得准确结果"
+    },
+    "buttons": {
+      "analyzeFood": "分析食物",
+      "processingImage": "处理图片中...",
+      "analyzing": "分析中...",
+      "addToTracker": "添加到追踪",
+      "saving": "保存中...",
+      "addedToTracker": "已添加到追踪",
+      "saveToFavorites": "保存到收藏",
+      "askAI": "询问 AI"
+    },
+    "results": {
+      "readyTitle": "准备分析",
+      "readyDesc": "上传食物图片或输入描述，即可获得 AI 驱动的即时营养信息",
+      "analyzingTitle": "正在分析您的食物...",
+      "analyzingImageDesc": "处理图片并提取营养数据",
+      "analyzingTextDesc": "分析描述并计算营养成分",
+      "imageAnalysis": "图片分析",
+      "imageAnalysisDesc": "上传您的餐食照片",
+      "textDescription": "文字描述",
+      "textDescriptionDesc": "描述您正在吃的食物",
+      "serving": "份量",
+      "calories": "卡路里",
+      "confidence": "可信度",
+      "nutritionFacts": "营养成分",
+      "nutritionFactsDesc": "每份详细营养成分",
+      "protein": "蛋白质",
+      "carbs": "碳水化合物",
+      "fats": "脂肪",
+      "fiber": "纤维",
+      "sugar": "糖",
+      "sodium": "钠",
+      "analysis": "分析",
+      "healthBenefits": "健康益处",
+      "considerations": "注意事项",
+      "successMessage": "成功添加到追踪！"
+    },
+    "confidenceLevels": {
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "categories": {
+      "sauce": "调味料",
+      "snack": "零食",
+      "beverage": "饮料",
+      "meal": "餐食",
+      "seasoning": "调料"
+    }
+  },
   "common": {
     "loading": "加载中...",
     "saving": "保存中...",
