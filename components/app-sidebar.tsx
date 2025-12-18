@@ -190,7 +190,7 @@ export function AppSidebar() {
   const handleLanguageToggle = async () => {
     try {
       const newLanguage = language === "en" ? "zh" : "en";
-      
+
       // Just call setLanguage from context - it handles database update
       await setLanguage(newLanguage);
     } catch (error) {
