@@ -278,7 +278,10 @@ export default function AnalyzerPage() {
                     <TabsTrigger value="description">Description</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="image" className="space-y-4 flex-1 flex flex-col">
+                  <TabsContent
+                    value="image"
+                    className="space-y-4 flex-1 flex flex-col"
+                  >
                     <div className="space-y-2">
                       <Label>Upload Food Image</Label>
 
@@ -658,14 +661,6 @@ export default function AnalyzerPage() {
                         Added to Tracker to Tracker
                       </Button>
                     )}
-                    <Button variant="outline">
-                      <Heart className="mr-2 h-4 w-4" />
-                      Save to Favorites to Favorites
-                    </Button>
-                    <Button variant="outline">
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      Ask AI About This
-                    </Button>
                   </div>
                 </>
               )}
