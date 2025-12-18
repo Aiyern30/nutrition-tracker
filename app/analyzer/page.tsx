@@ -254,21 +254,21 @@ export default function AnalyzerPage() {
           </div>
         </header>
 
-        <main className="flex-1 space-y-6 p-6">
+        <main className="flex-1 space-y-6 p-6 lg:px-12 xl:px-24">
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Input Panel */}
-            <Card className="lg:col-span-1">
+            <Card className="lg:col-span-1 flex flex-col h-full">
               <CardHeader>
                 <CardTitle>Input Method</CardTitle>
                 <CardDescription>
                   Choose how to analyze your food
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col flex-1">
                 <Tabs
                   value={activeTab}
                   onValueChange={setActiveTab}
-                  className="w-full"
+                  className="w-full flex-1 flex flex-col"
                 >
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="image">
@@ -278,7 +278,7 @@ export default function AnalyzerPage() {
                     <TabsTrigger value="description">Description</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="image" className="space-y-4">
+                  <TabsContent value="image" className="space-y-4 flex-1 flex flex-col">
                     <div className="space-y-2">
                       <Label>Upload Food Image</Label>
 
@@ -337,23 +337,43 @@ export default function AnalyzerPage() {
                     </div>
 
                     {ocrResults.length > 0 && (
-                      <div className="space-y-2">
+                      <div className="space-y-2 flex-1 flex flex-col">
                         <Label>Detected Text (OCR)</Label>
-                        <div className="max-h-32 overflow-y-auto rounded-lg border bg-muted p-3">
-                          {ocrResults.map((ocr, idx) => (
-                            <div
-                              key={idx}
-                              className="mb-2 flex items-start justify-between text-xs"
-                            >
-                              <span className="flex-1">{ocr.text}</span>
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                {(ocr.confidence * 100).toFixed(0)}%
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
+                        <Textarea
+                          value={ocrResults.map((ocr) => ocr.text).join("\n")}
+                          readOnly
+                          className="resize-none min-h-45 max-h-80 flex-1 bg-muted border rounded-lg p-3 text-sm leading-relaxed"
+                          style={{ fontFamily: "inherit" }}
+                        />
                       </div>
                     )}
+                    {/* Move the button to the bottom */}
+                    <div className="mt-4 shrink-0">
+                      <Button
+                        onClick={handleAnalyze}
+                        disabled={
+                          isAnalyzing ||
+                          (activeTab === "image" && !selectedImage) ||
+                          (activeTab === "description" && !description.trim())
+                        }
+                        className="w-full h-12"
+                        size="lg"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {activeTab === "image"
+                              ? "Processing Image..."
+                              : "Analyzing..."}
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Analyze Food
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="description" className="space-y-4">
@@ -378,31 +398,6 @@ export default function AnalyzerPage() {
                     {error}
                   </div>
                 )}
-
-                <Button
-                  onClick={handleAnalyze}
-                  disabled={
-                    isAnalyzing ||
-                    (activeTab === "image" && !selectedImage) ||
-                    (activeTab === "description" && !description.trim())
-                  }
-                  className="mt-6 w-full"
-                  size="lg"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {activeTab === "image"
-                        ? "Processing Image..."
-                        : "Analyzing..."}
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Analyze Food
-                    </>
-                  )}
-                </Button>
               </CardContent>
             </Card>
 
@@ -660,12 +655,12 @@ export default function AnalyzerPage() {
                     ) : (
                       <Button variant="default" disabled>
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Added to Tracker
+                        Added to Tracker to Tracker
                       </Button>
                     )}
                     <Button variant="outline">
                       <Heart className="mr-2 h-4 w-4" />
-                      Save to Favorites
+                      Save to Favorites to Favorites
                     </Button>
                     <Button variant="outline">
                       <MessageSquare className="mr-2 h-4 w-4" />
