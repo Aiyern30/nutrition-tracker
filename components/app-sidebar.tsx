@@ -2,6 +2,7 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import {
   Home,
   MessageSquare,
@@ -17,6 +18,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useLanguage } from "@/contexts/language-context";
 
 import {
   Sidebar,
@@ -38,39 +40,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  {
-    title: "Dashboard",
-    icon: Home,
-    href: "/",
-  },
-  {
-    title: "AI Chat",
-    icon: MessageSquare,
-    href: "/chat",
-  },
-  {
-    title: "Meal Planner",
-    icon: Utensils,
-    href: "/meal-planner",
-  },
-  {
-    title: "Food Analyzer",
-    icon: ScanSearch,
-    href: "/analyzer",
-  },
-  {
-    title: "Diet Tracker",
-    icon: TrendingUp,
-    href: "/tracker",
-  },
-  {
-    title: "Profile",
-    icon: User,
-    href: "/profile",
-  },
-];
-
 interface UserProfile {
   email: string;
   name: string;
@@ -80,10 +49,45 @@ interface UserProfile {
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { setTheme } = useTheme();
+  const { t } = useLanguage();
   const supabase = createClient();
   const [user, setUser] = useState<UserProfile | null>(null);
-  console.log("User in Sidebar:", user);
   const [loading, setLoading] = useState(true);
+
+  // Update navItems to use translations
+  const navItems = [
+    {
+      title: t.sidebar.dashboard,
+      icon: Home,
+      href: "/",
+    },
+    {
+      title: t.sidebar.aiChat,
+      icon: MessageSquare,
+      href: "/chat",
+    },
+    {
+      title: t.sidebar.mealPlanner,
+      icon: Utensils,
+      href: "/meal-planner",
+    },
+    {
+      title: t.sidebar.foodAnalyzer,
+      icon: ScanSearch,
+      href: "/analyzer",
+    },
+    {
+      title: t.sidebar.dietTracker,
+      icon: TrendingUp,
+      href: "/tracker",
+    },
+    {
+      title: t.sidebar.profile,
+      icon: User,
+      href: "/profile",
+    },
+  ];
 
   useEffect(() => {
     const getUser = async () => {
@@ -91,7 +95,6 @@ export function AppSidebar() {
         const {
           data: { user: authUser },
         } = await supabase.auth.getUser();
-        console.log("Supabase getUser:", authUser);
 
         if (authUser) {
           setUser({
@@ -103,6 +106,17 @@ export function AppSidebar() {
               "User",
             avatar_url: authUser.user_metadata?.avatar_url,
           });
+
+          // Load theme from profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("theme")
+            .eq("id", authUser.id)
+            .single();
+
+          if (profile?.theme) {
+            setTheme(profile.theme);
+          }
         }
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -117,16 +131,16 @@ export function AppSidebar() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (
+      async (
         _event: any,
         session: {
           user: {
+            id: string;
             email: string;
             user_metadata: { full_name: any; name: any; avatar_url: any };
           };
         }
       ) => {
-        console.log("onAuthStateChange session:", session);
         if (session?.user) {
           setUser({
             email: session.user.email || "",
@@ -137,6 +151,21 @@ export function AppSidebar() {
               "User",
             avatar_url: session.user.user_metadata?.avatar_url,
           });
+
+          // Load theme from profile
+          try {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("theme")
+              .eq("id", session.user.id)
+              .single();
+
+            if (profile?.theme) {
+              setTheme(profile.theme);
+            }
+          } catch (error) {
+            console.error("Error loading theme:", error);
+          }
         } else {
           setUser(null);
         }
@@ -146,7 +175,7 @@ export function AppSidebar() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase.auth]); // Remove supabase from dependency array
+  }, [supabase, setTheme]);
 
   const handleLogout = async () => {
     try {
@@ -166,10 +195,10 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-semibold text-sidebar-foreground">
-              NutriAI
+              {t.sidebar.appName}
             </span>
             <span className="text-xs text-muted-foreground">
-              Nutrition Assistant
+              {t.sidebar.appSubtitle}
             </span>
           </div>
           <div className="ml-auto">
@@ -187,7 +216,7 @@ export function AppSidebar() {
                 className={cn(
                   "w-full px-4",
                   pathname === item.href &&
-                  "bg-sidebar-accent text-sidebar-accent-foreground"
+                    "bg-sidebar-accent text-sidebar-accent-foreground"
                 )}
               >
                 <Link href={item.href}>
@@ -256,7 +285,7 @@ export function AppSidebar() {
               <DropdownMenuItem asChild>
                 <Link href="/profile" className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
-                  <span>Profile Settings</span>
+                  <span>{t.sidebar.profileSettings}</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -265,7 +294,7 @@ export function AppSidebar() {
                 className="cursor-pointer text-destructive focus:text-destructive"
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
+                <span>{t.sidebar.logout}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -279,9 +308,11 @@ export function AppSidebar() {
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-sidebar-foreground">
-                Sign In
+                {t.sidebar.signIn}
               </span>
-              <span className="text-xs text-muted-foreground">Get started</span>
+              <span className="text-xs text-muted-foreground">
+                {t.sidebar.getStarted}
+              </span>
             </div>
           </Link>
         )}

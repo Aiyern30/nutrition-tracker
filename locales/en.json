@@ -1,0 +1,197 @@
+{
+  "sidebar": {
+    "appName": "NutriAI",
+    "appSubtitle": "Nutrition Assistant",
+    "dashboard": "Dashboard",
+    "aiChat": "AI Chat",
+    "mealPlanner": "Meal Planner",
+    "foodAnalyzer": "Food Analyzer",
+    "dietTracker": "Diet Tracker",
+    "profile": "Profile",
+    "profileSettings": "Profile Settings",
+    "logout": "Log out",
+    "signIn": "Sign In",
+    "getStarted": "Get started"
+  },
+  "profile": {
+    "title": "Profile & Settings",
+    "subtitle": "Manage your account and preferences",
+    "welcome": "Welcome",
+    "memberSince": "Member since",
+    "freePlan": "Free Plan",
+    "dayStreak": "day streak",
+    "editProfile": "Edit Profile",
+    "personalGoals": {
+      "title": "Personal Goals",
+      "subtitle": "Set your nutrition and health objectives",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Enter your name",
+      "height": "Height",
+      "weight": "Weight",
+      "dailyCalorieGoal": "Daily Calorie Goal",
+      "dailyProteinGoal": "Daily Protein Goal (g)",
+      "dailyCarbsGoal": "Daily Carbs Goal (g)",
+      "dailyFatsGoal": "Daily Fats Goal (g)",
+      "activityLevel": "Activity Level",
+      "primaryGoal": "Primary Goal",
+      "updateGoals": "Update Goals",
+      "updating": "Updating...",
+      "activityLevels": {
+        "sedentary": "Sedentary",
+        "light": "Lightly Active",
+        "moderate": "Moderately Active",
+        "active": "Very Active",
+        "veryActive": "Extra Active"
+      },
+      "goals": {
+        "weightLoss": "Weight Loss",
+        "maintenance": "Maintain Weight",
+        "muscleGain": "Muscle Gain",
+        "health": "General Health"
+      }
+    },
+    "dietaryPreferences": {
+      "title": "Dietary Preferences",
+      "subtitle": "Customize your meal recommendations",
+      "allergiesRestrictions": "Allergies & Restrictions",
+      "addRestriction": "Add dietary restriction",
+      "foodsToAvoid": "Foods to Avoid",
+      "addDislikedFood": "Add disliked food",
+      "add": "Add"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "Manage your notification preferences",
+      "mealReminders": "Meal Reminders",
+      "mealRemindersDesc": "Get reminded to log your meals",
+      "weeklySummary": "Weekly Summary",
+      "weeklySummaryDesc": "Receive a weekly nutrition report",
+      "aiInsights": "AI Insights",
+      "aiInsightsDesc": "Get personalized suggestions from AI",
+      "saveSettings": "Save Notification Settings"
+    },
+    "appSettings": {
+      "title": "App Settings",
+      "subtitle": "Customize your app experience",
+      "theme": "Theme",
+      "language": "Language",
+      "units": "Units",
+      "saveSettings": "Save App Settings",
+      "themes": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "languages": {
+        "en": "English",
+        "zh": "中文"
+      },
+      "unitsOptions": {
+        "metric": "Metric",
+        "imperial": "Imperial"
+      }
+    },
+    "legal": {
+      "title": "About & Legal",
+      "disclaimer": "Important Disclaimer:",
+      "disclaimerText": "This app provides nutritional information and dietary guidance for educational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider before making any dietary changes, especially if you have medical conditions or concerns.",
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "helpSupport": "Help & Support"
+    },
+    "messages": {
+      "goalsUpdated": "Goals updated successfully!",
+      "restrictionAdded": "Dietary restriction added!",
+      "foodAdded": "Disliked food added!",
+      "settingsUpdated": "Settings updated successfully!",
+      "loadError": "Failed to load profile",
+      "updateError": "Failed to update goals",
+      "addRestrictionError": "Failed to add restriction",
+      "removeRestrictionError": "Failed to remove restriction",
+      "addFoodError": "Failed to add food",
+      "removeFoodError": "Failed to remove food",
+      "saveSettingsError": "Failed to update settings"
+    }
+  },
+  "analyzer": {
+    "title": "Food Analyzer",
+    "subtitle": "Analyze foods with AI using images or descriptions",
+    "inputMethod": {
+      "title": "Input Method",
+      "subtitle": "Choose how to analyze your food",
+      "imageTab": "Image",
+      "descriptionTab": "Description"
+    },
+    "imageUpload": {
+      "title": "Upload Food Image",
+      "clickToUpload": "Click to upload image",
+      "fileTypes": "PNG, JPG up to 10MB",
+      "additionalDesc": "Additional Description (Optional)",
+      "additionalDescPlaceholder": "e.g., serving size, preparation method...",
+      "detectedText": "Detected Text (OCR)"
+    },
+    "descriptionInput": {
+      "title": "Describe your food",
+      "placeholder": "e.g., grilled chicken breast with steamed broccoli",
+      "hint": "Be as detailed as possible for accurate results"
+    },
+    "buttons": {
+      "analyzeFood": "Analyze Food",
+      "processingImage": "Processing Image...",
+      "analyzing": "Analyzing...",
+      "addToTracker": "Add to Tracker",
+      "saving": "Saving...",
+      "addedToTracker": "Added to Tracker",
+      "saveToFavorites": "Save to Favorites",
+      "askAI": "Ask AI About This"
+    },
+    "results": {
+      "readyTitle": "Ready to Analyze",
+      "readyDesc": "Upload a food image or enter a description to get instant nutrition information powered by AI",
+      "analyzingTitle": "Analyzing Your Food...",
+      "analyzingImageDesc": "Processing image and extracting nutrition data",
+      "analyzingTextDesc": "Analyzing description and calculating nutrients",
+      "imageAnalysis": "Image Analysis",
+      "imageAnalysisDesc": "Upload photos of your meals",
+      "textDescription": "Text Description",
+      "textDescriptionDesc": "Describe what you're eating",
+      "serving": "Serving",
+      "calories": "calories",
+      "confidence": "confidence",
+      "nutritionFacts": "Nutrition Facts",
+      "nutritionFactsDesc": "Detailed nutritional breakdown per serving",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fats": "Fats",
+      "fiber": "Fiber",
+      "sugar": "Sugar",
+      "sodium": "Sodium",
+      "analysis": "Analysis",
+      "healthBenefits": "Health Benefits",
+      "considerations": "Considerations",
+      "successMessage": "Successfully added to tracker!"
+    },
+    "confidenceLevels": {
+      "high": "high",
+      "medium": "medium",
+      "low": "low"
+    },
+    "categories": {
+      "sauce": "Sauce",
+      "snack": "Snack",
+      "beverage": "Beverage",
+      "meal": "Meal",
+      "seasoning": "Seasoning"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "update": "Update",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close"
+  }
+}

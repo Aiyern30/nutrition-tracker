@@ -1,7 +1,9 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "next-themes";
+import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/contexts/language-context";
 
 import {
   SidebarProvider,
@@ -42,13 +44,330 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface Profile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  daily_calorie_goal: number;
+  daily_protein_goal: number;
+  daily_carbs_goal: number;
+  daily_fats_goal: number;
+  daily_water_goal: number;
+  current_streak: number;
+  activity_level: string;
+  goal_type: string;
+  dietary_restrictions: string[];
+  disliked_foods: string[];
+  height: number | null;
+  weight: number | null;
+  meal_reminders: boolean;
+  weekly_summary: boolean;
+  ai_insights: boolean;
+  theme: string;
+  language: string;
+  units: string;
+  created_at: string;
+}
+
 export default function ProfilePage() {
-  const { setTheme, theme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const { setTheme } = useTheme();
+  const { t, setLanguage: setAppLanguage } = useLanguage();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState({
+    display_name: "",
+    daily_calorie_goal: 2000,
+    daily_protein_goal: 150,
+    daily_carbs_goal: 200,
+    daily_fats_goal: 65,
+    daily_water_goal: 8,
+    activity_level: "moderate",
+    goal_type: "maintenance",
+    dietary_restrictions: [] as string[],
+    disliked_foods: [] as string[],
+    height: null as number | null,
+    weight: null as number | null,
+    meal_reminders: true,
+    weekly_summary: true,
+    ai_insights: true,
+    theme: "system",
+    language: "en",
+    units: "metric",
+  });
+
+  const [newRestriction, setNewRestriction] = useState("");
+  const [newDislikedFood, setNewDislikedFood] = useState("");
+
+  const supabase = createClient();
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      setLoading(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setUserEmail(user.email || "");
+      setUserAvatarUrl(user.user_metadata?.avatar_url || null);
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setProfile(data);
+        setFormData({
+          display_name: data.display_name || "",
+          daily_calorie_goal: data.daily_calorie_goal,
+          daily_protein_goal: data.daily_protein_goal,
+          daily_carbs_goal: data.daily_carbs_goal,
+          daily_fats_goal: data.daily_fats_goal,
+          daily_water_goal: data.daily_water_goal,
+          activity_level: data.activity_level,
+          goal_type: data.goal_type,
+          dietary_restrictions: data.dietary_restrictions || [],
+          disliked_foods: data.disliked_foods || [],
+          height: data.height,
+          weight: data.weight,
+          meal_reminders: data.meal_reminders ?? true,
+          weekly_summary: data.weekly_summary ?? true,
+          ai_insights: data.ai_insights ?? true,
+          theme: data.theme || "system",
+          language: data.language || "en",
+          units: data.units || "metric",
+        });
+
+        // Apply theme and language from profile
+        if (data.theme) {
+          setTheme(data.theme);
+        }
+        if (data.language) {
+          setAppLanguage(data.language as "en" | "zh");
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.profile.messages.loadError);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase, setTheme, setAppLanguage, t]);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const handleUpdateGoals = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          display_name: formData.display_name,
+          daily_calorie_goal: formData.daily_calorie_goal,
+          daily_protein_goal: formData.daily_protein_goal,
+          daily_carbs_goal: formData.daily_carbs_goal,
+          daily_fats_goal: formData.daily_fats_goal,
+          daily_water_goal: formData.daily_water_goal,
+          activity_level: formData.activity_level,
+          goal_type: formData.goal_type,
+          height: formData.height,
+          weight: formData.weight,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setSuccess(t.profile.messages.goalsUpdated);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.profile.messages.updateError);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateSettings = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          meal_reminders: formData.meal_reminders,
+          weekly_summary: formData.weekly_summary,
+          ai_insights: formData.ai_insights,
+          theme: formData.theme,
+          language: formData.language,
+          units: formData.units,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      // Update UI theme and language immediately
+      setTheme(formData.theme);
+      setAppLanguage(formData.language as "en" | "zh");
+
+      setSuccess(t.profile.messages.settingsUpdated);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.profile.messages.saveSettingsError);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addDietaryRestriction = async () => {
+    if (!newRestriction.trim()) return;
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updated = [...formData.dietary_restrictions, newRestriction.trim()];
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          dietary_restrictions: updated,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setFormData({ ...formData, dietary_restrictions: updated });
+      setNewRestriction("");
+      setSuccess(t.profile.messages.restrictionAdded);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : t.profile.messages.addRestrictionError
+      );
+    }
+  };
+
+  const removeDietaryRestriction = async (item: string) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updated = formData.dietary_restrictions.filter((r) => r !== item);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          dietary_restrictions: updated,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setFormData({ ...formData, dietary_restrictions: updated });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to remove restriction"
+      );
+    }
+  };
+
+  const addDislikedFood = async () => {
+    if (!newDislikedFood.trim()) return;
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updated = [...formData.disliked_foods, newDislikedFood.trim()];
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          disliked_foods: updated,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setFormData({ ...formData, disliked_foods: updated });
+      setNewDislikedFood("");
+      setSuccess(t.profile.messages.foodAdded);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.profile.messages.addFoodError);
+    }
+  };
+
+  const removeDislikedFood = async (item: string) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updated = formData.disliked_foods.filter((f) => f !== item);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          disliked_foods: updated,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setFormData({ ...formData, disliked_foods: updated });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove food");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -58,35 +377,72 @@ export default function ProfilePage() {
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">Profile & Settings</h1>
+              <h1 className="text-xl font-semibold">{t.profile.title}</h1>
               <p className="text-sm text-muted-foreground">
-                Manage your account and preferences
+                {t.profile.subtitle}
               </p>
             </div>
           </div>
         </header>
 
         <main className="flex-1 space-y-6 p-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {success && (
+            <Alert>
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Profile Header */}
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-6">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <User className="h-12 w-12" />
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary overflow-hidden">
+                  {userAvatarUrl ? (
+                    <Image
+                      alt=""
+                      width={96}
+                      height={96}
+                      src={userAvatarUrl}
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    // Fallback to icon
+                    <User className="h-12 w-12" />
+                  )}
                 </div>
                 <div className="flex-1 space-y-2">
-                  <h2 className="text-2xl font-bold">Welcome, User</h2>
-                  <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-bold">
+                    {t.profile.welcome}, {formData.display_name || "User"}
+                  </h2>
+                  {userEmail && (
+                    <p className="text-sm text-muted-foreground">{userEmail}</p>
+                  )}
+                  {/* <div className="flex items-center gap-2">
                     <Badge>Free Plan</Badge>
-                    <Badge variant="secondary">7 day streak</Badge>
-                  </div>
+                    <Badge variant="secondary">
+                      {profile?.current_streak || 0} day streak
+                    </Badge>
+                  </div> */}
                   <p className="text-sm text-muted-foreground">
-                    Member since January 2025
+                    {t.profile.memberSince}{" "}
+                    {profile?.created_at
+                      ? new Date(profile.created_at).toLocaleDateString(
+                          formData.language === "zh" ? "zh-CN" : "en-US",
+                          {
+                            month: "long",
+                            year: "numeric",
+                          }
+                        )
+                      : "Recently"}
                   </p>
                 </div>
-                <Button variant="outline" className="bg-transparent">
-                  Edit Profile
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -96,135 +452,229 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                <CardTitle>Personal Goals</CardTitle>
+                <CardTitle>{t.profile.personalGoals.title}</CardTitle>
               </div>
               <CardDescription>
-                Set your nutrition and health objectives
+                {t.profile.personalGoals.subtitle}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="display-name">{t.profile.personalGoals.displayName}</Label>
+                <Input
+                  id="display-name"
+                  value={formData.display_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, display_name: e.target.value })
+                  }
+                  placeholder={t.profile.personalGoals.displayNamePlaceholder}
+                />
+              </div>
+
+              {/* Height and Weight */}
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="current-weight">Current Weight</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="current-weight"
-                      type="number"
-                      placeholder="70"
-                      className="flex-1"
-                    />
-                    <Select defaultValue="kg">
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="kg">kg</SelectItem>
-                        <SelectItem value="lbs">lbs</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Label htmlFor="height">
+                    {t.profile.personalGoals.height} ({formData.units === "metric" ? "cm" : "in"})
+                  </Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    value={formData.height || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        height: e.target.value ? parseInt(e.target.value) : null,
+                      })
+                    }
+                    placeholder={formData.units === "metric" ? "170" : "67"}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="target-weight">Target Weight</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="target-weight"
-                      type="number"
-                      placeholder="65"
-                      className="flex-1"
-                    />
-                    <Select defaultValue="kg">
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="kg">kg</SelectItem>
-                        <SelectItem value="lbs">lbs</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Label htmlFor="weight">
+                    {t.profile.personalGoals.weight} ({formData.units === "metric" ? "kg" : "lbs"})
+                  </Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.1"
+                    value={formData.weight || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        weight: e.target.value ? parseFloat(e.target.value) : null,
+                      })
+                    }
+                    placeholder={formData.units === "metric" ? "70.0" : "154.3"}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="calorie-goal">{t.profile.personalGoals.dailyCalorieGoal}</Label>
+                  <Input
+                    id="calorie-goal"
+                    type="number"
+                    value={formData.daily_calorie_goal}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        daily_calorie_goal: parseInt(e.target.value) || 2000,
+                      })
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="calorie-goal">Daily Calorie Goal</Label>
-                  <Input id="calorie-goal" type="number" placeholder="2000" />
+                  <Label htmlFor="protein-goal">{t.profile.personalGoals.dailyProteinGoal}</Label>
+                  <Input
+                    id="protein-goal"
+                    type="number"
+                    value={formData.daily_protein_goal}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        daily_protein_goal: parseInt(e.target.value) || 150,
+                      })
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="activity-level">Activity Level</Label>
-                  <Select defaultValue="moderate">
+                  <Label htmlFor="carbs-goal">{t.profile.personalGoals.dailyCarbsGoal}</Label>
+                  <Input
+                    id="carbs-goal"
+                    type="number"
+                    value={formData.daily_carbs_goal}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        daily_carbs_goal: parseInt(e.target.value) || 200,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fats-goal">{t.profile.personalGoals.dailyFatsGoal}</Label>
+                  <Input
+                    id="fats-goal"
+                    type="number"
+                    value={formData.daily_fats_goal}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        daily_fats_goal: parseInt(e.target.value) || 65,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="activity-level">{t.profile.personalGoals.activityLevel}</Label>
+                  <Select
+                    value={formData.activity_level}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, activity_level: value })
+                    }
+                  >
                     <SelectTrigger id="activity-level">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sedentary">Sedentary</SelectItem>
-                      <SelectItem value="light">Lightly Active</SelectItem>
-                      <SelectItem value="moderate">
-                        Moderately Active
-                      </SelectItem>
-                      <SelectItem value="very">Very Active</SelectItem>
-                      <SelectItem value="extra">Extra Active</SelectItem>
+                      <SelectItem value="sedentary">{t.profile.personalGoals.activityLevels.sedentary}</SelectItem>
+                      <SelectItem value="light">{t.profile.personalGoals.activityLevels.light}</SelectItem>
+                      <SelectItem value="moderate">{t.profile.personalGoals.activityLevels.moderate}</SelectItem>
+                      <SelectItem value="active">{t.profile.personalGoals.activityLevels.active}</SelectItem>
+                      <SelectItem value="very_active">{t.profile.personalGoals.activityLevels.veryActive}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="goal-type">{t.profile.personalGoals.primaryGoal}</Label>
+                  <Select
+                    value={formData.goal_type}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, goal_type: value })
+                    }
+                  >
+                    <SelectTrigger id="goal-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weight_loss">{t.profile.personalGoals.goals.weightLoss}</SelectItem>
+                      <SelectItem value="maintenance">{t.profile.personalGoals.goals.maintenance}</SelectItem>
+                      <SelectItem value="muscle_gain">{t.profile.personalGoals.goals.muscleGain}</SelectItem>
+                      <SelectItem value="health">{t.profile.personalGoals.goals.health}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="goal-type">Primary Goal</Label>
-                <Select defaultValue="maintain">
-                  <SelectTrigger id="goal-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="loss">Weight Loss</SelectItem>
-                    <SelectItem value="maintain">Maintain Weight</SelectItem>
-                    <SelectItem value="gain">Muscle Gain</SelectItem>
-                    <SelectItem value="health">General Health</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button>Update Goals</Button>
+              <Button onClick={handleUpdateGoals} disabled={saving}>
+                {saving ? t.profile.personalGoals.updating : t.profile.personalGoals.updateGoals}
+              </Button>
             </CardContent>
           </Card>
 
           {/* Dietary Preferences */}
           <Card>
             <CardHeader>
-              <CardTitle>Dietary Preferences</CardTitle>
+              <CardTitle>{t.profile.dietaryPreferences.title}</CardTitle>
               <CardDescription>
-                Customize your meal recommendations
+                {t.profile.dietaryPreferences.subtitle}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>Diet Type</Label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "Balanced",
-                    "Vegetarian",
-                    "Vegan",
-                    "Keto",
-                    "Paleo",
-                    "Mediterranean",
-                    "Low Carb",
-                  ].map((diet) => (
+                <Label>{t.profile.dietaryPreferences.allergiesRestrictions}</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newRestriction}
+                    onChange={(e) => setNewRestriction(e.target.value)}
+                    placeholder={t.profile.dietaryPreferences.addRestriction}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && addDietaryRestriction()
+                    }
+                  />
+                  <Button onClick={addDietaryRestriction} type="button">
+                    {t.profile.dietaryPreferences.add}
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.dietary_restrictions.map((item) => (
                     <Badge
-                      key={diet}
-                      variant="outline"
-                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                      key={item}
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => removeDietaryRestriction(item)}
                     >
-                      {diet}
+                      {item} ×
                     </Badge>
                   ))}
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="allergies">Allergies & Restrictions</Label>
-                <Input id="allergies" placeholder="e.g., nuts, dairy, gluten" />
-                <p className="text-xs text-muted-foreground">
-                  Separate multiple items with commas
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dislikes">Foods to Avoid</Label>
-                <Input id="dislikes" placeholder="e.g., mushrooms, olives" />
+                <Label>{t.profile.dietaryPreferences.foodsToAvoid}</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newDislikedFood}
+                    onChange={(e) => setNewDislikedFood(e.target.value)}
+                    placeholder={t.profile.dietaryPreferences.addDislikedFood}
+                    onKeyDown={(e) => e.key === "Enter" && addDislikedFood()}
+                  />
+                  <Button onClick={addDislikedFood} type="button">
+                    {t.profile.dietaryPreferences.add}
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.disliked_foods.map((item) => (
+                    <Badge
+                      key={item}
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => removeDislikedFood(item)}
+                    >
+                      {item} ×
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -234,114 +684,148 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                <CardTitle>Notifications</CardTitle>
+                <CardTitle>{t.profile.notifications.title}</CardTitle>
               </div>
               <CardDescription>
-                Manage your notification preferences
+                {t.profile.notifications.subtitle}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Meal Reminders</Label>
+                  <Label>{t.profile.notifications.mealReminders}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get reminded to log your meals
+                    {t.profile.notifications.mealRemindersDesc}
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={formData.meal_reminders}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, meal_reminders: checked })
+                  }
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Weekly Summary</Label>
+                  <Label>{t.profile.notifications.weeklySummary}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receive a weekly nutrition report
+                    {t.profile.notifications.weeklySummaryDesc}
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={formData.weekly_summary}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, weekly_summary: checked })
+                  }
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>AI Insights</Label>
+                  <Label>{t.profile.notifications.aiInsights}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get personalized suggestions from AI
+                    {t.profile.notifications.aiInsightsDesc}
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={formData.ai_insights}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, ai_insights: checked })
+                  }
+                />
               </div>
+              <Separator />
+              <Button onClick={handleUpdateSettings} disabled={saving} className="w-full mt-4">
+                {saving ? t.common.saving : t.profile.notifications.saveSettings}
+              </Button>
             </CardContent>
           </Card>
 
           {/* App Settings */}
           <Card>
             <CardHeader>
-              <CardTitle>App Settings</CardTitle>
-              <CardDescription>Customize your app experience</CardDescription>
+              <CardTitle>{t.profile.appSettings.title}</CardTitle>
+              <CardDescription>{t.profile.appSettings.subtitle}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Moon className="h-4 w-4" />
-                  <Label>Dark Mode</Label>
+                  <Label>{t.profile.appSettings.theme}</Label>
                 </div>
-                <Switch
-                  checked={mounted && theme === "dark"}
-                  onCheckedChange={(checked) =>
-                    setTheme(checked ? "dark" : "light")
+                <Select
+                  value={formData.theme}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, theme: value })
                   }
-                />
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">{t.profile.appSettings.themes.light}</SelectItem>
+                    <SelectItem value="dark">{t.profile.appSettings.themes.dark}</SelectItem>
+                    <SelectItem value="system">{t.profile.appSettings.themes.system}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4" />
-                  <Label>Language</Label>
+                  <Label>{t.profile.appSettings.language}</Label>
                 </div>
-                <Select defaultValue="en">
+                <Select
+                  value={formData.language}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, language: value })
+                  }
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
+                    <SelectItem value="en">{t.profile.appSettings.languages.en}</SelectItem>
+                    <SelectItem value="zh">{t.profile.appSettings.languages.zh}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
-                <Label>Units</Label>
-                <Select defaultValue="metric">
+                <Label>{t.profile.appSettings.units}</Label>
+                <Select
+                  value={formData.units}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, units: value })
+                  }
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="metric">Metric</SelectItem>
-                    <SelectItem value="imperial">Imperial</SelectItem>
+                    <SelectItem value="metric">{t.profile.appSettings.unitsOptions.metric}</SelectItem>
+                    <SelectItem value="imperial">{t.profile.appSettings.unitsOptions.imperial}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              <Separator />
+              <Button onClick={handleUpdateSettings} disabled={saving} className="w-full mt-4">
+                {saving ? t.common.saving : t.profile.appSettings.saveSettings}
+              </Button>
             </CardContent>
           </Card>
 
           {/* Legal & Support */}
           <Card>
             <CardHeader>
-              <CardTitle>About & Legal</CardTitle>
+              <CardTitle>{t.profile.legal.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Alert className="border-accent/50 bg-accent/5">
                 <AlertCircle className="h-4 w-4 text-accent" />
                 <AlertDescription className="text-sm">
-                  <strong>Important Disclaimer:</strong> This app provides
-                  nutritional information and dietary guidance for educational
-                  purposes only. It is not a substitute for professional medical
-                  advice, diagnosis, or treatment. Always consult with a
-                  qualified healthcare provider before making any dietary
-                  changes, especially if you have medical conditions or
-                  concerns.
+                  <strong>{t.profile.legal.disclaimer}</strong> {t.profile.legal.disclaimerText}
                 </AlertDescription>
               </Alert>
               <Button
@@ -349,21 +833,21 @@ export default function ProfilePage() {
                 className="w-full justify-start bg-transparent"
               >
                 <Shield className="mr-2 h-4 w-4" />
-                Privacy Policy
+                {t.profile.legal.privacyPolicy}
               </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start bg-transparent"
               >
                 <FileText className="mr-2 h-4 w-4" />
-                Terms of Service
+                {t.profile.legal.termsOfService}
               </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start bg-transparent"
               >
                 <HelpCircle className="mr-2 h-4 w-4" />
-                Help & Support
+                {t.profile.legal.helpSupport}
               </Button>
             </CardContent>
           </Card>

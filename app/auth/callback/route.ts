@@ -9,6 +9,24 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient();
     await supabase.auth.exchangeCodeForSession(code);
+
+    // Check if profile exists
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      // Redirect to profile setup if no profile exists
+      if (!profile) {
+        return NextResponse.redirect(`${origin}/profile-setup`);
+      }
+    }
   }
 
   // URL to redirect to after sign in process completes
