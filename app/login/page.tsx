@@ -23,15 +23,19 @@ export default function LoginPage() {
       setLoading(provider);
       setError(null);
 
-      const redirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/auth/callback`
-          : undefined;
+      // Get the correct origin based on environment
+      const getRedirectUrl = () => {
+        if (typeof window === "undefined") return undefined;
+
+        // Use the current origin (works for both localhost and production)
+        return `${window.location.origin}/auth/callback`;
+      };
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo,
+          redirectTo: getRedirectUrl(),
+          skipBrowserRedirect: false,
         },
       });
 
