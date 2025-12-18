@@ -5,9 +5,9 @@ import base64
 import io
 from PIL import Image
 import numpy as np
-import anthropic
-import os
+import requests
 import json
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -15,8 +15,26 @@ CORS(app)
 # Initialize PaddleOCR (this will download models on first run)
 ocr = PaddleOCR(use_angle_cls=True, lang='en', use_gpu=False)
 
-# Initialize Anthropic client
-client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+# ERNIE API Configuration
+ERNIE_API_KEY = os.getenv('ERNIE_API_KEY')
+ERNIE_SECRET_KEY = os.getenv('ERNIE_SECRET_KEY')
+ERNIE_ACCESS_TOKEN = None
+
+def get_ernie_access_token():
+    """Get access token for ERNIE API"""
+    global ERNIE_ACCESS_TOKEN
+    
+    if not ERNIE_API_KEY or not ERNIE_SECRET_KEY:
+        raise Exception("ERNIE_API_KEY and ERNIE_SECRET_KEY must be set")
+    
+    url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={ERNIE_API_KEY}&client_secret={ERNIE_SECRET_KEY}"
+    
+    response = requests.post(url)
+    if response.status_code == 200:
+        ERNIE_ACCESS_TOKEN = response.json().get("access_token")
+        return ERNIE_ACCESS_TOKEN
+    else:
+        raise Exception(f"Failed to get access token: {response.text}")
 
 def extract_text_from_image(image_data):
     """Extract text from image using PaddleOCR"""
@@ -43,9 +61,13 @@ def extract_text_from_image(image_data):
     except Exception as e:
         raise Exception(f"OCR Error: {str(e)}")
 
-def analyze_nutrition_with_ai(text_data, user_description=""):
-    """Use Claude to analyze nutrition from extracted text"""
+def analyze_nutrition_with_ernie(text_data, user_description=""):
+    """Use ERNIE to analyze nutrition from extracted text"""
     try:
+        # Get access token if not already obtained
+        if not ERNIE_ACCESS_TOKEN:
+            get_ernie_access_token()
+        
         # Combine OCR text
         ocr_text = "\n".join([item['text'] for item in text_data])
         
@@ -74,18 +96,43 @@ Please provide a JSON response with the following structure:
   "explanation": "Brief explanation of the analysis"
 }}
 
-If the image appears to be a nutrition label, extract the exact values. If it's a photo of food, estimate based on visual appearance and typical nutritional values. Be conservative with estimates and indicate confidence level accordingly."""
+If the image appears to be a nutrition label, extract the exact values. If it's a photo of food, estimate based on visual appearance and typical nutritional values. Be conservative with estimates and indicate confidence level accordingly.
 
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=2000,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
+IMPORTANT: Return ONLY valid JSON, no other text."""
+
+        # ERNIE-4.5-8K endpoint
+        url = f"https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/ernie-4.5-8k?access_token={ERNIE_ACCESS_TOKEN}"
         
-        # Extract JSON from response
-        response_text = message.content[0].text
+        payload = {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "temperature": 0.3,
+            "top_p": 0.8,
+            "penalty_score": 1.0,
+            "disable_search": False,
+            "enable_citation": False
+        }
+        
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        
+        response = requests.post(url, headers=headers, json=payload)
+        
+        if response.status_code != 200:
+            raise Exception(f"ERNIE API error: {response.text}")
+        
+        result = response.json()
+        
+        if 'error_code' in result:
+            raise Exception(f"ERNIE error: {result.get('error_msg', 'Unknown error')}")
+        
+        # Extract response
+        response_text = result.get('result', '')
         
         # Try to find JSON in the response
         start_idx = response_text.find('{')
@@ -96,15 +143,89 @@ If the image appears to be a nutrition label, extract the exact values. If it's 
             nutrition_data = json.loads(json_str)
             return nutrition_data
         else:
-            raise Exception("Could not parse AI response")
+            raise Exception("Could not parse ERNIE response as JSON")
             
     except Exception as e:
-        raise Exception(f"AI Analysis Error: {str(e)}")
+        raise Exception(f"ERNIE Analysis Error: {str(e)}")
+
+def analyze_description_with_ernie(description):
+    """Use ERNIE to analyze food from text description only"""
+    try:
+        if not ERNIE_ACCESS_TOKEN:
+            get_ernie_access_token()
+        
+        prompt = f"""Analyze this food description and provide nutritional estimates.
+
+Food Description: {description}
+
+Please provide a JSON response with the following structure:
+{{
+  "name": "Food name",
+  "category": "Food category",
+  "calories": integer,
+  "protein": integer (in grams),
+  "carbs": integer (in grams),
+  "fats": integer (in grams),
+  "fiber": integer (in grams),
+  "sugar": integer (in grams),
+  "sodium": integer (in mg),
+  "serving_size": "serving size description",
+  "confidence": "high/medium/low",
+  "benefits": ["benefit 1", "benefit 2", "benefit 3"],
+  "considerations": ["consideration 1", "consideration 2"],
+  "explanation": "Brief explanation of the analysis"
+}}
+
+Provide realistic estimates based on typical nutritional values for this food.
+
+IMPORTANT: Return ONLY valid JSON, no other text."""
+
+        url = f"https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/ernie-4.5-8k?access_token={ERNIE_ACCESS_TOKEN}"
+        
+        payload = {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "temperature": 0.3,
+            "top_p": 0.8
+        }
+        
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(url, headers=headers, json=payload)
+        
+        if response.status_code != 200:
+            raise Exception(f"ERNIE API error: {response.text}")
+        
+        result = response.json()
+        
+        if 'error_code' in result:
+            raise Exception(f"ERNIE error: {result.get('error_msg', 'Unknown error')}")
+        
+        response_text = result.get('result', '')
+        start_idx = response_text.find('{')
+        end_idx = response_text.rfind('}') + 1
+        
+        if start_idx != -1 and end_idx > start_idx:
+            json_str = response_text[start_idx:end_idx]
+            nutrition_data = json.loads(json_str)
+            return nutrition_data
+        else:
+            raise Exception("Could not parse ERNIE response")
+            
+    except Exception as e:
+        raise Exception(f"ERNIE Analysis Error: {str(e)}")
 
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
-    return jsonify({"status": "healthy", "service": "PaddleOCR API"}), 200
+    return jsonify({
+        "status": "healthy",
+        "service": "PaddleOCR + ERNIE API",
+        "ernie_configured": bool(ERNIE_API_KEY and ERNIE_SECRET_KEY)
+    }), 200
 
 @app.route('/analyze', methods=['POST'])
 def analyze_food():
@@ -134,8 +255,8 @@ def analyze_food():
             # Get user description if provided
             user_description = data.get('description', '')
             
-            # Analyze with AI
-            nutrition_data = analyze_nutrition_with_ai(ocr_results, user_description)
+            # Analyze with ERNIE
+            nutrition_data = analyze_nutrition_with_ernie(ocr_results, user_description)
             
             return jsonify({
                 "success": True,
@@ -146,62 +267,30 @@ def analyze_food():
         # Handle text-only description
         elif 'description' in data:
             description = data['description']
+            nutrition_data = analyze_description_with_ernie(description)
             
-            # Create a simple prompt for AI
-            prompt = f"""Analyze this food description and provide nutritional estimates.
-
-Food Description: {description}
-
-Please provide a JSON response with the following structure:
-{{
-  "name": "Food name",
-  "category": "Food category",
-  "calories": integer,
-  "protein": integer (in grams),
-  "carbs": integer (in grams),
-  "fats": integer (in grams),
-  "fiber": integer (in grams),
-  "sugar": integer (in grams),
-  "sodium": integer (in mg),
-  "serving_size": "serving size description",
-  "confidence": "high/medium/low",
-  "benefits": ["benefit 1", "benefit 2", "benefit 3"],
-  "considerations": ["consideration 1", "consideration 2"],
-  "explanation": "Brief explanation of the analysis"
-}}
-
-Provide realistic estimates based on typical nutritional values for this food."""
-
-            message = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=2000,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            
-            response_text = message.content[0].text
-            start_idx = response_text.find('{')
-            end_idx = response_text.rfind('}') + 1
-            
-            if start_idx != -1 and end_idx > start_idx:
-                json_str = response_text[start_idx:end_idx]
-                nutrition_data = json.loads(json_str)
-                
-                return jsonify({
-                    "success": True,
-                    "nutrition": nutrition_data
-                }), 200
-            else:
-                return jsonify({"error": "Could not parse AI response"}), 500
+            return jsonify({
+                "success": True,
+                "nutrition": nutrition_data
+            }), 200
         
         else:
             return jsonify({"error": "No image or description provided"}), 400
             
     except Exception as e:
+        print(f"Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    print("Starting PaddleOCR API Server...")
-    print("Make sure to set ANTHROPIC_API_KEY environment variable")
+    print("=" * 60)
+    print("Starting PaddleOCR + ERNIE API Server...")
+    print("=" * 60)
+    print(f"ERNIE API Key configured: {bool(ERNIE_API_KEY)}")
+    print(f"ERNIE Secret Key configured: {bool(ERNIE_SECRET_KEY)}")
+    print("=" * 60)
+    
+    if not ERNIE_API_KEY or not ERNIE_SECRET_KEY:
+        print("WARNING: ERNIE credentials not found!")
+        print("Please set ERNIE_API_KEY and ERNIE_SECRET_KEY environment variables")
+    
     app.run(host='0.0.0.0', port=5000, debug=True)
