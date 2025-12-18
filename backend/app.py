@@ -15,42 +15,55 @@ client = OpenAI(
 def analyze_image_with_ernie(image_base64, additional_context=""):
     """Analyze food image directly using ERNIE vision model"""
     try:
-        prompt = f"""You are a nutrition expert. Analyze this food image and extract comprehensive nutritional information.
+        prompt = f"""You are a nutrition expert specializing in reading Chinese food packaging labels. Analyze this food image and extract EXACT nutritional information from the nutrition facts table.
 
 {f"Additional Context: {additional_context}" if additional_context else ""}
 
-Please examine the image carefully and look for:
-1. The food item(s) visible in the image
-2. Any visible nutritional labels or text (including Chinese text)
-3. Serving size information
-4. Package details if visible
+CRITICAL INSTRUCTIONS:
+1. Look for "营养成分表" (Nutrition Facts Table) on the package
+2. Find values for "每100克" (per 100g) or "每份" (per serving)
+3. Extract EXACT numbers from these fields:
+   - 能量 (Energy) - convert kJ to kcal (divide by 4.184)
+   - 蛋白质 (Protein) in grams
+   - 脂肪 (Fat) in grams
+   - 碳水化合物 (Carbohydrates) in grams
+   - 钠 (Sodium) in mg
+   - 膳食纤维 (Dietary Fiber) in grams if present
+   - 糖 (Sugar) in grams if present
 
-Provide a detailed JSON response with the following structure:
+4. Also identify:
+   - Product name (translate to English)
+   - Product category
+   - Serving size information
+   - All visible text on packaging
+
+Provide a JSON response with this EXACT structure:
 {{
-  "name": "Food name (in English)",
-  "category": "Food category (e.g., Sauce, Snack, Beverage, Meal, etc.)",
-  "calories": integer (kcal per serving),
-  "protein": integer (grams per serving),
-  "carbs": integer (grams per serving),
-  "fats": integer (grams per serving),
-  "fiber": integer (grams per serving, use 0 if not listed),
-  "sugar": integer (grams per serving, use 0 if not listed),
-  "sodium": integer (mg per serving),
-  "serving_size": "serving size description",
+  "name": "Product name in English (e.g., Green Sichuan Pepper Pickled Fish Seasoning)",
+  "category": "Food category (Sauce/Snack/Beverage/Seasoning/etc.)",
+  "calories": integer (kcal - converted from 能量/kJ value),
+  "protein": integer (grams - from 蛋白质 value),
+  "carbs": integer (grams - from 碳水化合物 value),
+  "fats": integer (grams - from 脂肪 value),
+  "fiber": integer (grams - from 膳食纤维, use 0 if not listed),
+  "sugar": integer (grams - from 糖, use 0 if not listed),
+  "sodium": integer (mg - from 钠 value),
+  "serving_size": "per 100g or actual serving size mentioned",
   "confidence": "high/medium/low",
   "benefits": ["health benefit 1", "health benefit 2", "health benefit 3"],
   "considerations": ["dietary consideration 1", "consideration 2"],
-  "explanation": "Brief explanation of what you see in the image and nutritional analysis",
-  "detected_text": "Any text visible on the packaging or label"
+  "explanation": "Summary of what you see and how you calculated the values",
+  "detected_text": "All Chinese text visible on the packaging"
 }}
 
-Important:
-- If you see a nutrition facts table, extract exact values
-- If nutritional table shows "per 100g", calculate serving size based on typical portions
-- Translate any Chinese text you see
-- If fiber or sugar are not listed, use 0
-- Be as accurate as possible based on what's visible in the image
-- Respond ONLY with valid JSON, no other text."""
+IMPORTANT RULES:
+- ALWAYS extract values from the 营养成分表 (nutrition table) if visible
+- If energy is in kJ, convert to kcal by dividing by 4.184
+- Round all numbers to nearest integer
+- If per 100g is shown, mention that in serving_size
+- If fiber/sugar not listed, use 0
+- Be PRECISE with numbers from the table
+- Respond ONLY with valid JSON, no other text"""
 
         messages = [
             {
@@ -71,7 +84,7 @@ Important:
         ]
         
         response = client.chat.completions.create(
-            model="ernie-5.0-thinking-preview",  # Use the vision-capable model
+            model="ernie-5.0-thinking-preview",
             messages=messages,
             max_completion_tokens=4096,
             stream=False
