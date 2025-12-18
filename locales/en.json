@@ -1,0 +1,26 @@
+{
+  "sidebar": {
+    "appName": "NutriAI",
+    "appSubtitle": "Nutrition Assistant",
+    "dashboard": "Dashboard",
+    "aiChat": "AI Chat",
+    "mealPlanner": "Meal Planner",
+    "foodAnalyzer": "Food Analyzer",
+    "dietTracker": "Diet Tracker",
+    "profile": "Profile",
+    "profileSettings": "Profile Settings",
+    "logout": "Log out",
+    "signIn": "Sign In",
+    "getStarted": "Get started"
+  },
+  "common": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "update": "Update",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close"
+  }
+}

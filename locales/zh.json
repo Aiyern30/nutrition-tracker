@@ -1,0 +1,26 @@
+{
+  "sidebar": {
+    "appName": "营养AI",
+    "appSubtitle": "营养助手",
+    "dashboard": "仪表盘",
+    "aiChat": "AI聊天",
+    "mealPlanner": "膳食计划",
+    "foodAnalyzer": "食物分析",
+    "dietTracker": "饮食追踪",
+    "profile": "个人资料",
+    "profileSettings": "个人设置",
+    "logout": "退出登录",
+    "signIn": "登录",
+    "getStarted": "开始使用"
+  },
+  "common": {
+    "loading": "加载中...",
+    "saving": "保存中...",
+    "save": "保存",
+    "cancel": "取消",
+    "update": "更新",
+    "delete": "删除",
+    "edit": "编辑",
+    "close": "关闭"
+  }
+}

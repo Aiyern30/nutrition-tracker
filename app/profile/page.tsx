@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/contexts/language-context";
 
 import {
   SidebarProvider,
@@ -70,10 +71,11 @@ interface Profile {
 
 export default function ProfilePage() {
   const { setTheme } = useTheme();
+  const { language, setLanguage: setAppLanguage } = useLanguage();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
-  console.log("Profile data:", profile);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
@@ -230,8 +232,9 @@ export default function ProfilePage() {
 
       if (error) throw error;
 
-      // Update UI theme immediately
+      // Update UI theme and language immediately
       setTheme(formData.theme);
+      setAppLanguage(formData.language as "en" | "zh");
 
       setSuccess("Settings updated successfully!");
       setTimeout(() => setSuccess(null), 3000);
