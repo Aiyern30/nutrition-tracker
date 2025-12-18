@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "next-themes";
+import { createClient } from "@/lib/supabase/client";
 
 import {
   SidebarProvider,
@@ -42,13 +43,257 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface Profile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  daily_calorie_goal: number;
+  daily_protein_goal: number;
+  daily_carbs_goal: number;
+  daily_fats_goal: number;
+  daily_water_goal: number;
+  current_streak: number;
+  activity_level: string;
+  goal_type: string;
+  dietary_restrictions: string[];
+  disliked_foods: string[];
+  created_at: string;
+}
+
 export default function ProfilePage() {
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
+
+  const [formData, setFormData] = useState({
+    display_name: "",
+    daily_calorie_goal: 2000,
+    daily_protein_goal: 150,
+    daily_carbs_goal: 200,
+    daily_fats_goal: 65,
+    daily_water_goal: 8,
+    activity_level: "moderate",
+    goal_type: "maintenance",
+    dietary_restrictions: [] as string[],
+    disliked_foods: [] as string[],
+  });
+
+  const [newRestriction, setNewRestriction] = useState("");
+  const [newDislikedFood, setNewDislikedFood] = useState("");
+
+  const supabase = createClient();
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      setLoading(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setUserEmail(user.email || "");
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setProfile(data);
+        setFormData({
+          display_name: data.display_name || "",
+          daily_calorie_goal: data.daily_calorie_goal,
+          daily_protein_goal: data.daily_protein_goal,
+          daily_carbs_goal: data.daily_carbs_goal,
+          daily_fats_goal: data.daily_fats_goal,
+          daily_water_goal: data.daily_water_goal,
+          activity_level: data.activity_level,
+          goal_type: data.goal_type,
+          dietary_restrictions: data.dietary_restrictions || [],
+          disliked_foods: data.disliked_foods || [],
+        });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const handleUpdateGoals = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          display_name: formData.display_name,
+          daily_calorie_goal: formData.daily_calorie_goal,
+          daily_protein_goal: formData.daily_protein_goal,
+          daily_carbs_goal: formData.daily_carbs_goal,
+          daily_fats_goal: formData.daily_fats_goal,
+          daily_water_goal: formData.daily_water_goal,
+          activity_level: formData.activity_level,
+          goal_type: formData.goal_type,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setSuccess("Goals updated successfully!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update goals");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addDietaryRestriction = async () => {
+    if (!newRestriction.trim()) return;
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updated = [...formData.dietary_restrictions, newRestriction.trim()];
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          dietary_restrictions: updated,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setFormData({ ...formData, dietary_restrictions: updated });
+      setNewRestriction("");
+      setSuccess("Dietary restriction added!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to add restriction"
+      );
+    }
+  };
+
+  const removeDietaryRestriction = async (item: string) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updated = formData.dietary_restrictions.filter((r) => r !== item);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          dietary_restrictions: updated,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setFormData({ ...formData, dietary_restrictions: updated });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to remove restriction"
+      );
+    }
+  };
+
+  const addDislikedFood = async () => {
+    if (!newDislikedFood.trim()) return;
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updated = [...formData.disliked_foods, newDislikedFood.trim()];
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          disliked_foods: updated,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setFormData({ ...formData, disliked_foods: updated });
+      setNewDislikedFood("");
+      setSuccess("Disliked food added!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add food");
+    }
+  };
+
+  const removeDislikedFood = async (item: string) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updated = formData.disliked_foods.filter((f) => f !== item);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          disliked_foods: updated,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setFormData({ ...formData, disliked_foods: updated });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove food");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -67,6 +312,19 @@ export default function ProfilePage() {
         </header>
 
         <main className="flex-1 space-y-6 p-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {success && (
+            <Alert>
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Profile Header */}
           <Card>
             <CardContent className="pt-6">
@@ -75,13 +333,29 @@ export default function ProfilePage() {
                   <User className="h-12 w-12" />
                 </div>
                 <div className="flex-1 space-y-2">
-                  <h2 className="text-2xl font-bold">Welcome, User</h2>
+                  <h2 className="text-2xl font-bold">
+                    Welcome, {formData.display_name || "User"}
+                  </h2>
+                  {userEmail && (
+                    <p className="text-sm text-muted-foreground">{userEmail}</p>
+                  )}
                   <div className="flex items-center gap-2">
                     <Badge>Free Plan</Badge>
-                    <Badge variant="secondary">7 day streak</Badge>
+                    <Badge variant="secondary">
+                      {profile?.current_streak || 0} day streak
+                    </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Member since January 2025
+                    Member since{" "}
+                    {profile?.created_at
+                      ? new Date(profile.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "long",
+                            year: "numeric",
+                          }
+                        )
+                      : "Recently"}
                   </p>
                 </div>
                 <Button variant="outline" className="bg-transparent">
@@ -103,54 +377,82 @@ export default function ProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="display-name">Display Name</Label>
+                <Input
+                  id="display-name"
+                  value={formData.display_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, display_name: e.target.value })
+                  }
+                  placeholder="Enter your name"
+                />
+              </div>
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="current-weight">Current Weight</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="current-weight"
-                      type="number"
-                      placeholder="70"
-                      className="flex-1"
-                    />
-                    <Select defaultValue="kg">
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="kg">kg</SelectItem>
-                        <SelectItem value="lbs">lbs</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="target-weight">Target Weight</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="target-weight"
-                      type="number"
-                      placeholder="65"
-                      className="flex-1"
-                    />
-                    <Select defaultValue="kg">
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="kg">kg</SelectItem>
-                        <SelectItem value="lbs">lbs</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="calorie-goal">Daily Calorie Goal</Label>
-                  <Input id="calorie-goal" type="number" placeholder="2000" />
+                  <Input
+                    id="calorie-goal"
+                    type="number"
+                    value={formData.daily_calorie_goal}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        daily_calorie_goal: parseInt(e.target.value) || 2000,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="protein-goal">Daily Protein Goal (g)</Label>
+                  <Input
+                    id="protein-goal"
+                    type="number"
+                    value={formData.daily_protein_goal}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        daily_protein_goal: parseInt(e.target.value) || 150,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="carbs-goal">Daily Carbs Goal (g)</Label>
+                  <Input
+                    id="carbs-goal"
+                    type="number"
+                    value={formData.daily_carbs_goal}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        daily_carbs_goal: parseInt(e.target.value) || 200,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fats-goal">Daily Fats Goal (g)</Label>
+                  <Input
+                    id="fats-goal"
+                    type="number"
+                    value={formData.daily_fats_goal}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        daily_fats_goal: parseInt(e.target.value) || 65,
+                      })
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="activity-level">Activity Level</Label>
-                  <Select defaultValue="moderate">
+                  <Select
+                    value={formData.activity_level}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, activity_level: value })
+                    }
+                  >
                     <SelectTrigger id="activity-level">
                       <SelectValue />
                     </SelectTrigger>
@@ -160,27 +462,36 @@ export default function ProfilePage() {
                       <SelectItem value="moderate">
                         Moderately Active
                       </SelectItem>
-                      <SelectItem value="very">Very Active</SelectItem>
-                      <SelectItem value="extra">Extra Active</SelectItem>
+                      <SelectItem value="active">Very Active</SelectItem>
+                      <SelectItem value="very_active">Extra Active</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="goal-type">Primary Goal</Label>
+                  <Select
+                    value={formData.goal_type}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, goal_type: value })
+                    }
+                  >
+                    <SelectTrigger id="goal-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weight_loss">Weight Loss</SelectItem>
+                      <SelectItem value="maintenance">
+                        Maintain Weight
+                      </SelectItem>
+                      <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
+                      <SelectItem value="health">General Health</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="goal-type">Primary Goal</Label>
-                <Select defaultValue="maintain">
-                  <SelectTrigger id="goal-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="loss">Weight Loss</SelectItem>
-                    <SelectItem value="maintain">Maintain Weight</SelectItem>
-                    <SelectItem value="gain">Muscle Gain</SelectItem>
-                    <SelectItem value="health">General Health</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button>Update Goals</Button>
+              <Button onClick={handleUpdateGoals} disabled={saving}>
+                {saving ? "Updating..." : "Update Goals"}
+              </Button>
             </CardContent>
           </Card>
 
@@ -194,37 +505,58 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>Diet Type</Label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "Balanced",
-                    "Vegetarian",
-                    "Vegan",
-                    "Keto",
-                    "Paleo",
-                    "Mediterranean",
-                    "Low Carb",
-                  ].map((diet) => (
+                <Label>Allergies & Restrictions</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newRestriction}
+                    onChange={(e) => setNewRestriction(e.target.value)}
+                    placeholder="Add dietary restriction"
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && addDietaryRestriction()
+                    }
+                  />
+                  <Button onClick={addDietaryRestriction} type="button">
+                    Add
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.dietary_restrictions.map((item) => (
                     <Badge
-                      key={diet}
-                      variant="outline"
-                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                      key={item}
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => removeDietaryRestriction(item)}
                     >
-                      {diet}
+                      {item} ×
                     </Badge>
                   ))}
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="allergies">Allergies & Restrictions</Label>
-                <Input id="allergies" placeholder="e.g., nuts, dairy, gluten" />
-                <p className="text-xs text-muted-foreground">
-                  Separate multiple items with commas
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dislikes">Foods to Avoid</Label>
-                <Input id="dislikes" placeholder="e.g., mushrooms, olives" />
+                <Label>Foods to Avoid</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newDislikedFood}
+                    onChange={(e) => setNewDislikedFood(e.target.value)}
+                    placeholder="Add disliked food"
+                    onKeyDown={(e) => e.key === "Enter" && addDislikedFood()}
+                  />
+                  <Button onClick={addDislikedFood} type="button">
+                    Add
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.disliked_foods.map((item) => (
+                    <Badge
+                      key={item}
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => removeDislikedFood(item)}
+                    >
+                      {item} ×
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

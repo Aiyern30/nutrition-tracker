@@ -13,7 +13,7 @@ export default function ProfileSetupPage() {
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient();
-      
+
       const {
         data: { user },
       } = await supabase.auth.getUser();

@@ -93,8 +93,8 @@ export function ProfileSetupDialog({ open, userId }: ProfileSetupDialogProps) {
         <DialogHeader>
           <DialogTitle>Complete Your Profile</DialogTitle>
           <DialogDescription>
-            Set up your nutrition goals to get personalized recommendations. You can
-            always update these later.
+            Set up your nutrition goals to get personalized recommendations. You
+            can always update these later.
           </DialogDescription>
         </DialogHeader>
 
@@ -247,11 +247,7 @@ export function ProfileSetupDialog({ open, userId }: ProfileSetupDialogProps) {
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={handleSkip}
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={handleSkip} disabled={loading}>
             Skip for Now
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
