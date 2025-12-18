@@ -139,7 +139,46 @@ def analyze_food():
             return jsonify({"error": "No image or description provided"}), 400
 
     except Exception as e:
-        print(f"Error in analyze_food: {str(e)}")  # Add logging
+        print(f"Error in analyze_food: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    """General chat with ERNIE"""
+    try:
+        data = request.json
+        if not data or 'messages' not in data:
+            return jsonify({"error": "No messages provided"}), 400
+        
+        messages = data['messages']
+        
+        # Ensure messages are in the correct format for the API
+        # The frontend should send {role: 'user'|'assistant', content: '...'}
+        
+        system_prompt = {
+            "role": "system", 
+            "content": "You are a helpful nutrition assistant. You provide advice on healthy eating, meal planning, and nutritional information. Keep your answers concise and informative."
+        }
+        
+        formatted_messages = [system_prompt] + messages
+        
+        response = client.chat.completions.create(
+            model="ernie-5.0-thinking-preview",
+            messages=formatted_messages,
+            max_completion_tokens=2048,
+            stream=False
+        )
+
+        if response.choices and len(response.choices) > 0:
+            return jsonify({
+                "success": True,
+                "message": response.choices[0].message.content
+            }), 200
+        else:
+            return jsonify({"error": "No response from ERNIE"}), 500
+
+    except Exception as e:
+        print(f"Error in chat: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/health', methods=['GET'])

@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -11,7 +11,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, User, AlertCircle, Settings } from "lucide-react";
+import { Send, Bot, User, AlertCircle, Settings, Trash2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface Message {
   id: string;
@@ -31,32 +32,136 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const supabase = createClient();
 
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    const initChat = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
+        // Fetch existing messages
+        const { data, error } = await supabase
+          .from("chat_messages")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true });
+
+        if (!error && data) {
+          const formattedMessages: Message[] = data.map((msg: any) => ({
+            id: msg.id,
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+          }));
+          setMessages(formattedMessages);
+        }
+      }
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    initChat();
+  }, [supabase]);
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || !userId) return;
+
+    const userMessageContent = input;
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // 1. Save user message to Supabase
+      const { data: userMsgData, error: userMsgError } = await supabase
+        .from("chat_messages")
+        .insert({
+          user_id: userId,
+          role: "user",
+          content: userMessageContent,
+        })
+        .select()
+        .single();
+
+      if (userMsgError) throw userMsgError;
+
+      const newUserMessage: Message = {
+        id: userMsgData.id,
+        role: "user",
+        content: userMessageContent,
+        timestamp: new Date(userMsgData.created_at),
+      };
+
+      setMessages((prev) => [...prev, newUserMessage]);
+
+      // 2. Get AI response from Flask backend
+      const response = await fetch("http://localhost:5000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [...messages, newUserMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response from AI");
+      }
+
+      const data = await response.json();
+      const aiContent = data.message || "I couldn't generate a response.";
+
+      // 3. Save assistant message to Supabase
+      const { data: aiMsgData, error: aiMsgError } = await supabase
+        .from("chat_messages")
+        .insert({
+          user_id: userId,
+          role: "assistant",
+          content: aiContent,
+        })
+        .select()
+        .single();
+
+      if (aiMsgError) throw aiMsgError;
+
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: aiMsgData.id,
         role: "assistant",
-        content: `This is a simulated response to: "${input}". In a real application, this would connect to the ERNIE AI model to provide personalized nutrition advice, calorie predictions, meal plans, and diet ratings based on your query.`,
+        content: aiContent,
+        timestamp: new Date(aiMsgData.created_at),
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Chat Error:", error);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "Sorry, I encountered an error while processing your request. Please make sure the backend server (python app.py) is running on port 5000.",
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
+  };
+
+  const clearChat = async () => {
+    if (!userId) return;
+
+    if (confirm("Are you sure you want to clear your chat history?")) {
+      const { error } = await supabase
+        .from("chat_messages")
+        .delete()
+        .eq("user_id", userId);
+
+      if (!error) {
+        setMessages([]);
+      }
+    }
   };
 
   const handlePromptClick = (prompt: string) => {
@@ -76,9 +181,20 @@ export default function ChatPage() {
                 Ask nutrition questions and get AI-powered guidance
               </p>
             </div>
-            <Button variant="ghost" size="icon">
-              <Settings className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={clearChat}
+                title="Clear Chat History"
+                disabled={messages.length === 0}
+              >
+                <Trash2 className="h-5 w-5 text-muted-foreground hover:text-destructive" />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -136,9 +252,8 @@ export default function ChatPage() {
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex gap-4 ${
-                      message.role === "user" ? "justify-end" : ""
-                    }`}
+                    className={`flex gap-4 ${message.role === "user" ? "justify-end" : ""
+                      }`}
                   >
                     {message.role === "assistant" && (
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -146,11 +261,10 @@ export default function ChatPage() {
                       </div>
                     )}
                     <div
-                      className={`max-w-[80%] space-y-2 rounded-2xl px-4 py-3 ${
-                        message.role === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card border"
-                      }`}
+                      className={`max-w-[80%] space-y-2 rounded-2xl px-4 py-3 ${message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card border"
+                        }`}
                     >
                       <p className="text-sm leading-relaxed">
                         {message.content}
