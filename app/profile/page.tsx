@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+
 import {
   SidebarProvider,
   SidebarInset,
@@ -40,6 +43,13 @@ import {
 } from "@/components/ui/select";
 
 export default function ProfilePage() {
+  const { setTheme, theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -275,7 +285,12 @@ export default function ProfilePage() {
                   <Moon className="h-4 w-4" />
                   <Label>Dark Mode</Label>
                 </div>
-                <Switch />
+                <Switch
+                  checked={mounted && theme === "dark"}
+                  onCheckedChange={(checked) =>
+                    setTheme(checked ? "dark" : "light")
+                  }
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
