@@ -468,34 +468,47 @@ def generate_meal_plan():
         ]
 
         response = client.chat.completions.create(
-            model="ernie-5.0-thinking-preview",
+            model="ernie-4.0-8k-latest",
             messages=messages,
-            max_completion_tokens=4096,
+            max_completion_tokens=2048,
             stream=False
         )
 
         if response.choices and len(response.choices) > 0:
-            result_text = response.choices[0].message.content.strip()
+            print(f"DEBUG: Response ID: {response.id}")
+            print(f"DEBUG: Finish Reason: {response.choices[0].finish_reason}")
+            result_text = response.choices[0].message.content
+            if not result_text:
+                print("DEBUG: Content is None or Empty")
+                result_text = ""
+            else:
+                result_text = result_text.strip()
+            print(f"DEBUG: Raw model response: {result_text}")
             
-            # Clean up potential markdown code blocks
-            if result_text.startswith("```json"):
-                result_text = result_text[7:]
-            if result_text.endswith("```"):
-                result_text = result_text[:-3]
+            # Simple cleanup of markdown blocks if they exist, to be safe
+            if "```json" in result_text:
+                result_text = result_text.replace("```json", "").replace("```", "")
+            elif "```" in result_text:
+                result_text = result_text.replace("```", "")
             
             start_idx = result_text.find('{')
             end_idx = result_text.rfind('}') + 1
             
             if start_idx != -1 and end_idx > start_idx:
                 json_str = result_text[start_idx:end_idx]
-                meal_plan = json.loads(json_str)
-                return jsonify({
-                    "success": True,
-                    "plan": meal_plan
-                }), 200
+                try:
+                    meal_plan = json.loads(json_str)
+                    return jsonify({
+                        "success": True,
+                        "plan": meal_plan
+                    }), 200
+                except json.JSONDecodeError as je:
+                    print(f"JSON Decode Error: {je}")
+                    print(f"Faulty JSON string: {json_str}")
+                    return jsonify({"error": f"Invalid JSON format from AI: {str(je)}"}), 500
             else:
-                print(f"Failed to parse JSON: {result_text}")
-                return jsonify({"error": "Could not parse JSON from ERNIE response"}), 500
+                print(f"Failed to locate JSON brackets in: {result_text}")
+                return jsonify({"error": "Could not locate JSON in ERNIE response"}), 500
         else:
             return jsonify({"error": "No response from ERNIE"}), 500
 
