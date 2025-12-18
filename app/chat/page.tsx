@@ -1,5 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
+import { useRouter } from "next/navigation";
 
 import { useEffect, useState, type MouseEvent } from "react";
 import {
@@ -11,7 +12,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, User, AlertCircle, Settings, Trash2, History, MessageSquare } from "lucide-react";
+import { Send, Bot, User, AlertCircle, Settings, Trash2, History, MessageSquare, CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -53,6 +54,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
@@ -297,7 +299,7 @@ export default function ChatPage() {
               >
                 <span className="text-xs">New Chat</span>
               </Button>
-              
+
             </div>
           </div>
         </header>
@@ -326,7 +328,7 @@ export default function ChatPage() {
                       Nutrition AI Assistant
                     </h2>
                     <p className="max-w-md text-muted-foreground">
-                      Ask me anything about nutrition, meal planning, calorie
+                      Ask me anything about nutrition, calorie
                       counting, or dietary advice. I'm here to help!
                     </p>
                   </div>
@@ -372,23 +374,35 @@ export default function ChatPage() {
                     >
                       <div className={message.role === "assistant" ? "prose prose-sm dark:prose-invert max-w-none text-foreground" : ""}>
                         {message.role === "assistant" ? (
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                              p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-foreground">{children}</p>,
-                              ul: ({ children }) => <ul className="mb-2 space-y-1 list-disc pl-4 text-foreground">{children}</ul>,
-                              ol: ({ children }) => <ol className="mb-2 space-y-1 list-decimal pl-4 text-foreground">{children}</ol>,
-                              li: ({ children }) => <li className="text-sm pl-1">{children}</li>,
-                              h1: ({ children }) => <h1 className="text-base font-bold mb-2 mt-3 text-foreground">{children}</h1>,
-                              h2: ({ children }) => <h2 className="text-sm font-bold mb-1 mt-2 text-foreground">{children}</h2>,
-                              h3: ({ children }) => <h3 className="text-xs font-bold mb-1 mt-2 uppercase tracking-wide text-muted-foreground">{children}</h3>,
-                              strong: ({ children }) => <span className="font-bold text-foreground">{children}</span>,
-                              blockquote: ({ children }) => <blockquote className="border-l-2 border-primary pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
-                              code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
-                            }}
-                          >
-                            {message.content}
-                          </ReactMarkdown>
+                          <>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-foreground">{children}</p>,
+                                ul: ({ children }) => <ul className="mb-2 space-y-1 list-disc pl-4 text-foreground">{children}</ul>,
+                                ol: ({ children }) => <ol className="mb-2 space-y-1 list-decimal pl-4 text-foreground">{children}</ol>,
+                                li: ({ children }) => <li className="text-sm pl-1">{children}</li>,
+                                h1: ({ children }) => <h1 className="text-base font-bold mb-2 mt-3 text-foreground">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-sm font-bold mb-1 mt-2 text-foreground">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-xs font-bold mb-1 mt-2 uppercase tracking-wide text-muted-foreground">{children}</h3>,
+                                strong: ({ children }) => <span className="font-bold text-foreground">{children}</span>,
+                                blockquote: ({ children }) => <blockquote className="border-l-2 border-primary pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
+                                code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
+                              }}
+                            >
+                              {message.content.replace('[ACTION:NavigateToMealPlanner]', '')}
+                            </ReactMarkdown>
+                            {message.content.includes('[ACTION:NavigateToMealPlanner]') && (
+                              <Button
+                                variant="outline"
+                                className="mt-3 w-full justify-start gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary"
+                                onClick={() => router.push('/meal-planner')}
+                              >
+                                <CalendarDays className="h-4 w-4" />
+                                Go to Meal Planner
+                              </Button>
+                            )}
+                          </>
                         ) : (
                           <p className="text-sm leading-relaxed whitespace-pre-wrap">
                             {message.content}

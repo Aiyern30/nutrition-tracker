@@ -336,7 +336,8 @@ def chat():
             4. Keep paragraphs short and concise.
             5. Avoid long blocks of text.
             6. Use a professional yet friendly tone.
-            7. DO NOT answer questions that are not related to nutrition."""
+            7. DO NOT answer questions that are not related to nutrition.
+            8. If you receive a question regarding what to eat today or meal plan of the day, please direct the user to the meal planner tab and append the tag [ACTION:NavigateToMealPlanner] at the end of your response."""
         }
         
         formatted_messages = [system_prompt] + messages
