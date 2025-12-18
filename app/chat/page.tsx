@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -11,10 +11,19 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, User, AlertCircle, Settings, Trash2 } from "lucide-react";
+import { Send, Bot, User, AlertCircle, Settings, Trash2, History, MessageSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Message {
   id: string;
@@ -30,40 +39,75 @@ const suggestedPrompts = [
   "How many calories in a chicken Caesar salad?",
 ];
 
+interface Conversation {
+  id: string;
+  title: string;
+  created_at: string;
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
-    const initChat = async () => {
+    const initUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-
-        // Fetch existing messages
-        const { data, error } = await supabase
-          .from("chat_messages")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: true });
-
-        if (!error && data) {
-          const formattedMessages: Message[] = data.map((msg: any) => ({
-            id: msg.id,
-            role: msg.role as "user" | "assistant",
-            content: msg.content,
-            timestamp: new Date(msg.created_at),
-          }));
-          setMessages(formattedMessages);
-        }
+        fetchConversations(user.id);
       }
     };
-
-    initChat();
+    initUser();
   }, [supabase]);
+
+  const fetchConversations = async (uid: string) => {
+    // Select only metadata, not the heavy messages array
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id, title, created_at")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setConversations(data);
+    }
+  };
+
+  const loadConversation = async (conversationId: string) => {
+    if (!userId) return;
+    setIsLoading(true);
+    setCurrentConversationId(conversationId);
+
+    // Fetch specifically the messages for this conversation
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("messages")
+      .eq("id", conversationId)
+      .single();
+
+    if (!error && data) {
+      // Parse timestamp strings back to Date objects
+      const loadedMessages: Message[] = (data.messages as any[]).map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp),
+      }));
+      setMessages(loadedMessages);
+      setIsHistoryOpen(false);
+    }
+    setIsLoading(false);
+  };
+
+  const startNewChat = () => {
+    setCurrentConversationId(null);
+    setMessages([]);
+    setIsHistoryOpen(false);
+  };
 
   const handleSendMessage = async () => {
     if (!input.trim() || !userId) return;
@@ -72,77 +116,85 @@ export default function ChatPage() {
     setInput("");
     setIsLoading(true);
 
+    const newUserMessage: Message = {
+      id: Date.now().toString(), // Temp ID
+      role: "user",
+      content: userMessageContent,
+      timestamp: new Date(),
+    };
+
+    // Optimistically update UI
+    const updatedMessages = [...messages, newUserMessage];
+    setMessages(updatedMessages);
+
     try {
-      // 1. Save user message to Supabase
-      const { data: userMsgData, error: userMsgError } = await supabase
-        .from("chat_messages")
-        .insert({
-          user_id: userId,
-          role: "user",
-          content: userMessageContent,
-        })
-        .select()
-        .single();
+      let conversationId = currentConversationId;
+      let finalMessages = updatedMessages;
 
-      if (userMsgError) throw userMsgError;
-
-      const newUserMessage: Message = {
-        id: userMsgData.id,
-        role: "user",
-        content: userMessageContent,
-        timestamp: new Date(userMsgData.created_at),
-      };
-
-      setMessages((prev) => [...prev, newUserMessage]);
-
-      // 2. Get AI response from Flask backend
+      // 1. Get AI Response First
       const response = await fetch("http://localhost:5000/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [...messages, newUserMessage].map((m) => ({
+          messages: updatedMessages.map((m) => ({
             role: m.role,
             content: m.content,
           })),
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to get response from AI");
-      }
+      if (!response.ok) throw new Error("Failed to get response from AI");
 
       const data = await response.json();
       const aiContent = data.message || "I couldn't generate a response.";
 
-      // 3. Save assistant message to Supabase
-      const { data: aiMsgData, error: aiMsgError } = await supabase
-        .from("chat_messages")
-        .insert({
-          user_id: userId,
-          role: "assistant",
-          content: aiContent,
-        })
-        .select()
-        .single();
-
-      if (aiMsgError) throw aiMsgError;
-
       const aiMessage: Message = {
-        id: aiMsgData.id,
+        id: (Date.now() + 1).toString(),
         role: "assistant",
         content: aiContent,
-        timestamp: new Date(aiMsgData.created_at),
+        timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, aiMessage]);
+      finalMessages = [...updatedMessages, aiMessage];
+      setMessages(finalMessages);
+
+      // 2. Save to Supabase (Single Table Update)
+      if (!conversationId) {
+        // Create NEW conversation in single table
+        const title = userMessageContent.slice(0, 40) + (userMessageContent.length > 40 ? "..." : "");
+
+        const { data: convData, error: convError } = await supabase
+          .from("conversations")
+          .insert({
+            user_id: userId,
+            title: title,
+            messages: finalMessages
+          })
+          .select()
+          .single();
+
+        if (convError) throw convError;
+
+        setCurrentConversationId(convData.id);
+        fetchConversations(userId);
+      } else {
+        // Update EXISTING conversation by replacing messages array
+        const { error: updateError } = await supabase
+          .from("conversations")
+          .update({
+            messages: finalMessages,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", conversationId);
+
+        if (updateError) throw updateError;
+      }
     } catch (error) {
       console.error("Chat Error:", error);
       const errorMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
-        content: "Sorry, I encountered an error while processing your request. Please make sure the backend server (python app.py) is running on port 5000.",
+        content: "Sorry, I encountered an error. Please ensure you have run the 'combine_tables.sql' script to update your database schema.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -151,17 +203,21 @@ export default function ChatPage() {
     }
   };
 
-  const clearChat = async () => {
+  const deleteConversation = async (e: MouseEvent, conversationId: string) => {
+    e.stopPropagation(); // Prevent loading the chat when clicking delete
     if (!userId) return;
 
-    if (confirm("Are you sure you want to clear your chat history?")) {
+    if (confirm("Delete this conversation permanently?")) {
       const { error } = await supabase
-        .from("chat_messages")
+        .from("conversations")
         .delete()
-        .eq("user_id", userId);
+        .eq("id", conversationId);
 
       if (!error) {
-        setMessages([]);
+        fetchConversations(userId);
+        if (currentConversationId === conversationId) {
+          startNewChat();
+        }
       }
     }
   };
@@ -184,14 +240,62 @@ export default function ChatPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" title="View History">
+                    <History className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                  <SheetHeader>
+                    <SheetTitle>History</SheetTitle>
+                    <SheetDescription>
+                      Your past conversations.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <ScrollArea className="h-[calc(100vh-100px)] mt-4">
+                    <div className="space-y-2 pr-4">
+                      {conversations.map((conv) => (
+                        <div
+                          key={conv.id}
+                          onClick={() => loadConversation(conv.id)}
+                          className={`group flex items-center justify-between rounded-lg p-3 text-sm cursor-pointer border transition-all ${currentConversationId === conv.id ? 'bg-primary/10 border-primary/20' : 'hover:bg-muted border-transparent'}`}
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <div className="flex flex-col overflow-hidden">
+                              <span className="truncate font-medium">{conv.title}</span>
+                              <span className="text-[10px] text-muted-foreground">{new Date(conv.created_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => deleteConversation(e, conv.id)}
+                          >
+                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                      {conversations.length === 0 && (
+                        <div className="text-center text-muted-foreground py-10 opacity-50">
+                          <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          No conversations yet.
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
+
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={clearChat}
-                title="Clear Chat History"
-                disabled={messages.length === 0}
+                variant="default"
+                size="sm"
+                onClick={startNewChat}
+                className="gap-2"
               >
-                <Trash2 className="h-5 w-5 text-muted-foreground hover:text-destructive" />
+                <span className="text-xs">New Chat</span>
               </Button>
               <Button variant="ghost" size="icon">
                 <Settings className="h-5 w-5" />

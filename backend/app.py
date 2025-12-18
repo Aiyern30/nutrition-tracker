@@ -166,7 +166,8 @@ def chat():
             3. Bold important keywords.
             4. Keep paragraphs short and concise.
             5. Avoid long blocks of text.
-            6. Use a professional yet friendly tone."""
+            6. Use a professional yet friendly tone.
+            7. DO NOT answer questions that are not related to nutrition."""
         }
         
         formatted_messages = [system_prompt] + messages
