@@ -12,58 +12,116 @@ client = OpenAI(
     base_url="https://aistudio.baidu.com/llm/lmapi/v3"
 )
 
-def analyze_image_with_ernie(image_base64, additional_context=""):
+def analyze_image_with_ernie(image_base64, additional_context="", lang="en"):
     """Analyze food image directly using ERNIE vision model"""
     try:
-        prompt = f"""You are a nutrition expert specializing in reading Chinese food packaging labels. Analyze this food image and extract EXACT nutritional information from the nutrition facts table.
+        if lang == "zh":
+            # Pure Chinese prompt
+            base_prompt = """你是一位专业的营养分析专家，擅长解读中国食品包装标签。请仔细分析这张食品图片，从营养成分表中提取准确的营养数据。"""
+            
+            if additional_context:
+                base_prompt += f"\n\n用户补充说明：{additional_context}"
+            
+            prompt = base_prompt + """
 
-{f"Additional Context: {additional_context}" if additional_context else ""}
+📋 分析步骤：
+1. 在包装上找到"营养成分表"区域
+2. 定位"每100克"或"每份"的标注
+3. 精确提取以下营养成分的数值：
+   • 能量（千焦kJ）→ 需换算为千卡kcal（除以4.184）
+   • 蛋白质（克）
+   • 脂肪（克）
+   • 碳水化合物（克）
+   • 钠（毫克）
+   • 膳食纤维（克，如有标注）
+   • 糖（克，如有标注）
 
-CRITICAL INSTRUCTIONS:
-1. Look for "营养成分表" (Nutrition Facts Table) on the package
-2. Find values for "每100克" (per 100g) or "每份" (per serving)
-3. Extract EXACT numbers from these fields:
-   - 能量 (Energy) - convert kJ to kcal (divide by 4.184)
-   - 蛋白质 (Protein) in grams
-   - 脂肪 (Fat) in grams
-   - 碳水化合物 (Carbohydrates) in grams
-   - 钠 (Sodium) in mg
-   - 膳食纤维 (Dietary Fiber) in grams if present
-   - 糖 (Sugar) in grams if present
+4. 识别产品信息：
+   • 产品中文名称
+   • 食品类别（调味料/零食/饮料/主食等）
+   • 包装上的所有可见文字
 
-4. Also identify:
-   - Product name (translate to English)
-   - Product category
-   - Serving size information
-   - All visible text on packaging
+📤 输出要求：
+请严格按照以下JSON格式返回，所有字段必须用中文填写：
 
-Provide a JSON response with this EXACT structure:
-{{
-  "name": "Product name in English (e.g., Green Sichuan Pepper Pickled Fish Seasoning)",
-  "category": "Food category (Sauce/Snack/Beverage/Seasoning/etc.)",
-  "calories": integer (kcal - converted from 能量/kJ value),
-  "protein": integer (grams - from 蛋白质 value),
-  "carbs": integer (grams - from 碳水化合物 value),
-  "fats": integer (grams - from 脂肪 value),
-  "fiber": integer (grams - from 膳食纤维, use 0 if not listed),
-  "sugar": integer (grams - from 糖, use 0 if not listed),
-  "sodium": integer (mg - from 钠 value),
-  "serving_size": "per 100g or actual serving size mentioned",
+{
+  "name": "产品完整中文名称",
+  "category": "食品类别",
+  "calories": 整数（千卡，从能量字段换算），
+  "protein": 整数（克），
+  "carbs": 整数（克），
+  "fats": 整数（克），
+  "fiber": 整数（克，无标注则填0），
+  "sugar": 整数（克，无标注则填0），
+  "sodium": 整数（毫克），
+  "serving_size": "每100克 或 实际标注的份量",
+  "confidence": "高/中/低",
+  "benefits": ["健康益处1", "健康益处2", "健康益处3"],
+  "considerations": ["注意事项1", "注意事项2"],
+  "explanation": "你的分析依据和计算说明",
+  "detected_text": "包装上所有可见的中文文字"
+}
+
+⚠️ 重要规则：
+• 必须从营养成分表中读取数值，不可估算
+• 能量单位如为千焦（kJ），必须换算为千卡（kcal = kJ ÷ 4.184）
+• 所有数值四舍五入为整数
+• 如果营养成分表中没有膳食纤维或糖的数据，填写0
+• 只输出JSON格式，不要添加任何其他文字或符号"""
+
+        else:
+            # Pure English prompt
+            base_prompt = """You are a professional nutrition analysis expert specializing in reading Chinese food packaging labels. Carefully analyze this food image and extract accurate nutritional data from the nutrition facts table."""
+            
+            if additional_context:
+                base_prompt += f"\n\nUser Context: {additional_context}"
+            
+            prompt = base_prompt + """
+
+📋 Analysis Steps:
+1. Locate the "营养成分表" (Nutrition Facts Table) on the package
+2. Find the section marked "每100克" (per 100g) or "每份" (per serving)
+3. Extract exact values for these nutritional components:
+   • 能量 (Energy in kJ) → Convert to kcal by dividing by 4.184
+   • 蛋白质 (Protein in grams)
+   • 脂肪 (Fat in grams)
+   • 碳水化合物 (Carbohydrates in grams)
+   • 钠 (Sodium in mg)
+   • 膳食纤维 (Dietary Fiber in grams, if listed)
+   • 糖 (Sugar in grams, if listed)
+
+4. Identify product information:
+   • Product name (translate to English)
+   • Food category
+   • All visible text on the packaging
+
+📤 Output Format:
+Provide your response in this exact JSON structure:
+
+{
+  "name": "Product name in English",
+  "category": "Food category (Seasoning/Snack/Beverage/Meal/etc.)",
+  "calories": integer (kcal - converted from 能量/kJ),
+  "protein": integer (grams from 蛋白质),
+  "carbs": integer (grams from 碳水化合物),
+  "fats": integer (grams from 脂肪),
+  "fiber": integer (grams from 膳食纤维, use 0 if not listed),
+  "sugar": integer (grams from 糖, use 0 if not listed),
+  "sodium": integer (mg from 钠),
+  "serving_size": "per 100g or the actual serving size stated",
   "confidence": "high/medium/low",
   "benefits": ["health benefit 1", "health benefit 2", "health benefit 3"],
   "considerations": ["dietary consideration 1", "consideration 2"],
-  "explanation": "Summary of what you see and how you calculated the values",
+  "explanation": "Your analysis rationale and calculation details",
   "detected_text": "All Chinese text visible on the packaging"
-}}
+}
 
-IMPORTANT RULES:
-- ALWAYS extract values from the 营养成分表 (nutrition table) if visible
-- If energy is in kJ, convert to kcal by dividing by 4.184
-- Round all numbers to nearest integer
-- If per 100g is shown, mention that in serving_size
-- If fiber/sugar not listed, use 0
-- Be PRECISE with numbers from the table
-- Respond ONLY with valid JSON, no other text"""
+⚠️ Critical Rules:
+• Extract values ONLY from the nutrition facts table, do not estimate
+• If energy is in kJ (千焦), convert to kcal by dividing by 4.184
+• Round all numerical values to the nearest integer
+• If fiber or sugar is not listed in the table, use 0
+• Output ONLY valid JSON with no additional text or formatting"""
 
         messages = [
             {
@@ -111,15 +169,44 @@ IMPORTANT RULES:
     except Exception as e:
         raise Exception(f"ERNIE Vision Analysis Error: {str(e)}")
 
-def analyze_text_with_ernie(description):
+def analyze_text_with_ernie(description, lang="en"):
     """Analyze food description using ERNIE text model"""
     try:
-        full_prompt = f"""Analyze the following food description and provide nutritional information.
+        if lang == "zh":
+            prompt = f"""你是一位专业的营养分析专家。请根据以下食物描述，提供详细的营养信息估算。
 
-Food Description:
+📝 食物描述：
 {description}
 
-Provide a JSON response with the following structure:
+📤 请严格按照以下JSON格式返回：
+
+{{
+  "name": "食物名称",
+  "category": "食品类别",
+  "calories": 整数（每份千卡）,
+  "protein": 整数（每份克）,
+  "carbs": 整数（每份克）,
+  "fats": 整数（每份克）,
+  "fiber": 整数（每份克）,
+  "sugar": 整数（每份克）,
+  "sodium": 整数（每份毫克）,
+  "serving_size": "份量描述",
+  "confidence": "高/中/低",
+  "benefits": ["健康益处1", "健康益处2", "健康益处3"],
+  "considerations": ["注意事项1", "注意事项2"],
+  "explanation": "营养分析的依据和说明"
+}}
+
+⚠️ 只输出JSON格式，不要添加任何其他内容。"""
+
+        else:
+            prompt = f"""You are a professional nutrition analysis expert. Based on the following food description, provide detailed nutritional information estimates.
+
+📝 Food Description:
+{description}
+
+📤 Provide your response in this exact JSON format:
+
 {{
   "name": "Food name",
   "category": "Food category",
@@ -134,13 +221,13 @@ Provide a JSON response with the following structure:
   "confidence": "high/medium/low",
   "benefits": ["health benefit 1", "health benefit 2", "health benefit 3"],
   "considerations": ["dietary consideration 1", "consideration 2"],
-  "explanation": "Brief explanation of the nutritional analysis"
+  "explanation": "Brief rationale for the nutritional analysis"
 }}
 
-Respond ONLY with valid JSON, no other text."""
+⚠️ Output ONLY valid JSON with no additional text."""
 
         messages = [
-            {"role": "user", "content": full_prompt}
+            {"role": "user", "content": prompt}
         ]
         
         response = client.chat.completions.create(
@@ -169,7 +256,7 @@ Respond ONLY with valid JSON, no other text."""
         raise Exception(f"JSON parsing error: {str(e)}")
     except Exception as e:
         raise Exception(f"ERNIE Analysis Error: {str(e)}")
-
+    
 @app.route('/analyze', methods=['POST'])
 def analyze_food():
     """Analyze food from image or description using ERNIE"""

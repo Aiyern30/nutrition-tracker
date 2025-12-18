@@ -56,7 +56,7 @@ interface OCRResult {
 }
 
 export default function AnalyzerPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [description, setDescription] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<NutritionResult | null>(null);
@@ -109,6 +109,7 @@ export default function AnalyzerPage() {
         body: JSON.stringify({
           image: selectedImage,
           description: description,
+          lang: language, // Pass language context to backend
         }),
       });
 
@@ -150,6 +151,7 @@ export default function AnalyzerPage() {
         },
         body: JSON.stringify({
           description: description,
+          lang: language,
         }),
       });
 
