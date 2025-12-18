@@ -10,7 +10,7 @@ type Translations = typeof enTranslations;
 
 interface LanguageContextType {
   language: Language;
-  setLanguage: (lang: Language) => void;
+  setLanguage: (lang: Language) => Promise<void>;
   t: Translations;
 }
 
@@ -54,24 +54,37 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [supabase]);
 
   const setLanguage = async (lang: Language) => {
-    setLanguageState(lang);
-
-    // Save to profile
     try {
+      // Update state first for immediate UI response
+      setLanguageState(lang);
+
+      // Save to profile in database
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error("No user found, cannot save language preference");
+        return;
+      }
 
-      await supabase
+      const { error } = await supabase
         .from("profiles")
         .update({
           language: lang,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
+
+      if (error) {
+        console.error("Error saving language to database:", error);
+        throw error;
+      }
+
+      console.log("Language successfully updated to:", lang);
     } catch (error) {
-      console.error("Error saving language:", error);
+      console.error("Error in setLanguage:", error);
+      // Optionally revert state if database update fails
+      // setLanguageState(previous language);
     }
   };
 

@@ -13,6 +13,7 @@ import {
   Apple,
   LogOut,
   ChevronDown,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -50,7 +51,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { setTheme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const supabase = createClient();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -186,6 +187,17 @@ export function AppSidebar() {
     }
   };
 
+  const handleLanguageToggle = async () => {
+    try {
+      const newLanguage = language === "en" ? "zh" : "en";
+      
+      // Just call setLanguage from context - it handles database update
+      await setLanguage(newLanguage);
+    } catch (error) {
+      console.error("Error toggling language:", error);
+    }
+  };
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border">
@@ -287,6 +299,19 @@ export function AppSidebar() {
                   <User className="mr-2 h-4 w-4" />
                   <span>{t.sidebar.profileSettings}</span>
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLanguageToggle}
+                className="cursor-pointer"
+              >
+                <Globe className="mr-2 h-4 w-4" />
+                <span className="flex items-center justify-between w-full">
+                  <span>Language</span>
+                  <span className="text-xs text-muted-foreground">
+                    {language === "en" ? "EN" : "中文"}
+                  </span>
+                </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
