@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
@@ -66,9 +66,11 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  console.log("Profile data:", profile);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     display_name: "",
@@ -101,6 +103,7 @@ export default function ProfilePage() {
       }
 
       setUserEmail(user.email || "");
+      setUserAvatarUrl(user.user_metadata?.avatar_url || null);
 
       const { data, error } = await supabase
         .from("profiles")
@@ -329,8 +332,19 @@ export default function ProfilePage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-6">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <User className="h-12 w-12" />
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary overflow-hidden">
+                  {userAvatarUrl ? (
+                    <Image
+                      alt=""
+                      width={96}
+                      height={96}
+                      src={userAvatarUrl}
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    // Fallback to icon
+                    <User className="h-12 w-12" />
+                  )}
                 </div>
                 <div className="flex-1 space-y-2">
                   <h2 className="text-2xl font-bold">
@@ -339,12 +353,12 @@ export default function ProfilePage() {
                   {userEmail && (
                     <p className="text-sm text-muted-foreground">{userEmail}</p>
                   )}
-                  <div className="flex items-center gap-2">
+                  {/* <div className="flex items-center gap-2">
                     <Badge>Free Plan</Badge>
                     <Badge variant="secondary">
                       {profile?.current_streak || 0} day streak
                     </Badge>
-                  </div>
+                  </div> */}
                   <p className="text-sm text-muted-foreground">
                     Member since{" "}
                     {profile?.created_at
