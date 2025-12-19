@@ -117,7 +117,7 @@ export default function MealPlannerPage() {
     try {
       const dateStr = format(selectedDate, "yyyy-MM-dd");
 
-      const response = await fetch("http://127.0.0.1:5000/generate-meal-plan", {
+      const response = await fetch("/api/meal_planner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
