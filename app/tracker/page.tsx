@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   SidebarProvider,
@@ -35,7 +35,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +46,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 
 interface FoodEntry {
   id: string;
@@ -148,18 +146,23 @@ const AddFoodDialog = ({
   isOpen,
   onOpenChange,
 }: {
-  onAddFood: (food: AnalyzedFood | any, mealType: string, isManual: boolean) => void;
+  onAddFood: (
+    food: AnalyzedFood | any,
+    mealType: string,
+    isManual: boolean
+  ) => void;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }) => {
   const [analyzedFoods, setAnalyzedFoods] = useState<AnalyzedFood[]>([]);
   const [filteredFoods, setFilteredFoods] = useState<AnalyzedFood[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "favorites">("all");
   const [selectedMealType, setSelectedMealType] = useState<string>("breakfast");
   const [activeTab, setActiveTab] = useState<"analyzed" | "manual">("analyzed");
-  
+  const [error, setError] = useState<string | null>(null);
+
   // Manual entry form state
   const [manualFood, setManualFood] = useState({
     food_name: "",
@@ -176,39 +179,41 @@ const AddFoodDialog = ({
 
   const supabase = createClient();
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchAnalyzedFoods();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    filterFoods();
-  }, [searchQuery, filterType, analyzedFoods]);
-
-  const fetchAnalyzedFoods = async () => {
+  const fetchAnalyzedFoods = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      
+      if (!user) {
+        setError("Please log in to view analyzed foods");
+        setIsLoading(false);
+        return;
+      }
 
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from("analyzed_foods")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (fetchError) {
+        console.error("Fetch error:", fetchError);
+        throw fetchError;
+      }
+      
       setAnalyzedFoods(data || []);
     } catch (error) {
       console.error("Error fetching analyzed foods:", error);
+      setError("Failed to load foods. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase]);
 
-  const filterFoods = () => {
+  const filterFoods = useCallback(() => {
     let filtered = analyzedFoods;
 
     if (filterType === "favorites") {
@@ -225,7 +230,17 @@ const AddFoodDialog = ({
     }
 
     setFilteredFoods(filtered);
-  };
+  }, [analyzedFoods, filterType, searchQuery]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAnalyzedFoods();
+    }
+  }, [isOpen, fetchAnalyzedFoods]);
+
+  useEffect(() => {
+    filterFoods();
+  }, [filterFoods]);
 
   const handleAddAnalyzedFood = (food: AnalyzedFood) => {
     onAddFood(food, selectedMealType, false);
@@ -271,6 +286,7 @@ const AddFoodDialog = ({
     });
     setSearchQuery("");
     setActiveTab("analyzed");
+    setError(null);
   };
 
   return (
@@ -287,7 +303,10 @@ const AddFoodDialog = ({
           {/* Meal Type Selection */}
           <div className="space-y-2">
             <Label>Add to Meal</Label>
-            <Select value={selectedMealType} onValueChange={setSelectedMealType}>
+            <Select
+              value={selectedMealType}
+              onValueChange={setSelectedMealType}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -301,13 +320,20 @@ const AddFoodDialog = ({
           </div>
 
           {/* Tabs for Analyzed vs Manual */}
-          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="flex-1 flex flex-col">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v: any) => setActiveTab(v)}
+            className="flex-1 flex flex-col"
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="analyzed">Analyzed Foods</TabsTrigger>
               <TabsTrigger value="manual">Manual Entry</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="analyzed" className="flex-1 space-y-4 overflow-hidden flex flex-col">
+            <TabsContent
+              value="analyzed"
+              className="flex-1 space-y-4 overflow-hidden flex flex-col"
+            >
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -322,7 +348,7 @@ const AddFoodDialog = ({
                   value={filterType}
                   onValueChange={(v: "all" | "favorites") => setFilterType(v)}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-35">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -331,6 +357,12 @@ const AddFoodDialog = ({
                   </SelectContent>
                 </Select>
               </div>
+
+              {error && (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
 
               <div className="space-y-2 flex-1 overflow-y-auto">
                 {isLoading ? (
@@ -341,7 +373,9 @@ const AddFoodDialog = ({
                   <div className="text-center py-8 text-muted-foreground">
                     <p>No foods found</p>
                     <p className="text-sm">
-                      Try analyzing foods in the Analyzer page first
+                      {analyzedFoods.length === 0
+                        ? "Try analyzing foods in the Analyzer page first"
+                        : "No foods match your search"}
                     </p>
                   </div>
                 ) : (
@@ -376,7 +410,10 @@ const AddFoodDialog = ({
                             </p>
                           )}
                         </div>
-                        <Button size="sm" onClick={() => handleAddAnalyzedFood(food)}>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAddAnalyzedFood(food)}
+                        >
                           <Plus className="h-4 w-4 mr-1" />
                           Add
                         </Button>
@@ -384,6 +421,7 @@ const AddFoodDialog = ({
                     </div>
                   ))
                 )}
+
               </div>
             </TabsContent>
 
@@ -395,7 +433,12 @@ const AddFoodDialog = ({
                     id="food_name"
                     placeholder="e.g., Grilled Chicken Breast"
                     value={manualFood.food_name}
-                    onChange={(e) => setManualFood({ ...manualFood, food_name: e.target.value })}
+                    onChange={(e) =>
+                      setManualFood({
+                        ...manualFood,
+                        food_name: e.target.value,
+                      })
+                    }
                   />
                 </div>
 
@@ -406,7 +449,12 @@ const AddFoodDialog = ({
                       id="food_category"
                       placeholder="e.g., Protein"
                       value={manualFood.food_category}
-                      onChange={(e) => setManualFood({ ...manualFood, food_category: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({
+                          ...manualFood,
+                          food_category: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -415,7 +463,12 @@ const AddFoodDialog = ({
                       id="serving_size"
                       placeholder="e.g., 100g"
                       value={manualFood.serving_size}
-                      onChange={(e) => setManualFood({ ...manualFood, serving_size: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({
+                          ...manualFood,
+                          serving_size: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -428,7 +481,12 @@ const AddFoodDialog = ({
                       type="number"
                       placeholder="0"
                       value={manualFood.calories}
-                      onChange={(e) => setManualFood({ ...manualFood, calories: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({
+                          ...manualFood,
+                          calories: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -438,7 +496,12 @@ const AddFoodDialog = ({
                       type="number"
                       placeholder="0"
                       value={manualFood.protein}
-                      onChange={(e) => setManualFood({ ...manualFood, protein: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({
+                          ...manualFood,
+                          protein: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -451,7 +514,9 @@ const AddFoodDialog = ({
                       type="number"
                       placeholder="0"
                       value={manualFood.carbs}
-                      onChange={(e) => setManualFood({ ...manualFood, carbs: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, carbs: e.target.value })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -461,7 +526,9 @@ const AddFoodDialog = ({
                       type="number"
                       placeholder="0"
                       value={manualFood.fats}
-                      onChange={(e) => setManualFood({ ...manualFood, fats: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, fats: e.target.value })
+                      }
                     />
                   </div>
                 </div>
@@ -474,7 +541,9 @@ const AddFoodDialog = ({
                       type="number"
                       placeholder="0"
                       value={manualFood.fiber}
-                      onChange={(e) => setManualFood({ ...manualFood, fiber: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, fiber: e.target.value })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -484,7 +553,9 @@ const AddFoodDialog = ({
                       type="number"
                       placeholder="0"
                       value={manualFood.sugar}
-                      onChange={(e) => setManualFood({ ...manualFood, sugar: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, sugar: e.target.value })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -494,18 +565,22 @@ const AddFoodDialog = ({
                       type="number"
                       placeholder="0"
                       value={manualFood.sodium}
-                      onChange={(e) => setManualFood({ ...manualFood, sodium: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, sodium: e.target.value })
+                      }
                     />
                   </div>
                 </div>
 
-                <Button 
+                <Button
                   onClick={handleAddManualFood}
                   disabled={!manualFood.food_name || !manualFood.calories}
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add to {selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}
+                  Add to{" "}
+                  {selectedMealType.charAt(0).toUpperCase() +
+                    selectedMealType.slice(1)}
                 </Button>
               </div>
             </TabsContent>
@@ -519,15 +594,10 @@ const AddFoodDialog = ({
 export default function TrackerPage() {
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isLoading, setIsLoading] = useState(true);
   const [isAddFoodOpen, setIsAddFoodOpen] = useState(false);
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchFoodLogs();
-  }, [selectedDate]);
-
-  const fetchFoodLogs = async () => {
+  const fetchFoodLogs = useCallback(async () => {
     try {
       const {
         data: { user },
@@ -563,10 +633,12 @@ export default function TrackerPage() {
       setEntries(mappedEntries);
     } catch (error) {
       console.error("Error fetching food logs:", error);
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [supabase, selectedDate]);
+
+  useEffect(() => {
+    fetchFoodLogs();
+  }, [fetchFoodLogs]);
 
   const totalCalories = entries.reduce((sum, entry) => sum + entry.calories, 0);
   const totalProtein = entries.reduce((sum, entry) => sum + entry.protein, 0);
@@ -591,7 +663,11 @@ export default function TrackerPage() {
     }
   };
 
-  const handleAddFoodToMeal = async (food: AnalyzedFood | any, mealType: string, isManual: boolean) => {
+  const handleAddFoodToMeal = async (
+    food: AnalyzedFood | any,
+    mealType: string,
+    isManual: boolean
+  ) => {
     try {
       const {
         data: { user },
@@ -635,7 +711,11 @@ export default function TrackerPage() {
           fiber: data.fiber || 0,
           sugar: data.sugar || 0,
           sodium: data.sodium || 0,
-          mealType: data.meal_type as "breakfast" | "lunch" | "dinner" | "snack",
+          mealType: data.meal_type as
+            | "breakfast"
+            | "lunch"
+            | "dinner"
+            | "snack",
           analyzedFoodId: data.analyzed_food_id,
         };
         setEntries([...entries, newEntry]);
