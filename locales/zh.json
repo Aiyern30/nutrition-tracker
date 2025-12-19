@@ -234,5 +234,66 @@
     "delete": "删除",
     "edit": "编辑",
     "close": "关闭"
+  },
+  "tracker": {
+    "title": "饮食追踪器",
+    "subtitle": "记录和追踪您的每日膳食",
+    "addFood": "添加食物",
+    "refresh": "刷新",
+    "dateNavigation": {
+      "today": "今天"
+    },
+    "summary": {
+      "title": "每日摘要",
+      "subtitle": "您今天的营养进度",
+      "noMeals": "尚未记录任何餐食",
+      "calories": "卡路里",
+      "protein": "蛋白质",
+      "carbs": "碳水化合物",
+      "fats": "脂肪"
+    },
+    "meals": {
+      "breakfast": "早餐",
+      "lunch": "午餐",
+      "dinner": "晚餐",
+      "snacks": "零食",
+      "calories": "卡路里"
+    },
+    "addFoodDialog": {
+      "title": "添加食物到追踪器",
+      "subtitle": "从已分析的食物中选择或手动添加",
+      "addToMeal": "添加到",
+      "analyzedFoods": "已分析的食物",
+      "manualEntry": "手动输入",
+      "searchPlaceholder": "按名称或类别搜索...",
+      "allFoods": "所有食物",
+      "favorites": "收藏夹",
+      "showing": "显示",
+      "of": "共",
+      "food": "种食物",
+      "foods": "种食物",
+      "noFoodsFound": "未找到食物",
+      "noFoodsHint": "请先在分析器页面分析食物",
+      "noMatch": "没有符合您搜索条件的食物",
+      "add": "添加",
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第",
+      "foodName": "食物名称",
+      "foodNamePlaceholder": "例如：烤鸡胸肉",
+      "category": "类别",
+      "categoryPlaceholder": "例如：蛋白质",
+      "servingSize": "份量",
+      "servingSizePlaceholder": "例如：100克",
+      "calories": "卡路里",
+      "protein": "蛋白质（克）",
+      "carbs": "碳水化合物（克）",
+      "fats": "脂肪（克）",
+      "fiber": "膳食纤维（克）",
+      "sugar": "糖（克）",
+      "sodium": "钠（毫克）",
+      "required": "*",
+      "addToMealButton": "添加到"
+    }
   }
 }

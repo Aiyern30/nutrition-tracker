@@ -234,5 +234,66 @@
     "delete": "Delete",
     "edit": "Edit",
     "close": "Close"
+  },
+  "tracker": {
+    "title": "Diet Tracker",
+    "subtitle": "Log and track your daily meals",
+    "addFood": "Add Food",
+    "refresh": "Refresh",
+    "dateNavigation": {
+      "today": "Today"
+    },
+    "summary": {
+      "title": "Daily Summary",
+      "subtitle": "Your nutrition progress today",
+      "noMeals": "No meals logged yet",
+      "calories": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fats": "Fats"
+    },
+    "meals": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snacks": "Snacks",
+      "calories": "calories"
+    },
+    "addFoodDialog": {
+      "title": "Add Food to Tracker",
+      "subtitle": "Select from analyzed foods or add manually",
+      "addToMeal": "Add to Meal",
+      "analyzedFoods": "Analyzed Foods",
+      "manualEntry": "Manual Entry",
+      "searchPlaceholder": "Search by name or category...",
+      "allFoods": "All Foods",
+      "favorites": "Favorites",
+      "showing": "Showing",
+      "of": "of",
+      "food": "food",
+      "foods": "foods",
+      "noFoodsFound": "No foods found",
+      "noFoodsHint": "Try analyzing foods in the Analyzer page first",
+      "noMatch": "No foods match your search criteria",
+      "add": "Add",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page",
+      "foodName": "Food Name",
+      "foodNamePlaceholder": "e.g., Grilled Chicken Breast",
+      "category": "Category",
+      "categoryPlaceholder": "e.g., Protein",
+      "servingSize": "Serving Size",
+      "servingSizePlaceholder": "e.g., 100g",
+      "calories": "Calories",
+      "protein": "Protein (g)",
+      "carbs": "Carbs (g)",
+      "fats": "Fats (g)",
+      "fiber": "Fiber (g)",
+      "sugar": "Sugar (g)",
+      "sodium": "Sodium (mg)",
+      "required": "*",
+      "addToMealButton": "Add to"
+    }
   }
 }

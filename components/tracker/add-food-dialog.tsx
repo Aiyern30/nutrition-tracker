@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/contexts/language-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -65,6 +66,7 @@ export function AddFoodDialog({
   isOpen,
   onOpenChange,
 }: AddFoodDialogProps) {
+  const { t } = useLanguage();
   const [analyzedFoods, setAnalyzedFoods] = useState<AnalyzedFood[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -234,15 +236,15 @@ export function AddFoodDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Add Food to Tracker</DialogTitle>
+          <DialogTitle>{t.tracker.addFoodDialog.title}</DialogTitle>
           <DialogDescription>
-            Select from analyzed foods or add manually
+            {t.tracker.addFoodDialog.subtitle}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 flex-1 overflow-hidden flex flex-col min-h-0">
           <div className="space-y-2 shrink-0">
-            <Label>Add to Meal</Label>
+            <Label>{t.tracker.addFoodDialog.addToMeal}</Label>
             <Select
               value={selectedMealType}
               onValueChange={setSelectedMealType}
@@ -251,10 +253,12 @@ export function AddFoodDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="breakfast">Breakfast</SelectItem>
-                <SelectItem value="lunch">Lunch</SelectItem>
-                <SelectItem value="dinner">Dinner</SelectItem>
-                <SelectItem value="snack">Snacks</SelectItem>
+                <SelectItem value="breakfast">
+                  {t.tracker.meals.breakfast}
+                </SelectItem>
+                <SelectItem value="lunch">{t.tracker.meals.lunch}</SelectItem>
+                <SelectItem value="dinner">{t.tracker.meals.dinner}</SelectItem>
+                <SelectItem value="snack">{t.tracker.meals.snacks}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -265,8 +269,12 @@ export function AddFoodDialog({
             className="flex-1 flex flex-col min-h-0"
           >
             <TabsList className="grid w-full grid-cols-2 shrink-0">
-              <TabsTrigger value="analyzed">Analyzed Foods</TabsTrigger>
-              <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+              <TabsTrigger value="analyzed">
+                {t.tracker.addFoodDialog.analyzedFoods}
+              </TabsTrigger>
+              <TabsTrigger value="manual">
+                {t.tracker.addFoodDialog.manualEntry}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent
@@ -277,7 +285,7 @@ export function AddFoodDialog({
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name or category..."
+                    placeholder={t.tracker.addFoodDialog.searchPlaceholder}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
@@ -294,8 +302,12 @@ export function AddFoodDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Foods</SelectItem>
-                    <SelectItem value="favorites">Favorites</SelectItem>
+                    <SelectItem value="all">
+                      {t.tracker.addFoodDialog.allFoods}
+                    </SelectItem>
+                    <SelectItem value="favorites">
+                      {t.tracker.addFoodDialog.favorites}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -303,10 +315,13 @@ export function AddFoodDialog({
               {/* Results count */}
               {!isLoading && totalCount > 0 && (
                 <div className="text-xs text-muted-foreground shrink-0">
-                  Showing{" "}
+                  {t.tracker.addFoodDialog.showing}{" "}
                   {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, totalCount)}
-                  -{Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{" "}
-                  {totalCount} {totalCount === 1 ? "food" : "foods"}
+                  -{Math.min(currentPage * ITEMS_PER_PAGE, totalCount)}{" "}
+                  {t.tracker.addFoodDialog.of} {totalCount}{" "}
+                  {totalCount === 1
+                    ? t.tracker.addFoodDialog.food
+                    : t.tracker.addFoodDialog.foods}
                 </div>
               )}
 
@@ -325,11 +340,13 @@ export function AddFoodDialog({
                     </div>
                   ) : analyzedFoods.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground">
-                      <p className="font-medium">No foods found</p>
+                      <p className="font-medium">
+                        {t.tracker.addFoodDialog.noFoodsFound}
+                      </p>
                       <p className="text-sm mt-1">
                         {totalCount === 0
-                          ? "Try analyzing foods in the Analyzer page first"
-                          : "No foods match your search criteria"}
+                          ? t.tracker.addFoodDialog.noFoodsHint
+                          : t.tracker.addFoodDialog.noMatch}
                       </p>
                     </div>
                   ) : (
@@ -360,7 +377,7 @@ export function AddFoodDialog({
                         <div className="flex items-center gap-3 shrink-0">
                           <div className="text-right">
                             <Badge variant="secondary">
-                              {food.calories} cal
+                              {food.calories} {t.tracker.meals.calories}
                             </Badge>
                             {food.serving_size && (
                               <p className="text-xs text-muted-foreground mt-1">
@@ -373,7 +390,7 @@ export function AddFoodDialog({
                             onClick={() => handleAddAnalyzedFood(food)}
                           >
                             <Plus className="h-4 w-4 mr-1" />
-                            Add
+                            {t.tracker.addFoodDialog.add}
                           </Button>
                         </div>
                       </div>
@@ -392,10 +409,11 @@ export function AddFoodDialog({
                     disabled={currentPage === 1 || isLoading}
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
+                    {t.tracker.addFoodDialog.previous}
                   </Button>
                   <div className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
+                    {t.tracker.addFoodDialog.page} {currentPage}{" "}
+                    {t.tracker.addFoodDialog.of} {totalPages}
                   </div>
                   <Button
                     variant="outline"
@@ -403,7 +421,7 @@ export function AddFoodDialog({
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage >= totalPages || isLoading}
                   >
-                    Next
+                    {t.tracker.addFoodDialog.next}
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
@@ -413,10 +431,13 @@ export function AddFoodDialog({
             <TabsContent value="manual" className="flex-1 overflow-y-auto mt-3">
               <div className="grid gap-4 pb-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="food_name">Food Name *</Label>
+                  <Label htmlFor="food_name">
+                    {t.tracker.addFoodDialog.foodName}{" "}
+                    {t.tracker.addFoodDialog.required}
+                  </Label>
                   <Input
                     id="food_name"
-                    placeholder="e.g., Grilled Chicken Breast"
+                    placeholder={t.tracker.addFoodDialog.foodNamePlaceholder}
                     value={manualFood.food_name}
                     onChange={(e) =>
                       setManualFood({
@@ -429,10 +450,12 @@ export function AddFoodDialog({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="food_category">Category</Label>
+                    <Label htmlFor="food_category">
+                      {t.tracker.addFoodDialog.category}
+                    </Label>
                     <Input
                       id="food_category"
-                      placeholder="e.g., Protein"
+                      placeholder={t.tracker.addFoodDialog.categoryPlaceholder}
                       value={manualFood.food_category}
                       onChange={(e) =>
                         setManualFood({
@@ -443,10 +466,14 @@ export function AddFoodDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="serving_size">Serving Size</Label>
+                    <Label htmlFor="serving_size">
+                      {t.tracker.addFoodDialog.servingSize}
+                    </Label>
                     <Input
                       id="serving_size"
-                      placeholder="e.g., 100g"
+                      placeholder={
+                        t.tracker.addFoodDialog.servingSizePlaceholder
+                      }
                       value={manualFood.serving_size}
                       onChange={(e) =>
                         setManualFood({
@@ -460,7 +487,10 @@ export function AddFoodDialog({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="calories">Calories *</Label>
+                    <Label htmlFor="calories">
+                      {t.tracker.addFoodDialog.calories}{" "}
+                      {t.tracker.addFoodDialog.required}
+                    </Label>
                     <Input
                       id="calories"
                       type="number"
@@ -475,7 +505,9 @@ export function AddFoodDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="protein">Protein (g)</Label>
+                    <Label htmlFor="protein">
+                      {t.tracker.addFoodDialog.protein}
+                    </Label>
                     <Input
                       id="protein"
                       type="number"
@@ -493,7 +525,9 @@ export function AddFoodDialog({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="carbs">Carbs (g)</Label>
+                    <Label htmlFor="carbs">
+                      {t.tracker.addFoodDialog.carbs}
+                    </Label>
                     <Input
                       id="carbs"
                       type="number"
@@ -505,7 +539,7 @@ export function AddFoodDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="fats">Fats (g)</Label>
+                    <Label htmlFor="fats">{t.tracker.addFoodDialog.fats}</Label>
                     <Input
                       id="fats"
                       type="number"
@@ -520,7 +554,9 @@ export function AddFoodDialog({
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="fiber">Fiber (g)</Label>
+                    <Label htmlFor="fiber">
+                      {t.tracker.addFoodDialog.fiber}
+                    </Label>
                     <Input
                       id="fiber"
                       type="number"
@@ -532,7 +568,9 @@ export function AddFoodDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="sugar">Sugar (g)</Label>
+                    <Label htmlFor="sugar">
+                      {t.tracker.addFoodDialog.sugar}
+                    </Label>
                     <Input
                       id="sugar"
                       type="number"
@@ -544,7 +582,9 @@ export function AddFoodDialog({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="sodium">Sodium (mg)</Label>
+                    <Label htmlFor="sodium">
+                      {t.tracker.addFoodDialog.sodium}
+                    </Label>
                     <Input
                       id="sodium"
                       type="number"
@@ -563,9 +603,12 @@ export function AddFoodDialog({
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add to{" "}
-                  {selectedMealType.charAt(0).toUpperCase() +
-                    selectedMealType.slice(1)}
+                  {t.tracker.addFoodDialog.addToMealButton}{" "}
+                  {selectedMealType === "breakfast" &&
+                    t.tracker.meals.breakfast}
+                  {selectedMealType === "lunch" && t.tracker.meals.lunch}
+                  {selectedMealType === "dinner" && t.tracker.meals.dinner}
+                  {selectedMealType === "snack" && t.tracker.meals.snacks}
                 </Button>
               </div>
             </TabsContent>

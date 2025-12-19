@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/contexts/language-context";
 import {
   SidebarProvider,
   SidebarInset,
@@ -56,6 +57,7 @@ interface DailySummary {
 }
 
 export default function TrackerPage() {
+  const { t } = useLanguage();
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isAddFoodOpen, setIsAddFoodOpen] = useState(false);
@@ -265,23 +267,22 @@ export default function TrackerPage() {
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">Diet Tracker</h1>
+              <h1 className="text-xl font-semibold">{t.tracker.title}</h1>
               <p className="text-sm text-muted-foreground">
-                Log and track your daily meals
+                {t.tracker.subtitle}
               </p>
             </div>
             <div className="flex gap-2">
-              {/* Temporary debug button */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={manualRefreshSummary}
               >
-                🔄 Refresh
+                🔄 {t.tracker.refresh}
               </Button>
               <Button onClick={() => setIsAddFoodOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Add Food
+                {t.tracker.addFood}
               </Button>
             </div>
           </div>
@@ -307,25 +308,25 @@ export default function TrackerPage() {
           <div className="space-y-4">
             <MealSection
               mealType="breakfast"
-              title="Breakfast"
+              title={t.tracker.meals.breakfast}
               mealEntries={getEntriesByMealType("breakfast")}
               onDeleteEntry={handleDeleteEntry}
             />
             <MealSection
               mealType="lunch"
-              title="Lunch"
+              title={t.tracker.meals.lunch}
               mealEntries={getEntriesByMealType("lunch")}
               onDeleteEntry={handleDeleteEntry}
             />
             <MealSection
               mealType="dinner"
-              title="Dinner"
+              title={t.tracker.meals.dinner}
               mealEntries={getEntriesByMealType("dinner")}
               onDeleteEntry={handleDeleteEntry}
             />
             <MealSection
               mealType="snack"
-              title="Snacks"
+              title={t.tracker.meals.snacks}
               mealEntries={getEntriesByMealType("snack")}
               onDeleteEntry={handleDeleteEntry}
             />

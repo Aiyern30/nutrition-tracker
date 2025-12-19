@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/contexts/language-context";
 import {
   Card,
   CardContent,
@@ -37,6 +38,7 @@ export function MealSection({
   mealEntries,
   onDeleteEntry,
 }: MealSectionProps) {
+  const { t } = useLanguage();
   const mealCalories = mealEntries.reduce((sum, e) => sum + e.calories, 0);
 
   return (
@@ -46,7 +48,9 @@ export function MealSection({
           <div>
             <CardTitle className="text-lg">{title}</CardTitle>
             {mealCalories > 0 && (
-              <CardDescription>{mealCalories} calories</CardDescription>
+              <CardDescription>
+                {mealCalories} {t.tracker.meals.calories}
+              </CardDescription>
             )}
           </div>
         </div>

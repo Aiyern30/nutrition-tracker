@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/contexts/language-context";
 import {
   Card,
   CardContent,
@@ -30,17 +31,19 @@ export function NutritionSummary({
   carbsGoal,
   fatsGoal,
 }: NutritionSummaryProps) {
+  const { t } = useLanguage();
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Daily Summary</CardTitle>
-            <CardDescription>Your nutrition progress today</CardDescription>
+            <CardTitle>{t.tracker.summary.title}</CardTitle>
+            <CardDescription>{t.tracker.summary.subtitle}</CardDescription>
           </div>
           {totalCalories === 0 && (
             <Badge variant="outline" className="text-xs">
-              No meals logged yet
+              {t.tracker.summary.noMeals}
             </Badge>
           )}
         </div>
@@ -49,7 +52,9 @@ export function NutritionSummary({
         <div className="grid gap-4 md:grid-cols-4">
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
-              <span className="text-sm text-muted-foreground">Calories</span>
+              <span className="text-sm text-muted-foreground">
+                {t.tracker.summary.calories}
+              </span>
               <span
                 className={`text-sm ${
                   totalCalories > calorieGoal
@@ -83,7 +88,9 @@ export function NutritionSummary({
 
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
-              <span className="text-sm text-muted-foreground">Protein</span>
+              <span className="text-sm text-muted-foreground">
+                {t.tracker.summary.protein}
+              </span>
               <span className="text-sm text-primary">
                 {totalProtein} / {proteinGoal}g
               </span>
@@ -103,7 +110,9 @@ export function NutritionSummary({
 
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
-              <span className="text-sm text-muted-foreground">Carbs</span>
+              <span className="text-sm text-muted-foreground">
+                {t.tracker.summary.carbs}
+              </span>
               <span className="text-sm text-primary">
                 {totalCarbs} / {carbsGoal}g
               </span>
@@ -120,7 +129,9 @@ export function NutritionSummary({
 
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
-              <span className="text-sm text-muted-foreground">Fats</span>
+              <span className="text-sm text-muted-foreground">
+                {t.tracker.summary.fats}
+              </span>
               <span className="text-sm text-chart-3">
                 {totalFats} / {fatsGoal}g
               </span>
