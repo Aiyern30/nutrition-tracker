@@ -57,8 +57,8 @@ interface AddFoodDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const ITEMS_PER_PAGE = 10;
-const SEARCH_DEBOUNCE_MS = 500;
+const ITEMS_PER_PAGE = 4; // Changed from 10 to 4 to show pagination with 5 items
+const SEARCH_DEBOUNCE_MS = 300; // Reduced from 500ms for faster response
 
 export function AddFoodDialog({
   onAddFood,
@@ -77,7 +77,6 @@ export function AddFoodDialog({
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
 
   const [manualFood, setManualFood] = useState({
     food_name: "",
@@ -119,14 +118,19 @@ export function AddFoodDialog({
         return;
       }
 
-      // Calculate pagination
+      // Calculate pagination - simpler calculation
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
+
+      console.log(`Fetching page ${currentPage}: from=${from}, to=${to}`);
 
       // Build query with server-side filtering
       let query = supabase
         .from("analyzed_foods")
-        .select("*", { count: "exact" })
+        .select(
+          "id, food_name, food_category, calories, protein, carbs, fats, fiber, sugar, sodium, serving_size, is_favorite, created_at",
+          { count: "exact" }
+        )
         .eq("user_id", user.id);
 
       // Apply favorite filter
@@ -134,10 +138,11 @@ export function AddFoodDialog({
         query = query.eq("is_favorite", true);
       }
 
-      // Apply search filter (server-side search on name and category)
+      // Apply search filter - use simpler OR condition
       if (debouncedSearch.trim()) {
+        const searchTerm = `%${debouncedSearch.trim()}%`;
         query = query.or(
-          `food_name.ilike.%${debouncedSearch}%,food_category.ilike.%${debouncedSearch}%`
+          `food_name.ilike.${searchTerm},food_category.ilike.${searchTerm}`
         );
       }
 
@@ -148,11 +153,15 @@ export function AddFoodDialog({
         count,
       } = await query.order("created_at", { ascending: false }).range(from, to);
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Supabase error:", fetchError);
+        throw fetchError;
+      }
+
+      console.log(`Fetched ${data?.length || 0} foods, total count: ${count}`);
 
       setAnalyzedFoods(data || []);
       setTotalCount(count || 0);
-      setHasMore((count || 0) > to + 1);
     } catch (error) {
       console.error("Error fetching analyzed foods:", error);
       setError("Failed to load foods. Please try again.");
@@ -172,6 +181,7 @@ export function AddFoodDialog({
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const showPagination = totalPages > 1;
 
   const handleAddAnalyzedFood = (food: AnalyzedFood) => {
     onAddFood(food, selectedMealType, false);
@@ -293,9 +303,10 @@ export function AddFoodDialog({
               {/* Results count */}
               {!isLoading && totalCount > 0 && (
                 <div className="text-xs text-muted-foreground shrink-0">
-                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
-                  {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{" "}
-                  {totalCount} foods
+                  Showing{" "}
+                  {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, totalCount)}
+                  -{Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{" "}
+                  {totalCount} {totalCount === 1 ? "food" : "foods"}
                 </div>
               )}
 
@@ -371,14 +382,14 @@ export function AddFoodDialog({
                 </div>
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && !isLoading && (
+              {/* Pagination - Show if more than 1 page */}
+              {showPagination && !isLoading && (
                 <div className="flex items-center justify-between pt-2 border-t shrink-0">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
+                    disabled={currentPage === 1 || isLoading}
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
                     Previous
@@ -390,7 +401,7 @@ export function AddFoodDialog({
                     variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage >= totalPages || isLoading}
                   >
                     Next
                     <ChevronRight className="h-4 w-4 ml-1" />

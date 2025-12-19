@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Loader2, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Loader2 } from "lucide-react";
 
 interface AnalyzedFood {
   id: string;
@@ -52,15 +52,15 @@ export function AnalyzedFoodsHistory() {
       }
 
       // Calculate offset for pagination
+      // Page 1: from=0, to=3 (OFFSET 0 LIMIT 4)
+      // Page 2: from=4, to=7 (OFFSET 4 LIMIT 4)
+      // Page 3: from=8, to=11 (OFFSET 8 LIMIT 4)
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
-      // Fetch with pagination
-      const {
-        data,
-        error: fetchError,
-        count,
-      } = await supabase
+      // Fetch with pagination using .range()
+      // This translates to SQL: OFFSET {from} LIMIT {ITEMS_PER_PAGE}
+      const { data, error: fetchError, count } = await supabase
         .from("analyzed_foods")
         .select("*", { count: "exact" })
         .eq("user_id", user.id)
@@ -106,6 +106,19 @@ export function AnalyzedFoodsHistory() {
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   const hasNextPage = currentPage < totalPages;
   const hasPrevPage = currentPage > 1;
+
+  // Handler functions for pagination
+  const goToNextPage = () => {
+    if (hasNextPage) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (hasPrevPage) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   if (isLoading && foods.length === 0) {
     return (
@@ -243,13 +256,13 @@ export function AnalyzedFoodsHistory() {
           ))}
         </div>
 
-        {/* Pagination Controls */}
+        {/* Pagination Controls - This is the key part! */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(currentPage - 1)}
+              onClick={goToPrevPage}
               disabled={!hasPrevPage || isLoading}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
@@ -261,7 +274,7 @@ export function AnalyzedFoodsHistory() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(currentPage + 1)}
+              onClick={goToNextPage}
               disabled={!hasNextPage || isLoading}
             >
               Next
