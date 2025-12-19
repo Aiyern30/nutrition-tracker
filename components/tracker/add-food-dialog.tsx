@@ -5,7 +5,14 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Star, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Star,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -41,20 +48,36 @@ interface AnalyzedFood {
 }
 
 interface AddFoodDialogProps {
-  onAddFood: (food: AnalyzedFood | any, mealType: string, isManual: boolean) => void;
+  onAddFood: (
+    food: AnalyzedFood | any,
+    mealType: string,
+    isManual: boolean
+  ) => void;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialogProps) {
+const ITEMS_PER_PAGE = 10;
+const SEARCH_DEBOUNCE_MS = 500;
+
+export function AddFoodDialog({
+  onAddFood,
+  isOpen,
+  onOpenChange,
+}: AddFoodDialogProps) {
   const [analyzedFoods, setAnalyzedFoods] = useState<AnalyzedFood[]>([]);
-  const [filteredFoods, setFilteredFoods] = useState<AnalyzedFood[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "favorites">("all");
   const [selectedMealType, setSelectedMealType] = useState<string>("breakfast");
   const [activeTab, setActiveTab] = useState<"analyzed" | "manual">("analyzed");
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
 
   const [manualFood, setManualFood] = useState({
     food_name: "",
@@ -71,11 +94,24 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
 
   const supabase = createClient();
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Reset to first page on new search
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const fetchAnalyzedFoods = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
         setError("Please log in to view analyzed foods");
@@ -83,40 +119,47 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
         return;
       }
 
-      const { data, error: fetchError } = await supabase
+      // Calculate pagination
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      // Build query with server-side filtering
+      let query = supabase
         .from("analyzed_foods")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .select("*", { count: "exact" })
+        .eq("user_id", user.id);
+
+      // Apply favorite filter
+      if (filterType === "favorites") {
+        query = query.eq("is_favorite", true);
+      }
+
+      // Apply search filter (server-side search on name and category)
+      if (debouncedSearch.trim()) {
+        query = query.or(
+          `food_name.ilike.%${debouncedSearch}%,food_category.ilike.%${debouncedSearch}%`
+        );
+      }
+
+      // Apply pagination and ordering
+      const {
+        data,
+        error: fetchError,
+        count,
+      } = await query.order("created_at", { ascending: false }).range(from, to);
 
       if (fetchError) throw fetchError;
+
       setAnalyzedFoods(data || []);
+      setTotalCount(count || 0);
+      setHasMore((count || 0) > to + 1);
     } catch (error) {
       console.error("Error fetching analyzed foods:", error);
       setError("Failed to load foods. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
-
-  const filterFoods = useCallback(() => {
-    let filtered = analyzedFoods;
-
-    if (filterType === "favorites") {
-      filtered = filtered.filter((f) => f.is_favorite);
-    }
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (f) =>
-          f.food_name.toLowerCase().includes(query) ||
-          f.food_category?.toLowerCase().includes(query)
-      );
-    }
-
-    setFilteredFoods(filtered);
-  }, [analyzedFoods, filterType, searchQuery]);
+  }, [supabase, currentPage, debouncedSearch, filterType]);
 
   useEffect(() => {
     if (isOpen) {
@@ -124,9 +167,11 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
     }
   }, [isOpen, fetchAnalyzedFoods]);
 
-  useEffect(() => {
-    filterFoods();
-  }, [filterFoods]);
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const handleAddAnalyzedFood = (food: AnalyzedFood) => {
     onAddFood(food, selectedMealType, false);
@@ -169,6 +214,8 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
       serving_size: "",
     });
     setSearchQuery("");
+    setDebouncedSearch("");
+    setCurrentPage(1);
     setActiveTab("analyzed");
     setError(null);
   };
@@ -183,10 +230,13 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          <div className="space-y-2">
+        <div className="space-y-4 flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="space-y-2 shrink-0">
             <Label>Add to Meal</Label>
-            <Select value={selectedMealType} onValueChange={setSelectedMealType}>
+            <Select
+              value={selectedMealType}
+              onValueChange={setSelectedMealType}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -199,24 +249,37 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
             </Select>
           </div>
 
-          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v: any) => setActiveTab(v)}
+            className="flex-1 flex flex-col min-h-0"
+          >
+            <TabsList className="grid w-full grid-cols-2 shrink-0">
               <TabsTrigger value="analyzed">Analyzed Foods</TabsTrigger>
               <TabsTrigger value="manual">Manual Entry</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="analyzed" className="flex-1 space-y-4 overflow-hidden flex flex-col">
-              <div className="flex gap-2">
+            <TabsContent
+              value="analyzed"
+              className="flex-1 flex flex-col space-y-3 min-h-0 mt-3"
+            >
+              <div className="flex gap-2 shrink-0">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Search foods..."
+                    placeholder="Search by name or category..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
                   />
                 </div>
-                <Select value={filterType} onValueChange={(v: "all" | "favorites") => setFilterType(v)}>
+                <Select
+                  value={filterType}
+                  onValueChange={(v: "all" | "favorites") => {
+                    setFilterType(v);
+                    setCurrentPage(1);
+                  }}
+                >
                   <SelectTrigger className="w-35">
                     <SelectValue />
                   </SelectTrigger>
@@ -227,77 +290,129 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                 </Select>
               </div>
 
+              {/* Results count */}
+              {!isLoading && totalCount > 0 && (
+                <div className="text-xs text-muted-foreground shrink-0">
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+                  {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of{" "}
+                  {totalCount} foods
+                </div>
+              )}
+
               {error && (
-                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive shrink-0">
                   {error}
                 </div>
               )}
 
-              <div className="space-y-2 flex-1 overflow-y-auto">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : filteredFoods.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>No foods found</p>
-                    <p className="text-sm">
-                      {analyzedFoods.length === 0
-                        ? "Try analyzing foods in the Analyzer page first"
-                        : "No foods match your search"}
-                    </p>
-                  </div>
-                ) : (
-                  filteredFoods.map((food) => (
-                    <div
-                      key={food.id}
-                      className="flex items-center justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-accent/5"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{food.food_name}</p>
-                          {food.is_favorite && (
-                            <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {food.protein}g protein • {food.carbs}g carbs • {food.fats}g fats
-                        </p>
-                        {food.food_category && (
-                          <Badge variant="outline" className="mt-1 text-xs">
-                            {food.food_category}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <Badge variant="secondary">{food.calories} cal</Badge>
-                          {food.serving_size && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {food.serving_size}
-                            </p>
-                          )}
-                        </div>
-                        <Button size="sm" onClick={() => handleAddAnalyzedFood(food)}>
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add
-                        </Button>
-                      </div>
+              {/* Scrollable food list */}
+              <div className="flex-1 overflow-y-auto min-h-0 -mx-1 px-1">
+                <div className="space-y-2 pb-2">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
-                  ))
-                )}
+                  ) : analyzedFoods.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p className="font-medium">No foods found</p>
+                      <p className="text-sm mt-1">
+                        {totalCount === 0
+                          ? "Try analyzing foods in the Analyzer page first"
+                          : "No foods match your search criteria"}
+                      </p>
+                    </div>
+                  ) : (
+                    analyzedFoods.map((food) => (
+                      <div
+                        key={food.id}
+                        className="flex items-center justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-accent/5"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">
+                              {food.food_name}
+                            </p>
+                            {food.is_favorite && (
+                              <Star className="h-3 w-3 fill-yellow-500 text-yellow-500 shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {food.protein}g protein • {food.carbs}g carbs •{" "}
+                            {food.fats}g fats
+                          </p>
+                          {food.food_category && (
+                            <Badge variant="outline" className="mt-1 text-xs">
+                              {food.food_category}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="text-right">
+                            <Badge variant="secondary">
+                              {food.calories} cal
+                            </Badge>
+                            {food.serving_size && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {food.serving_size}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddAnalyzedFood(food)}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && !isLoading && (
+                <div className="flex items-center justify-between pt-2 border-t shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+                  <div className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              )}
             </TabsContent>
 
-            <TabsContent value="manual" className="space-y-4 overflow-y-auto">
-              <div className="grid gap-4">
+            <TabsContent value="manual" className="flex-1 overflow-y-auto mt-3">
+              <div className="grid gap-4 pb-4">
                 <div className="grid gap-2">
                   <Label htmlFor="food_name">Food Name *</Label>
                   <Input
                     id="food_name"
                     placeholder="e.g., Grilled Chicken Breast"
                     value={manualFood.food_name}
-                    onChange={(e) => setManualFood({ ...manualFood, food_name: e.target.value })}
+                    onChange={(e) =>
+                      setManualFood({
+                        ...manualFood,
+                        food_name: e.target.value,
+                      })
+                    }
                   />
                 </div>
 
@@ -308,7 +423,12 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                       id="food_category"
                       placeholder="e.g., Protein"
                       value={manualFood.food_category}
-                      onChange={(e) => setManualFood({ ...manualFood, food_category: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({
+                          ...manualFood,
+                          food_category: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -317,7 +437,12 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                       id="serving_size"
                       placeholder="e.g., 100g"
                       value={manualFood.serving_size}
-                      onChange={(e) => setManualFood({ ...manualFood, serving_size: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({
+                          ...manualFood,
+                          serving_size: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -330,7 +455,12 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                       type="number"
                       placeholder="0"
                       value={manualFood.calories}
-                      onChange={(e) => setManualFood({ ...manualFood, calories: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({
+                          ...manualFood,
+                          calories: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -340,7 +470,12 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                       type="number"
                       placeholder="0"
                       value={manualFood.protein}
-                      onChange={(e) => setManualFood({ ...manualFood, protein: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({
+                          ...manualFood,
+                          protein: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -353,7 +488,9 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                       type="number"
                       placeholder="0"
                       value={manualFood.carbs}
-                      onChange={(e) => setManualFood({ ...manualFood, carbs: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, carbs: e.target.value })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -363,7 +500,9 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                       type="number"
                       placeholder="0"
                       value={manualFood.fats}
-                      onChange={(e) => setManualFood({ ...manualFood, fats: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, fats: e.target.value })
+                      }
                     />
                   </div>
                 </div>
@@ -376,7 +515,9 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                       type="number"
                       placeholder="0"
                       value={manualFood.fiber}
-                      onChange={(e) => setManualFood({ ...manualFood, fiber: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, fiber: e.target.value })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -386,7 +527,9 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                       type="number"
                       placeholder="0"
                       value={manualFood.sugar}
-                      onChange={(e) => setManualFood({ ...manualFood, sugar: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, sugar: e.target.value })
+                      }
                     />
                   </div>
                   <div className="space-y-2">
@@ -396,7 +539,9 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                       type="number"
                       placeholder="0"
                       value={manualFood.sodium}
-                      onChange={(e) => setManualFood({ ...manualFood, sodium: e.target.value })}
+                      onChange={(e) =>
+                        setManualFood({ ...manualFood, sodium: e.target.value })
+                      }
                     />
                   </div>
                 </div>
@@ -407,7 +552,9 @@ export function AddFoodDialog({ onAddFood, isOpen, onOpenChange }: AddFoodDialog
                   className="w-full"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add to {selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}
+                  Add to{" "}
+                  {selectedMealType.charAt(0).toUpperCase() +
+                    selectedMealType.slice(1)}
                 </Button>
               </div>
             </TabsContent>
