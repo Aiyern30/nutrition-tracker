@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface NutritionSummaryProps {
   totalCalories: number;
@@ -32,8 +33,17 @@ export function NutritionSummary({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Daily Summary</CardTitle>
-        <CardDescription>Your nutrition progress today</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Daily Summary</CardTitle>
+            <CardDescription>Your nutrition progress today</CardDescription>
+          </div>
+          {totalCalories === 0 && (
+            <Badge variant="outline" className="text-xs">
+              No meals logged yet
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 md:grid-cols-4">
