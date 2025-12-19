@@ -204,6 +204,27 @@
       "seasoning": "Seasoning"
     }
   },
+  "chat": {
+    "title": "AI Chat",
+    "subtitle": "Ask nutrition questions and get AI-powered guidance",
+    "history": "History",
+    "historySubtitle": "Your past conversations.",
+    "newChat": "New Chat",
+    "disclaimer": "Educational purposes only - Not medical advice",
+    "assistantTitle": "Nutrition AI Assistant",
+    "assistantSubtitle": "Ask me anything about nutrition, calorie counting, or dietary advice. I'm here to help!",
+    "suggestedQuestions": "Suggested questions:",
+    "prompts": [
+      "What's a healthy breakfast for weight loss?",
+      "Explain the nutrition facts of salmon",
+      "Create a 1500 calorie meal plan",
+      "How many calories in a chicken Caesar salad?"
+    ],
+    "inputPlaceholder": "Ask about nutrition, meal ideas, or your diet...",
+    "errorResponse": "Sorry, I encountered an error. Please ensure you have run the 'combine_tables.sql' script to update your database schema.",
+    "noHistory": "No conversations yet.",
+    "goToMealPlanner": "Go to Meal Planner"
+  },
   "common": {
     "loading": "Loading...",
     "saving": "Saving...",

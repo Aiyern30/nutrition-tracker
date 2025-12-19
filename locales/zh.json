@@ -204,6 +204,27 @@
       "seasoning": "调料"
     }
   },
+  "chat": {
+    "title": "AI 聊天",
+    "subtitle": "咨询营养问题并获取 AI 驱动的指导",
+    "history": "历史记录",
+    "historySubtitle": "您过去的对话。",
+    "newChat": "新对话",
+    "disclaimer": "仅供教育目的 - 不构成医疗建议",
+    "assistantTitle": "营养 AI 助手",
+    "assistantSubtitle": "问我任何关于营养、卡路里计算或饮食建议的问题。我随时为您提供帮助！",
+    "suggestedQuestions": "建议问题：",
+    "prompts": [
+      "什么样的健康早餐适合减肥？",
+      "解释一下三文鱼的营养成分",
+      "制定一份 1500 卡路里的膳食计划",
+      "一份鸡肉凯撒沙拉有多少卡路里？"
+    ],
+    "inputPlaceholder": "询问关于营养、膳食创意或您的饮食...",
+    "errorResponse": "抱歉，我遇到错误。请确保您已运行 'combine_tables.sql' 脚本以更新您的数据库架构。",
+    "noHistory": "暂无对话。",
+    "goToMealPlanner": "前往膳食计划"
+  },
   "common": {
     "loading": "加载中...",
     "saving": "保存中...",

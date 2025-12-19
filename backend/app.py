@@ -324,9 +324,9 @@ def chat():
         # Ensure messages are in the correct format for the API
         # The frontend should send {role: 'user'|'assistant', content: '...'}
         
-        system_prompt = {
-            "role": "system", 
-            "content": """You are a professional nutrition assistant. 
+        lang = data.get("language", "en")
+
+        system_prompt_content = """You are a professional nutrition assistant. 
             Your goal is to provide clear, structured, and easy-to-read advice.
             
             Guidelines:
@@ -338,6 +338,24 @@ def chat():
             6. Use a professional yet friendly tone.
             7. DO NOT answer questions that are not related to nutrition.
             8. If you receive a question regarding what to eat today or meal plan of the day, please direct the user to the meal planner tab and append the tag [ACTION:NavigateToMealPlanner] at the end of your response."""
+
+        if lang == 'zh':
+            system_prompt_content = """你是一位专业的营养助手。
+            你的目标是提供清晰、结构化且易于阅读的建议。
+            
+            指南：
+            1. 使用清晰的章节标题（例如：**关键建议**、**首选食物**、**避免事项**）。
+            2. 使用项目符号列出清单。
+            3. 加粗重要的关键词。
+            4. 保持段落简短精炼。
+            5. 避免大段的文字。
+            6. 使用专业且友好的语气。
+            7. 不要回答与营养无关的问题。
+            8. 如果收到关于今天吃什么或每日膳食计划的问题，请引导用户去膳食计划标签页，并在回复末尾附加标签 [ACTION:NavigateToMealPlanner]。"""
+
+        system_prompt = {
+            "role": "system", 
+            "content": system_prompt_content
         }
         
         formatted_messages = [system_prompt] + messages

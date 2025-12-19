@@ -16,6 +16,7 @@ import { Send, Bot, User, AlertCircle, Settings, Trash2, History, MessageSquare,
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useLanguage } from "@/contexts/language-context";
 import {
   Sheet,
   SheetContent,
@@ -33,12 +34,7 @@ interface Message {
   timestamp: Date;
 }
 
-const suggestedPrompts = [
-  "What's a healthy breakfast for weight loss?",
-  "Explain the nutrition facts of salmon",
-  "Create a 1500 calorie meal plan",
-  "How many calories in a chicken Caesar salad?",
-];
+
 
 interface Conversation {
   id: string;
@@ -56,6 +52,10 @@ export default function ChatPage() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const { language, t } = useLanguage();
+
+  // Use prompts from translation, ensuring it defaults to an empty array if undefined
+  const suggestedPrompts = Array.isArray(t.chat?.prompts) ? t.chat.prompts : [];
 
   useEffect(() => {
     const initUser = async () => {
@@ -142,6 +142,7 @@ export default function ChatPage() {
             role: m.role,
             content: m.content,
           })),
+          language: language,
         }),
       });
 
@@ -196,7 +197,7 @@ export default function ChatPage() {
       const errorMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
-        content: "Sorry, I encountered an error. Please ensure you have run the 'combine_tables.sql' script to update your database schema.",
+        content: t.chat.errorResponse,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -236,9 +237,9 @@ export default function ChatPage() {
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">AI Chat</h1>
+              <h1 className="text-xl font-semibold">{t.chat.title}</h1>
               <p className="text-sm text-muted-foreground">
-                Ask nutrition questions and get AI-powered guidance
+                {t.chat.subtitle}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -250,9 +251,9 @@ export default function ChatPage() {
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                   <SheetHeader>
-                    <SheetTitle>History</SheetTitle>
+                    <SheetTitle>{t.chat.history}</SheetTitle>
                     <SheetDescription>
-                      Your past conversations.
+                      {t.chat.historySubtitle}
                     </SheetDescription>
                   </SheetHeader>
                   <ScrollArea className="h-[calc(100vh-100px)] mt-4">
@@ -283,7 +284,7 @@ export default function ChatPage() {
                       {conversations.length === 0 && (
                         <div className="text-center text-muted-foreground py-10 opacity-50">
                           <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          No conversations yet.
+                          {t.chat.noHistory}
                         </div>
                       )}
                     </div>
@@ -297,7 +298,7 @@ export default function ChatPage() {
                 onClick={startNewChat}
                 className="gap-2"
               >
-                <span className="text-xs">New Chat</span>
+                <span className="text-xs">{t.chat.newChat}</span>
               </Button>
 
             </div>
@@ -310,7 +311,7 @@ export default function ChatPage() {
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-accent" />
               <span className="text-sm font-medium">
-                Educational purposes only - Not medical advice
+                {t.chat.disclaimer}
               </span>
             </div>
           </div>
@@ -325,18 +326,17 @@ export default function ChatPage() {
                   </div>
                   <div className="space-y-2 text-center">
                     <h2 className="text-2xl font-semibold">
-                      Nutrition AI Assistant
+                      {t.chat.assistantTitle}
                     </h2>
                     <p className="max-w-md text-muted-foreground">
-                      Ask me anything about nutrition, calorie
-                      counting, or dietary advice. I'm here to help!
+                      {t.chat.assistantSubtitle}
                     </p>
                   </div>
                 </div>
 
                 <div className="w-full max-w-2xl space-y-3">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Suggested questions:
+                    {t.chat.suggestedQuestions}
                   </p>
                   <div className="grid gap-3 md:grid-cols-2">
                     {suggestedPrompts.map((prompt, i) => (
@@ -399,7 +399,7 @@ export default function ChatPage() {
                                 onClick={() => router.push('/meal-planner')}
                               >
                                 <CalendarDays className="h-4 w-4" />
-                                Go to Meal Planner
+                                {t.chat.goToMealPlanner}
                               </Button>
                             )}
                           </>
@@ -446,7 +446,7 @@ export default function ChatPage() {
             <div className="mx-auto max-w-3xl">
               <div className="flex gap-3">
                 <Input
-                  placeholder="Ask about nutrition, meal ideas, or your diet..."
+                  placeholder={t.chat.inputPlaceholder}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
