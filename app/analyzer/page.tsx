@@ -105,7 +105,7 @@ export default function AnalyzerPage() {
     setOcrResults([]);
 
     try {
-      const response = await fetch("http://localhost:5000/analyze", {
+      const response = await fetch("/api/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -113,7 +113,7 @@ export default function AnalyzerPage() {
         body: JSON.stringify({
           image: selectedImage,
           description: description,
-          lang: language, // Pass language context to backend
+          lang: language,
         }),
       });
 
@@ -148,7 +148,7 @@ export default function AnalyzerPage() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:5000/analyze", {
+      const response = await fetch("/api/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
