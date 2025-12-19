@@ -46,11 +46,74 @@ interface AnalyzedFood {
   created_at: string;
 }
 
+interface DailySummary {
+  total_calories: number;
+  total_protein: number;
+  total_carbs: number;
+  total_fats: number;
+  water_intake: number;
+  diet_quality_score: string;
+}
+
 export default function TrackerPage() {
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isAddFoodOpen, setIsAddFoodOpen] = useState(false);
+  const [dailySummary, setDailySummary] = useState<DailySummary>({
+    total_calories: 0,
+    total_protein: 0,
+    total_carbs: 0,
+    total_fats: 0,
+    water_intake: 0,
+    diet_quality_score: "B",
+  });
   const supabase = createClient();
+
+  // Fetch daily summary from daily_summaries table
+  const fetchDailySummary = useCallback(async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const dateStr = selectedDate.toISOString().split("T")[0];
+
+      const { data, error } = await supabase
+        .from("daily_summaries")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", dateStr)
+        .single();
+
+      if (error) {
+        // If no summary exists yet, use zeros
+        if (error.code === "PGRST116") {
+          setDailySummary({
+            total_calories: 0,
+            total_protein: 0,
+            total_carbs: 0,
+            total_fats: 0,
+            water_intake: 0,
+            diet_quality_score: "B",
+          });
+        } else {
+          throw error;
+        }
+      } else if (data) {
+        setDailySummary({
+          total_calories: data.total_calories || 0,
+          total_protein: data.total_protein || 0,
+          total_carbs: data.total_carbs || 0,
+          total_fats: data.total_fats || 0,
+          water_intake: data.water_intake || 0,
+          diet_quality_score: data.diet_quality_score || "B",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching daily summary:", error);
+    }
+  }, [supabase, selectedDate]);
 
   const fetchFoodLogs = useCallback(async () => {
     try {
@@ -93,12 +156,8 @@ export default function TrackerPage() {
 
   useEffect(() => {
     fetchFoodLogs();
-  }, [fetchFoodLogs]);
-
-  const totalCalories = entries.reduce((sum, entry) => sum + entry.calories, 0);
-  const totalProtein = entries.reduce((sum, entry) => sum + entry.protein, 0);
-  const totalCarbs = entries.reduce((sum, entry) => sum + entry.carbs, 0);
-  const totalFats = entries.reduce((sum, entry) => sum + entry.fats, 0);
+    fetchDailySummary();
+  }, [fetchFoodLogs, fetchDailySummary]);
 
   const calorieGoal = 2000;
   const proteinGoal = 150;
@@ -112,7 +171,11 @@ export default function TrackerPage() {
     try {
       const { error } = await supabase.from("food_logs").delete().eq("id", id);
       if (error) throw error;
+
       setEntries(entries.filter((e) => e.id !== id));
+
+      // Refetch summary after delete - trigger will auto-update it
+      await fetchDailySummary();
     } catch (error) {
       console.error("Error deleting entry:", error);
     }
@@ -174,6 +237,9 @@ export default function TrackerPage() {
           analyzedFoodId: data.analyzed_food_id,
         };
         setEntries([...entries, newEntry]);
+
+        // Refetch summary after insert - trigger will auto-update it
+        await fetchDailySummary();
       }
     } catch (error) {
       console.error("Error adding food to meal:", error);
@@ -213,10 +279,10 @@ export default function TrackerPage() {
           />
 
           <NutritionSummary
-            totalCalories={totalCalories}
-            totalProtein={totalProtein}
-            totalCarbs={totalCarbs}
-            totalFats={totalFats}
+            totalCalories={dailySummary.total_calories}
+            totalProtein={dailySummary.total_protein}
+            totalCarbs={dailySummary.total_carbs}
+            totalFats={dailySummary.total_fats}
             calorieGoal={calorieGoal}
             proteinGoal={proteinGoal}
             carbsGoal={carbsGoal}
