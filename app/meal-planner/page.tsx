@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
+import { zhCN, enUS } from 'date-fns/locale';
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/contexts/language-context";
 import {
   SidebarProvider,
   SidebarInset,
@@ -63,6 +65,8 @@ export default function MealPlannerPage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const router = useRouter();
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'zh' ? zhCN : enUS;
 
   const supabase = createClient();
 
@@ -156,7 +160,7 @@ export default function MealPlannerPage() {
           : "bg-card hover:bg-accent/50 border-transparent"
           }`}
       >
-        <span className="text-xs font-medium opacity-80">{format(date, "EEE")}</span>
+        <span className="text-xs font-medium opacity-80">{format(date, "EEE", { locale: dateLocale })}</span>
         <span className="text-xl font-bold">{format(date, "d")}</span>
       </button>
     );
@@ -166,9 +170,9 @@ export default function MealPlannerPage() {
 
   // Pie chart data
   const macroData = currentPlan ? [
-    { name: 'Protein', value: currentPlan.total_nutrition.protein, color: '#3b82f6' },
-    { name: 'Carbs', value: currentPlan.total_nutrition.carbs, color: '#10b981' },
-    { name: 'Fats', value: currentPlan.total_nutrition.fats, color: '#f59e0b' },
+    { name: t.mealPlanner.protein, value: currentPlan.total_nutrition.protein, color: '#3b82f6' },
+    { name: t.mealPlanner.carbs, value: currentPlan.total_nutrition.carbs, color: '#10b981' },
+    { name: t.mealPlanner.fats, value: currentPlan.total_nutrition.fats, color: '#f59e0b' },
   ] : [];
 
   return (
@@ -179,16 +183,16 @@ export default function MealPlannerPage() {
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Smart Meal Planner</h1>
-              <p className="text-xs text-muted-foreground">AI-Powered Personalized Nutrition</p>
+              <h1 className="text-xl font-bold tracking-tight">{t.mealPlanner.title}</h1>
+              <p className="text-xs text-muted-foreground">{t.mealPlanner.subtitle}</p>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-muted-foreground hidden md:inline-block">
-                {format(selectedDate, "MMMM yyyy")}
+                {format(selectedDate, "MMMM yyyy", { locale: dateLocale })}
               </span>
               <Button variant="outline" size="sm" onClick={() => setSelectedDate(new Date())}>
-                Today
+                {t.mealPlanner.today}
               </Button>
             </div>
           </div>
@@ -210,9 +214,9 @@ export default function MealPlannerPage() {
               </div>
 
               <div className="space-y-2 max-w-md">
-                <h2 className="text-2xl font-bold">No plan for {format(selectedDate, "EEEE")}</h2>
+                <h2 className="text-2xl font-bold">{t.mealPlanner.noPlan} {format(selectedDate, "EEEE", { locale: dateLocale })}</h2>
                 <p className="text-muted-foreground">
-                  Generate a personalized meal plan based on your health goals and dietary preferences using Ernie AI.
+                  {t.mealPlanner.generatePlanInfo}
                 </p>
               </div>
 
@@ -224,7 +228,7 @@ export default function MealPlannerPage() {
                   onClick={() => router.push('/profile')}
                   className="rounded-full px-8 h-12 text-base shadow-lg"
                 >
-                  Set up Profile
+                  {t.mealPlanner.setupProfile}
                 </Button>
               ) : (
                 <Button
@@ -236,12 +240,12 @@ export default function MealPlannerPage() {
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Creating your plan...
+                      {t.mealPlanner.creatingPlan}
                     </>
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-5 w-5" />
-                      Generate Meal Plan
+                      {t.mealPlanner.generatePlan}
                     </>
                   )}
                 </Button>
@@ -255,26 +259,26 @@ export default function MealPlannerPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-primary" />
-                      Daily Overview
+                      {t.mealPlanner.dailyOverview}
                     </CardTitle>
                     <CardDescription>{currentPlan.summary}</CardDescription>
                   </CardHeader>
                   <CardContent className="grid sm:grid-cols-4 gap-4">
                     <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">Calories</span>
+                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">{t.mealPlanner.calories}</span>
                       <div className="text-2xl font-bold text-primary mt-1">{currentPlan.total_nutrition.calories}</div>
-                      <span className="text-xs text-muted-foreground">kcal</span>
+                      <span className="text-xs text-muted-foreground">{t.mealPlanner.kcal}</span>
                     </div>
                     <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">Protein</span>
+                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">{t.mealPlanner.protein}</span>
                       <div className="text-2xl font-bold text-blue-500 mt-1">{currentPlan.total_nutrition.protein}g</div>
                     </div>
                     <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">Carbs</span>
+                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">{t.mealPlanner.carbs}</span>
                       <div className="text-2xl font-bold text-emerald-500 mt-1">{currentPlan.total_nutrition.carbs}g</div>
                     </div>
                     <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">Fats</span>
+                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">{t.mealPlanner.fats}</span>
                       <div className="text-2xl font-bold text-amber-500 mt-1">{currentPlan.total_nutrition.fats}g</div>
                     </div>
                   </CardContent>
@@ -282,7 +286,7 @@ export default function MealPlannerPage() {
 
                 <Card className="border-none shadow-md">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Macro Distribution</CardTitle>
+                    <CardTitle className="text-base">{t.mealPlanner.macroDistribution}</CardTitle>
                   </CardHeader>
                   <CardContent className="h-[180px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -305,9 +309,9 @@ export default function MealPlannerPage() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="flex justify-center gap-4 text-xs font-medium">
-                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> Protein</div>
-                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Carbs</div>
-                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" /> Fats</div>
+                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {t.mealPlanner.protein}</div>
+                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /> {t.mealPlanner.carbs}</div>
+                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" /> {t.mealPlanner.fats}</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -328,7 +332,7 @@ export default function MealPlannerPage() {
                         </div>
                         <div className="text-right">
                           <span className="font-bold text-lg">{meal.nutrition.calories}</span>
-                          <span className="text-xs text-muted-foreground block">kcal</span>
+                          <span className="text-xs text-muted-foreground block">{t.mealPlanner.kcal}</span>
                         </div>
                       </div>
                       <CardDescription className="line-clamp-2">{meal.description}</CardDescription>
@@ -338,7 +342,7 @@ export default function MealPlannerPage() {
                       <div className="space-y-4">
                         <div>
                           <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                            <Utensils className="w-4 h-4 text-muted-foreground" /> Ingredients
+                            <Utensils className="w-4 h-4 text-muted-foreground" /> {t.mealPlanner.ingredients}
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {meal.items.map((item, i) => (
@@ -350,19 +354,19 @@ export default function MealPlannerPage() {
                         </div>
 
                         <div className="p-3 bg-muted/30 rounded-lg text-sm">
-                          <strong className="text-muted-foreground mr-1">Pro-Tip:</strong>
+                          <strong className="text-muted-foreground mr-1">{t.mealPlanner.proTip}</strong>
                           {meal.tips}
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2">
                           <div className="p-2 bg-blue-500/10 rounded text-blue-700 dark:text-blue-400">
-                            <div className="font-bold">{meal.nutrition.protein}g</div> Protein
+                            <div className="font-bold">{meal.nutrition.protein}g</div> {t.mealPlanner.protein}
                           </div>
                           <div className="p-2 bg-emerald-500/10 rounded text-emerald-700 dark:text-emerald-400">
-                            <div className="font-bold">{meal.nutrition.carbs}g</div> Carbs
+                            <div className="font-bold">{meal.nutrition.carbs}g</div> {t.mealPlanner.carbs}
                           </div>
                           <div className="p-2 bg-amber-500/10 rounded text-amber-700 dark:text-amber-400">
-                            <div className="font-bold">{meal.nutrition.fats}g</div> Fats
+                            <div className="font-bold">{meal.nutrition.fats}g</div> {t.mealPlanner.fats}
                           </div>
                         </div>
                       </div>
@@ -374,7 +378,7 @@ export default function MealPlannerPage() {
               <div className="flex justify-center pb-8">
                 <Button variant="outline" onClick={generatePlan} disabled={loading} className="gap-2">
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  Regenerate Plan
+                  {t.mealPlanner.regeneratePlan}
                 </Button>
               </div>
 

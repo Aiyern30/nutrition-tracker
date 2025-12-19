@@ -13,6 +13,26 @@
     "signIn": "Sign In",
     "getStarted": "Get started"
   },
+  "mealPlanner": {
+    "title": "Smart Meal Planner",
+    "subtitle": "AI-Powered Personalized Nutrition",
+    "today": "Today",
+    "noPlan": "No plan for",
+    "generatePlanInfo": "Generate a personalized meal plan based on your health goals and dietary preferences using Ernie AI.",
+    "setupProfile": "Set up Profile",
+    "creatingPlan": "Creating your plan...",
+    "generatePlan": "Generate Meal Plan",
+    "dailyOverview": "Daily Overview",
+    "calories": "Calories",
+    "protein": "Protein",
+    "carbs": "Carbs",
+    "fats": "Fats",
+    "macroDistribution": "Macro Distribution",
+    "ingredients": "Ingredients",
+    "proTip": "Pro-Tip:",
+    "regeneratePlan": "Regenerate Plan",
+    "kcal": "kcal"
+  },
   "profile": {
     "title": "Profile & Settings",
     "subtitle": "Manage your account and preferences",

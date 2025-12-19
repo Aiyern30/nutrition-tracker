@@ -13,6 +13,26 @@
     "signIn": "登录",
     "getStarted": "开始使用"
   },
+  "mealPlanner": {
+    "title": "智能膳食计划",
+    "subtitle": "AI 驱动的个性化营养方案",
+    "today": "今天",
+    "noPlan": "今日无计划",
+    "generatePlanInfo": "使用 Ernie AI 根据您的健康目标和饮食偏好生成个性化膳食计划。",
+    "setupProfile": "设置个人资料",
+    "creatingPlan": "正在生成计划...",
+    "generatePlan": "生成膳食计划",
+    "dailyOverview": "每日概览",
+    "calories": "卡路里",
+    "protein": "蛋白质",
+    "carbs": "碳水化合物",
+    "fats": "脂肪",
+    "macroDistribution": "宏量营养素分布",
+    "ingredients": "食材",
+    "proTip": "专业提示：",
+    "regeneratePlan": "重新生成计划",
+    "kcal": "千卡"
+  },
   "profile": {
     "title": "个人资料与设置",
     "subtitle": "管理您的账户和偏好设置",
