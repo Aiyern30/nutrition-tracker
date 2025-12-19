@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   SidebarProvider,
   SidebarInset,
@@ -23,6 +25,9 @@ import {
   ChevronRight,
   Trash2,
   Edit,
+  Search,
+  Star,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -34,6 +39,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
 interface FoodEntry {
   id: string;
@@ -42,47 +56,28 @@ interface FoodEntry {
   protein: number;
   carbs: number;
   fats: number;
+  fiber: number;
+  sugar: number;
+  sodium: number;
   mealType: "breakfast" | "lunch" | "dinner" | "snack";
+  analyzedFoodId?: string;
 }
 
-const sampleEntries: FoodEntry[] = [
-  {
-    id: "1",
-    name: "Scrambled Eggs",
-    calories: 220,
-    protein: 18,
-    carbs: 4,
-    fats: 15,
-    mealType: "breakfast",
-  },
-  {
-    id: "2",
-    name: "Whole Wheat Toast",
-    calories: 140,
-    protein: 6,
-    carbs: 26,
-    fats: 2,
-    mealType: "breakfast",
-  },
-  {
-    id: "3",
-    name: "Chicken Caesar Salad",
-    calories: 480,
-    protein: 42,
-    carbs: 18,
-    fats: 26,
-    mealType: "lunch",
-  },
-  {
-    id: "4",
-    name: "Protein Shake",
-    calories: 200,
-    protein: 30,
-    carbs: 15,
-    fats: 3,
-    mealType: "snack",
-  },
-];
+interface AnalyzedFood {
+  id: string;
+  food_name: string;
+  food_category: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
+  sugar: number;
+  sodium: number;
+  serving_size: string | null;
+  is_favorite: boolean;
+  created_at: string;
+}
 
 const MealSection = ({
   title,
@@ -106,38 +101,6 @@ const MealSection = ({
               <CardDescription>{mealCalories} calories</CardDescription>
             )}
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="bg-transparent">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Food to {title}</DialogTitle>
-                <DialogDescription>
-                  Enter the food details or search recent items
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Food Name</Label>
-                  <Input placeholder="e.g., Grilled Chicken" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Calories</Label>
-                    <Input type="number" placeholder="0" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Protein (g)</Label>
-                    <Input type="number" placeholder="0" />
-                  </div>
-                </div>
-                <Button className="w-full">Add to Tracker</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
       </CardHeader>
       {mealEntries.length > 0 && (
@@ -180,9 +143,430 @@ const MealSection = ({
   );
 };
 
+const AddFoodDialog = ({
+  onAddFood,
+  isOpen,
+  onOpenChange,
+}: {
+  onAddFood: (food: AnalyzedFood | any, mealType: string, isManual: boolean) => void;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  const [analyzedFoods, setAnalyzedFoods] = useState<AnalyzedFood[]>([]);
+  const [filteredFoods, setFilteredFoods] = useState<AnalyzedFood[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "favorites">("all");
+  const [selectedMealType, setSelectedMealType] = useState<string>("breakfast");
+  const [activeTab, setActiveTab] = useState<"analyzed" | "manual">("analyzed");
+  
+  // Manual entry form state
+  const [manualFood, setManualFood] = useState({
+    food_name: "",
+    food_category: "",
+    calories: "",
+    protein: "",
+    carbs: "",
+    fats: "",
+    fiber: "",
+    sugar: "",
+    sodium: "",
+    serving_size: "",
+  });
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAnalyzedFoods();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    filterFoods();
+  }, [searchQuery, filterType, analyzedFoods]);
+
+  const fetchAnalyzedFoods = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("analyzed_foods")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setAnalyzedFoods(data || []);
+    } catch (error) {
+      console.error("Error fetching analyzed foods:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filterFoods = () => {
+    let filtered = analyzedFoods;
+
+    if (filterType === "favorites") {
+      filtered = filtered.filter((f) => f.is_favorite);
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (f) =>
+          f.food_name.toLowerCase().includes(query) ||
+          f.food_category?.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredFoods(filtered);
+  };
+
+  const handleAddAnalyzedFood = (food: AnalyzedFood) => {
+    onAddFood(food, selectedMealType, false);
+    onOpenChange(false);
+    resetForm();
+  };
+
+  const handleAddManualFood = () => {
+    if (!manualFood.food_name || !manualFood.calories) {
+      return;
+    }
+
+    const foodData = {
+      food_name: manualFood.food_name,
+      food_category: manualFood.food_category || "Custom",
+      calories: parseInt(manualFood.calories) || 0,
+      protein: parseInt(manualFood.protein) || 0,
+      carbs: parseInt(manualFood.carbs) || 0,
+      fats: parseInt(manualFood.fats) || 0,
+      fiber: parseInt(manualFood.fiber) || 0,
+      sugar: parseInt(manualFood.sugar) || 0,
+      sodium: parseInt(manualFood.sodium) || 0,
+      serving_size: manualFood.serving_size || null,
+    };
+
+    onAddFood(foodData, selectedMealType, true);
+    onOpenChange(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setManualFood({
+      food_name: "",
+      food_category: "",
+      calories: "",
+      protein: "",
+      carbs: "",
+      fats: "",
+      fiber: "",
+      sugar: "",
+      sodium: "",
+      serving_size: "",
+    });
+    setSearchQuery("");
+    setActiveTab("analyzed");
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Add Food to Tracker</DialogTitle>
+          <DialogDescription>
+            Select from analyzed foods or add manually
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+          {/* Meal Type Selection */}
+          <div className="space-y-2">
+            <Label>Add to Meal</Label>
+            <Select value={selectedMealType} onValueChange={setSelectedMealType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="breakfast">Breakfast</SelectItem>
+                <SelectItem value="lunch">Lunch</SelectItem>
+                <SelectItem value="dinner">Dinner</SelectItem>
+                <SelectItem value="snack">Snacks</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Tabs for Analyzed vs Manual */}
+          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="analyzed">Analyzed Foods</TabsTrigger>
+              <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="analyzed" className="flex-1 space-y-4 overflow-hidden flex flex-col">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search foods..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select
+                  value={filterType}
+                  onValueChange={(v: "all" | "favorites") => setFilterType(v)}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Foods</SelectItem>
+                    <SelectItem value="favorites">Favorites</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 flex-1 overflow-y-auto">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : filteredFoods.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No foods found</p>
+                    <p className="text-sm">
+                      Try analyzing foods in the Analyzer page first
+                    </p>
+                  </div>
+                ) : (
+                  filteredFoods.map((food) => (
+                    <div
+                      key={food.id}
+                      className="flex items-center justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-accent/5"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{food.food_name}</p>
+                          {food.is_favorite && (
+                            <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {food.protein}g protein • {food.carbs}g carbs •{" "}
+                          {food.fats}g fats
+                        </p>
+                        {food.food_category && (
+                          <Badge variant="outline" className="mt-1 text-xs">
+                            {food.food_category}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <Badge variant="secondary">{food.calories} cal</Badge>
+                          {food.serving_size && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {food.serving_size}
+                            </p>
+                          )}
+                        </div>
+                        <Button size="sm" onClick={() => handleAddAnalyzedFood(food)}>
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="manual" className="space-y-4 overflow-y-auto">
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="food_name">Food Name *</Label>
+                  <Input
+                    id="food_name"
+                    placeholder="e.g., Grilled Chicken Breast"
+                    value={manualFood.food_name}
+                    onChange={(e) => setManualFood({ ...manualFood, food_name: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="food_category">Category</Label>
+                    <Input
+                      id="food_category"
+                      placeholder="e.g., Protein"
+                      value={manualFood.food_category}
+                      onChange={(e) => setManualFood({ ...manualFood, food_category: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="serving_size">Serving Size</Label>
+                    <Input
+                      id="serving_size"
+                      placeholder="e.g., 100g"
+                      value={manualFood.serving_size}
+                      onChange={(e) => setManualFood({ ...manualFood, serving_size: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="calories">Calories *</Label>
+                    <Input
+                      id="calories"
+                      type="number"
+                      placeholder="0"
+                      value={manualFood.calories}
+                      onChange={(e) => setManualFood({ ...manualFood, calories: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="protein">Protein (g)</Label>
+                    <Input
+                      id="protein"
+                      type="number"
+                      placeholder="0"
+                      value={manualFood.protein}
+                      onChange={(e) => setManualFood({ ...manualFood, protein: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="carbs">Carbs (g)</Label>
+                    <Input
+                      id="carbs"
+                      type="number"
+                      placeholder="0"
+                      value={manualFood.carbs}
+                      onChange={(e) => setManualFood({ ...manualFood, carbs: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fats">Fats (g)</Label>
+                    <Input
+                      id="fats"
+                      type="number"
+                      placeholder="0"
+                      value={manualFood.fats}
+                      onChange={(e) => setManualFood({ ...manualFood, fats: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="fiber">Fiber (g)</Label>
+                    <Input
+                      id="fiber"
+                      type="number"
+                      placeholder="0"
+                      value={manualFood.fiber}
+                      onChange={(e) => setManualFood({ ...manualFood, fiber: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sugar">Sugar (g)</Label>
+                    <Input
+                      id="sugar"
+                      type="number"
+                      placeholder="0"
+                      value={manualFood.sugar}
+                      onChange={(e) => setManualFood({ ...manualFood, sugar: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sodium">Sodium (mg)</Label>
+                    <Input
+                      id="sodium"
+                      type="number"
+                      placeholder="0"
+                      value={manualFood.sodium}
+                      onChange={(e) => setManualFood({ ...manualFood, sodium: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleAddManualFood}
+                  disabled={!manualFood.food_name || !manualFood.calories}
+                  className="w-full"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add to {selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default function TrackerPage() {
-  const [entries, setEntries] = useState<FoodEntry[]>(sampleEntries);
-  const [selectedDate] = useState(new Date());
+  const [entries, setEntries] = useState<FoodEntry[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddFoodOpen, setIsAddFoodOpen] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    fetchFoodLogs();
+  }, [selectedDate]);
+
+  const fetchFoodLogs = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const dateStr = selectedDate.toISOString().split("T")[0];
+
+      const { data, error } = await supabase
+        .from("food_logs")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", dateStr)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      const mappedEntries: FoodEntry[] =
+        data?.map((log: any) => ({
+          id: log.id,
+          name: log.food_name,
+          calories: log.calories,
+          protein: log.protein || 0,
+          carbs: log.carbs || 0,
+          fats: log.fats || 0,
+          fiber: log.fiber || 0,
+          sugar: log.sugar || 0,
+          sodium: log.sodium || 0,
+          mealType: log.meal_type as "breakfast" | "lunch" | "dinner" | "snack",
+          analyzedFoodId: log.analyzed_food_id,
+        })) || [];
+
+      setEntries(mappedEntries);
+    } catch (error) {
+      console.error("Error fetching food logs:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const totalCalories = entries.reduce((sum, entry) => sum + entry.calories, 0);
   const totalProtein = entries.reduce((sum, entry) => sum + entry.protein, 0);
@@ -197,8 +581,74 @@ export default function TrackerPage() {
   const getEntriesByMealType = (mealType: string) =>
     entries.filter((e) => e.mealType === mealType);
 
-  const handleDeleteEntry = (id: string) => {
-    setEntries(entries.filter((e) => e.id !== id));
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      const { error } = await supabase.from("food_logs").delete().eq("id", id);
+      if (error) throw error;
+      setEntries(entries.filter((e) => e.id !== id));
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+    }
+  };
+
+  const handleAddFoodToMeal = async (food: AnalyzedFood | any, mealType: string, isManual: boolean) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const dateStr = selectedDate.toISOString().split("T")[0];
+
+      const insertData = {
+        user_id: user.id,
+        analyzed_food_id: isManual ? null : food.id,
+        date: dateStr,
+        meal_type: mealType,
+        food_name: food.food_name,
+        calories: food.calories,
+        protein: food.protein,
+        carbs: food.carbs,
+        fats: food.fats,
+        fiber: food.fiber,
+        sugar: food.sugar,
+        sodium: food.sodium,
+        serving_size: food.serving_size,
+      };
+
+      const { data, error } = await supabase
+        .from("food_logs")
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const newEntry: FoodEntry = {
+          id: data.id,
+          name: data.food_name,
+          calories: data.calories,
+          protein: data.protein || 0,
+          carbs: data.carbs || 0,
+          fats: data.fats || 0,
+          fiber: data.fiber || 0,
+          sugar: data.sugar || 0,
+          sodium: data.sodium || 0,
+          mealType: data.meal_type as "breakfast" | "lunch" | "dinner" | "snack",
+          analyzedFoodId: data.analyzed_food_id,
+        };
+        setEntries([...entries, newEntry]);
+      }
+    } catch (error) {
+      console.error("Error adding food to meal:", error);
+    }
+  };
+
+  const changeDate = (days: number) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + days);
+    setSelectedDate(newDate);
   };
 
   return (
@@ -214,6 +664,10 @@ export default function TrackerPage() {
                 Log and track your daily meals
               </p>
             </div>
+            <Button onClick={() => setIsAddFoodOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Food
+            </Button>
           </div>
         </header>
 
@@ -222,7 +676,11 @@ export default function TrackerPage() {
           <Card>
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
-                <Button variant="ghost" size="icon">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => changeDate(-1)}
+                >
                   <ChevronLeft className="h-5 w-5" />
                 </Button>
                 <div className="flex items-center gap-2">
@@ -235,7 +693,11 @@ export default function TrackerPage() {
                     })}
                   </span>
                 </div>
-                <Button variant="ghost" size="icon">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => changeDate(1)}
+                >
                   <ChevronRight className="h-5 w-5" />
                 </Button>
               </div>
@@ -376,6 +838,12 @@ export default function TrackerPage() {
             />
           </div>
         </main>
+
+        <AddFoodDialog
+          onAddFood={handleAddFoodToMeal}
+          isOpen={isAddFoodOpen}
+          onOpenChange={setIsAddFoodOpen}
+        />
       </SidebarInset>
     </SidebarProvider>
   );
