@@ -62,7 +62,10 @@ export function NutritionSummary({
                     : "bg-primary"
                 }`}
                 style={{
-                  width: `${Math.min((totalCalories / calorieGoal) * 100, 100)}%`,
+                  width: `${Math.min(
+                    (totalCalories / calorieGoal) * 100,
+                    100
+                  )}%`,
                 }}
               />
             </div>
@@ -79,7 +82,10 @@ export function NutritionSummary({
               <div
                 className="h-full rounded-full bg-primary transition-all"
                 style={{
-                  width: `${Math.min((totalProtein / proteinGoal) * 100, 100)}%`,
+                  width: `${Math.min(
+                    (totalProtein / proteinGoal) * 100,
+                    100
+                  )}%`,
                 }}
               />
             </div>
@@ -88,7 +94,7 @@ export function NutritionSummary({
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
               <span className="text-sm text-muted-foreground">Carbs</span>
-              <span className="text-sm text-accent">
+              <span className="text-sm text-primary">
                 {totalCarbs} / {carbsGoal}g
               </span>
             </div>
