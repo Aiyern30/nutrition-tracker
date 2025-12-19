@@ -60,7 +60,11 @@ export function AnalyzedFoodsHistory() {
 
       // Fetch with pagination using .range()
       // This translates to SQL: OFFSET {from} LIMIT {ITEMS_PER_PAGE}
-      const { data, error: fetchError, count } = await supabase
+      const {
+        data,
+        error: fetchError,
+        count,
+      } = await supabase
         .from("analyzed_foods")
         .select("*", { count: "exact" })
         .eq("user_id", user.id)
