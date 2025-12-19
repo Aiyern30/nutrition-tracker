@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
 
 const ERNIE_API_KEY = process.env.ERNIE_API_KEY;
 if (!ERNIE_API_KEY) {
-  throw new Error('ERNIE_API_KEY is not set in environment variables');
+  throw new Error("ERNIE_API_KEY is not set in environment variables");
 }
 
 const client = new OpenAI({
   apiKey: ERNIE_API_KEY,
-  baseURL: "https://aistudio.baidu.com/llm/lmapi/v3"
+  baseURL: "https://aistudio.baidu.com/llm/lmapi/v3",
 });
 
 interface NutritionData {
@@ -40,12 +40,14 @@ async function analyzeImageWithErnie(
 
     if (lang === "zh") {
       basePrompt = `你是一位专业的营养分析专家，擅长解读中国食品包装标签。请仔细分析这张食品图片，从营养成分表中提取准确的营养数据。`;
-      
+
       if (additionalContext) {
         basePrompt += `\n\n用户补充说明：${additionalContext}`;
       }
-      
-      prompt = basePrompt + `
+
+      prompt =
+        basePrompt +
+        `
 
 📋 分析步骤：
 1. 在包装上找到"营养成分表"区域
@@ -93,12 +95,14 @@ async function analyzeImageWithErnie(
 • 只输出JSON格式，不要添加任何其他文字或符号`;
     } else {
       basePrompt = `You are a professional nutrition analysis expert specializing in reading Chinese food packaging labels. Carefully analyze this food image and extract accurate nutritional data from the nutrition facts table.`;
-      
+
       if (additionalContext) {
         basePrompt += `\n\nUser Context: ${additionalContext}`;
       }
-      
-      prompt = basePrompt + `
+
+      prompt =
+        basePrompt +
+        `
 
 📋 Analysis Steps:
 1. Locate the "营养成分表" (Nutrition Facts Table) on the package
@@ -152,31 +156,31 @@ Provide your response in this exact JSON structure:
         content: [
           {
             type: "text" as const,
-            text: prompt
+            text: prompt,
           },
           {
             type: "image_url" as const,
             image_url: {
-              url: `data:image/jpeg;base64,${imageBase64}`
-            }
-          }
-        ]
-      }
+              url: `data:image/jpeg;base64,${imageBase64}`,
+            },
+          },
+        ],
+      },
     ];
 
     const response = await client.chat.completions.create({
       model: "ernie-5.0-thinking-preview",
       messages: messages,
       max_completion_tokens: 4096,
-      stream: false
+      stream: false,
     });
 
     if (response.choices && response.choices.length > 0) {
       const resultText = response.choices[0].message.content?.trim() || "";
-      
-      const startIdx = resultText.indexOf('{');
-      const endIdx = resultText.lastIndexOf('}') + 1;
-      
+
+      const startIdx = resultText.indexOf("{");
+      const endIdx = resultText.lastIndexOf("}") + 1;
+
       if (startIdx !== -1 && endIdx > startIdx) {
         const jsonStr = resultText.substring(startIdx, endIdx);
         const nutritionData = JSON.parse(jsonStr) as NutritionData;
@@ -256,23 +260,21 @@ ${description}
 ⚠️ Output ONLY valid JSON with no additional text.`;
     }
 
-    const messages = [
-      { role: "user" as const, content: prompt }
-    ];
+    const messages = [{ role: "user" as const, content: prompt }];
 
     const response = await client.chat.completions.create({
       model: "ernie-5.0-thinking-preview",
       messages: messages,
       max_completion_tokens: 2048,
-      stream: false
+      stream: false,
     });
 
     if (response.choices && response.choices.length > 0) {
       const resultText = response.choices[0].message.content?.trim() || "";
-      
-      const startIdx = resultText.indexOf('{');
-      const endIdx = resultText.lastIndexOf('}') + 1;
-      
+
+      const startIdx = resultText.indexOf("{");
+      const endIdx = resultText.lastIndexOf("}") + 1;
+
       if (startIdx !== -1 && endIdx > startIdx) {
         const jsonStr = resultText.substring(startIdx, endIdx);
         const nutritionData = JSON.parse(jsonStr) as NutritionData;
@@ -294,7 +296,7 @@ ${description}
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    
+
     if (!data) {
       return NextResponse.json({ error: "No data provided" }, { status: 400 });
     }
@@ -305,31 +307,35 @@ export async function POST(request: NextRequest) {
     if (data.image) {
       let imageData = data.image;
       // Remove data URL prefix if present
-      if (imageData.includes(',')) {
-        imageData = imageData.split(',')[1];
+      if (imageData.includes(",")) {
+        imageData = imageData.split(",")[1];
       }
-      
-      const additionalContext = data.description || '';
-      
-      const nutritionData = await analyzeImageWithErnie(imageData, additionalContext, lang);
-      
+
+      const additionalContext = data.description || "";
+
+      const nutritionData = await analyzeImageWithErnie(
+        imageData,
+        additionalContext,
+        lang
+      );
+
       // Extract detected text if available
-      const detectedText = nutritionData.detected_text || '';
+      const detectedText = nutritionData.detected_text || "";
       const ocrResults = [];
       if (detectedText) {
         // Split text into lines for display
-        const lines = detectedText.split('\n');
+        const lines = detectedText.split("\n");
         for (const line of lines) {
           if (line.trim()) {
             ocrResults.push({ text: line.trim(), confidence: 0.95 });
           }
         }
       }
-      
+
       return NextResponse.json({
         success: true,
         ocr_results: ocrResults,
-        nutrition: nutritionData
+        nutrition: nutritionData,
       });
     }
 
@@ -338,12 +344,14 @@ export async function POST(request: NextRequest) {
       const nutritionData = await analyzeTextWithErnie(data.description, lang);
       return NextResponse.json({
         success: true,
-        nutrition: nutritionData
+        nutrition: nutritionData,
       });
     }
 
-    return NextResponse.json({ error: "No image or description provided" }, { status: 400 });
-
+    return NextResponse.json(
+      { error: "No image or description provided" },
+      { status: 400 }
+    );
   } catch (error) {
     console.error("Error in analyze API:", error);
     return NextResponse.json(
