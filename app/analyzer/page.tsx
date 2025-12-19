@@ -32,6 +32,7 @@ import {
   FileImage,
   Loader2,
 } from "lucide-react";
+import { AnalyzedFoodsHistory } from "@/components/analyzer/analyzed-foods-history";
 
 interface NutritionResult {
   name: string;
@@ -774,6 +775,9 @@ export default function AnalyzerPage() {
               )}
             </div>
           </div>
+
+          {/* Add History Section Below */}
+          <AnalyzedFoodsHistory />
         </main>
       </SidebarInset>
     </SidebarProvider>
