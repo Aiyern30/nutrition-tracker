@@ -3,7 +3,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -50,7 +54,9 @@ export default function TrackerPage() {
 
   const fetchFoodLogs = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const dateStr = selectedDate.toISOString().split("T")[0];
@@ -118,7 +124,9 @@ export default function TrackerPage() {
     isManual: boolean
   ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const dateStr = selectedDate.toISOString().split("T")[0];
@@ -158,7 +166,11 @@ export default function TrackerPage() {
           fiber: data.fiber || 0,
           sugar: data.sugar || 0,
           sodium: data.sodium || 0,
-          mealType: data.meal_type as "breakfast" | "lunch" | "dinner" | "snack",
+          mealType: data.meal_type as
+            | "breakfast"
+            | "lunch"
+            | "dinner"
+            | "snack",
           analyzedFoodId: data.analyzed_food_id,
         };
         setEntries([...entries, newEntry]);
@@ -195,7 +207,10 @@ export default function TrackerPage() {
         </header>
 
         <main className="flex-1 space-y-6 p-6">
-          <DateNavigation selectedDate={selectedDate} onDateChange={changeDate} />
+          <DateNavigation
+            selectedDate={selectedDate}
+            onDateChange={changeDate}
+          />
 
           <NutritionSummary
             totalCalories={totalCalories}
