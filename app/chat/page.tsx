@@ -12,7 +12,17 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, User, AlertCircle, Settings, Trash2, History, MessageSquare, CalendarDays } from "lucide-react";
+import {
+  Send,
+  Bot,
+  User,
+  AlertCircle,
+  Settings,
+  Trash2,
+  History,
+  MessageSquare,
+  CalendarDays,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -26,6 +36,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 
 interface Message {
   id: string;
@@ -34,8 +45,6 @@ interface Message {
   timestamp: Date;
 }
 
-
-
 interface Conversation {
   id: string;
   title: string;
@@ -43,9 +52,13 @@ interface Conversation {
 }
 
 export default function ChatPage() {
+  useLocalizedMetadata({ page: "chat" });
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | null
+  >(null);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -59,7 +72,9 @@ export default function ChatPage() {
 
   useEffect(() => {
     const initUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
         fetchConversations(user.id);
@@ -95,10 +110,12 @@ export default function ChatPage() {
 
     if (!error && data) {
       // Parse timestamp strings back to Date objects
-      const loadedMessages: Message[] = (data.messages as any[]).map((msg: any) => ({
-        ...msg,
-        timestamp: new Date(msg.timestamp),
-      }));
+      const loadedMessages: Message[] = (data.messages as any[]).map(
+        (msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        })
+      );
       setMessages(loadedMessages);
       setIsHistoryOpen(false);
     }
@@ -164,14 +181,16 @@ export default function ChatPage() {
       // 2. Save to Supabase (Single Table Update)
       if (!conversationId) {
         // Create NEW conversation in single table
-        const title = userMessageContent.slice(0, 40) + (userMessageContent.length > 40 ? "..." : "");
+        const title =
+          userMessageContent.slice(0, 40) +
+          (userMessageContent.length > 40 ? "..." : "");
 
         const { data: convData, error: convError } = await supabase
           .from("conversations")
           .insert({
             user_id: userId,
             title: title,
-            messages: finalMessages
+            messages: finalMessages,
           })
           .select()
           .single();
@@ -186,7 +205,7 @@ export default function ChatPage() {
           .from("conversations")
           .update({
             messages: finalMessages,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq("id", conversationId);
 
@@ -238,9 +257,7 @@ export default function ChatPage() {
           <div className="flex flex-1 items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold">{t.chat.title}</h1>
-              <p className="text-sm text-muted-foreground">
-                {t.chat.subtitle}
-              </p>
+              <p className="text-sm text-muted-foreground">{t.chat.subtitle}</p>
             </div>
             <div className="flex items-center gap-2">
               <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
@@ -262,13 +279,21 @@ export default function ChatPage() {
                         <div
                           key={conv.id}
                           onClick={() => loadConversation(conv.id)}
-                          className={`group flex items-center justify-between rounded-lg p-3 text-sm cursor-pointer border transition-all ${currentConversationId === conv.id ? 'bg-primary/10 border-primary/20' : 'hover:bg-muted border-transparent'}`}
+                          className={`group flex items-center justify-between rounded-lg p-3 text-sm cursor-pointer border transition-all ${
+                            currentConversationId === conv.id
+                              ? "bg-primary/10 border-primary/20"
+                              : "hover:bg-muted border-transparent"
+                          }`}
                         >
                           <div className="flex items-center gap-3 overflow-hidden">
                             <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
                             <div className="flex flex-col overflow-hidden">
-                              <span className="truncate font-medium">{conv.title}</span>
-                              <span className="text-[10px] text-muted-foreground">{new Date(conv.created_at).toLocaleDateString()}</span>
+                              <span className="truncate font-medium">
+                                {conv.title}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {new Date(conv.created_at).toLocaleDateString()}
+                              </span>
                             </div>
                           </div>
                           <Button
@@ -300,7 +325,6 @@ export default function ChatPage() {
               >
                 <span className="text-xs">{t.chat.newChat}</span>
               </Button>
-
             </div>
           </div>
         </header>
@@ -310,9 +334,7 @@ export default function ChatPage() {
           <div className="border-b bg-accent/5 px-6 py-3">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-accent" />
-              <span className="text-sm font-medium">
-                {t.chat.disclaimer}
-              </span>
+              <span className="text-sm font-medium">{t.chat.disclaimer}</span>
             </div>
           </div>
 
@@ -358,8 +380,9 @@ export default function ChatPage() {
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex gap-4 ${message.role === "user" ? "justify-end" : ""
-                      }`}
+                    className={`flex gap-4 ${
+                      message.role === "user" ? "justify-end" : ""
+                    }`}
                   >
                     {message.role === "assistant" && (
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -367,36 +390,86 @@ export default function ChatPage() {
                       </div>
                     )}
                     <div
-                      className={`max-w-[85%] space-y-2 rounded-2xl px-5 py-4 ${message.role === "user"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "bg-card border shadow-sm"
-                        }`}
+                      className={`max-w-[85%] space-y-2 rounded-2xl px-5 py-4 ${
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-card border shadow-sm"
+                      }`}
                     >
-                      <div className={message.role === "assistant" ? "prose prose-sm dark:prose-invert max-w-none text-foreground" : ""}>
+                      <div
+                        className={
+                          message.role === "assistant"
+                            ? "prose prose-sm dark:prose-invert max-w-none text-foreground"
+                            : ""
+                        }
+                      >
                         {message.role === "assistant" ? (
                           <>
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               components={{
-                                p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-foreground">{children}</p>,
-                                ul: ({ children }) => <ul className="mb-2 space-y-1 list-disc pl-4 text-foreground">{children}</ul>,
-                                ol: ({ children }) => <ol className="mb-2 space-y-1 list-decimal pl-4 text-foreground">{children}</ol>,
-                                li: ({ children }) => <li className="text-sm pl-1">{children}</li>,
-                                h1: ({ children }) => <h1 className="text-base font-bold mb-2 mt-3 text-foreground">{children}</h1>,
-                                h2: ({ children }) => <h2 className="text-sm font-bold mb-1 mt-2 text-foreground">{children}</h2>,
-                                h3: ({ children }) => <h3 className="text-xs font-bold mb-1 mt-2 uppercase tracking-wide text-muted-foreground">{children}</h3>,
-                                strong: ({ children }) => <span className="font-bold text-foreground">{children}</span>,
-                                blockquote: ({ children }) => <blockquote className="border-l-2 border-primary pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
-                                code: ({ children }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
+                                p: ({ children }) => (
+                                  <p className="mb-2 last:mb-0 leading-relaxed text-foreground">
+                                    {children}
+                                  </p>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul className="mb-2 space-y-1 list-disc pl-4 text-foreground">
+                                    {children}
+                                  </ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol className="mb-2 space-y-1 list-decimal pl-4 text-foreground">
+                                    {children}
+                                  </ol>
+                                ),
+                                li: ({ children }) => (
+                                  <li className="text-sm pl-1">{children}</li>
+                                ),
+                                h1: ({ children }) => (
+                                  <h1 className="text-base font-bold mb-2 mt-3 text-foreground">
+                                    {children}
+                                  </h1>
+                                ),
+                                h2: ({ children }) => (
+                                  <h2 className="text-sm font-bold mb-1 mt-2 text-foreground">
+                                    {children}
+                                  </h2>
+                                ),
+                                h3: ({ children }) => (
+                                  <h3 className="text-xs font-bold mb-1 mt-2 uppercase tracking-wide text-muted-foreground">
+                                    {children}
+                                  </h3>
+                                ),
+                                strong: ({ children }) => (
+                                  <span className="font-bold text-foreground">
+                                    {children}
+                                  </span>
+                                ),
+                                blockquote: ({ children }) => (
+                                  <blockquote className="border-l-2 border-primary pl-3 my-2 italic text-muted-foreground">
+                                    {children}
+                                  </blockquote>
+                                ),
+                                code: ({ children }) => (
+                                  <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">
+                                    {children}
+                                  </code>
+                                ),
                               }}
                             >
-                              {message.content.replace('[ACTION:NavigateToMealPlanner]', '')}
+                              {message.content.replace(
+                                "[ACTION:NavigateToMealPlanner]",
+                                ""
+                              )}
                             </ReactMarkdown>
-                            {message.content.includes('[ACTION:NavigateToMealPlanner]') && (
+                            {message.content.includes(
+                              "[ACTION:NavigateToMealPlanner]"
+                            ) && (
                               <Button
                                 variant="outline"
                                 className="mt-3 w-full justify-start gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary"
-                                onClick={() => router.push('/meal-planner')}
+                                onClick={() => router.push("/meal-planner")}
                               >
                                 <CalendarDays className="h-4 w-4" />
                                 {t.chat.goToMealPlanner}
@@ -409,7 +482,11 @@ export default function ChatPage() {
                           </p>
                         )}
                       </div>
-                      <p className={`text-[10px] opacity-50 mt-2 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                      <p
+                        className={`text-[10px] opacity-50 mt-2 ${
+                          message.role === "user" ? "text-right" : "text-left"
+                        }`}
+                      >
                         {message.timestamp.toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",

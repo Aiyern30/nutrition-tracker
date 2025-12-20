@@ -27,8 +27,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { DailySummaryCard } from "@/components/daily-summary-card";
+import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 
 export default function DashboardPage() {
+  useLocalizedMetadata({ page: "dashboard" });
+
   const { t } = useLanguage();
 
   return (
