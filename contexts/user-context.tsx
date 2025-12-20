@@ -14,28 +14,10 @@ interface UserProfile {
   email: string;
   name: string;
   avatar_url?: string;
-  profile?: {
-    id: string;
-    display_name: string | null;
-    daily_calorie_goal: number;
-    daily_protein_goal: number;
-    daily_carbs_goal: number;
-    daily_fats_goal: number;
-    daily_water_goal: number;
-    current_streak: number;
-    activity_level: string;
-    goal_type: string;
-    dietary_restrictions: string[];
-    disliked_foods: string[];
-    height: number | null;
-    weight: number | null;
-    meal_reminders: boolean;
-    weekly_summary: boolean;
-    ai_insights: boolean;
+  created_at?: string; // Add auth user created_at
+  profileSettings?: {
     theme: string;
     language: string;
-    units: string;
-    created_at: string;
   };
 }
 
@@ -60,10 +42,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getUser();
 
       if (authUser) {
-        // Fetch full profile data
+        // Only fetch theme and language from profile, not the entire profile
         const { data: profile } = await supabase
           .from("profiles")
-          .select("*")
+          .select("theme, language")
           .eq("id", authUser.id)
           .single();
 
@@ -72,11 +54,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           name:
             authUser.user_metadata?.full_name ||
             authUser.user_metadata?.name ||
-            profile?.display_name ||
             authUser.email?.split("@")[0] ||
             "User",
           avatar_url: authUser.user_metadata?.avatar_url,
-          profile: profile || undefined,
+          created_at: authUser.created_at,
+          profileSettings: profile
+            ? {
+                theme: profile.theme || "system",
+                language: profile.language || "en",
+              }
+            : undefined,
         });
 
         if (profile?.theme) {
@@ -107,7 +94,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         try {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("*")
+            .select("theme, language")
             .eq("id", session.user.id)
             .single();
 
@@ -117,11 +104,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               name:
                 session.user.user_metadata?.full_name ||
                 session.user.user_metadata?.name ||
-                profile?.display_name ||
                 session.user.email?.split("@")[0] ||
                 "User",
               avatar_url: session.user.user_metadata?.avatar_url,
-              profile: profile || undefined,
+              created_at: session.user.created_at,
+              profileSettings: profile
+                ? {
+                    theme: profile.theme || "system",
+                    language: profile.language || "en",
+                  }
+                : undefined,
             });
 
             if (profile?.theme) {
