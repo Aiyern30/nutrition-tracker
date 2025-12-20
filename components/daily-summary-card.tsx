@@ -13,7 +13,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalorieRing } from "@/components/calorie-ring";
 import { MacroBar } from "@/components/macro-bar";
-import { getProgressColor } from "@/lib/utils/nutrition-colors";
+import {
+  getProgressColor,
+  getStatusMessage,
+} from "@/lib/utils/nutrition-colors";
 
 interface DailySummary {
   total_calories: number;
@@ -88,17 +91,17 @@ export function DailySummaryCard() {
   const consumedFats = dailySummary?.total_fats || 0;
   const fatsGoal = profile?.daily_fats_goal || 65;
 
-  // Determine colors based on progress using nutrition-colors helper
-  const getProteinColor = () => {
-    return getProgressColor(consumedProtein, proteinGoal, "protein");
-  };
-
-  const getCarbsColor = () => {
-    return getProgressColor(consumedCarbs, carbsGoal, "carbs");
-  };
-
-  const getFatsColor = () => {
-    return getProgressColor(consumedFats, fatsGoal, "fats");
+  // Translation object for status messages
+  const statusTranslations = {
+    overGoal: t.dashboard.todaysSummary.overGoal,
+    remaining: t.dashboard.todaysSummary.remaining,
+    optimal: t.dashboard.todaysSummary.optimal,
+    aboveRecommended: t.dashboard.todaysSummary.aboveRecommended,
+    belowTarget: t.dashboard.todaysSummary.belowTarget,
+    toGo: t.dashboard.todaysSummary.remaining,
+    goalReached: t.dashboard.todaysSummary.goalReached,
+    goalAchieved: t.dashboard.todaysSummary.goalReached,
+    noGoalSet: t.dashboard.todaysSummary.noGoalSet,
   };
 
   return (
@@ -149,34 +152,41 @@ export function DailySummaryCard() {
                 label={t.dashboard.todaysSummary.protein}
                 current={consumedProtein}
                 goal={proteinGoal}
-                color={getProteinColor()}
-                translations={{
-                  overGoal: t.dashboard.todaysSummary.overGoal,
-                  remaining: t.dashboard.todaysSummary.remaining,
-                  almostThere: t.dashboard.todaysSummary.almostThere,
-                }}
+                color={getProgressColor(
+                  consumedProtein,
+                  proteinGoal,
+                  "protein"
+                )}
+                statusMessage={getStatusMessage(
+                  consumedProtein,
+                  proteinGoal,
+                  "protein",
+                  statusTranslations
+                )}
               />
               <MacroBar
                 label={t.dashboard.todaysSummary.carbs}
                 current={consumedCarbs}
                 goal={carbsGoal}
-                color={getCarbsColor()}
-                translations={{
-                  overGoal: t.dashboard.todaysSummary.overGoal,
-                  remaining: t.dashboard.todaysSummary.remaining,
-                  almostThere: t.dashboard.todaysSummary.almostThere,
-                }}
+                color={getProgressColor(consumedCarbs, carbsGoal, "carbs")}
+                statusMessage={getStatusMessage(
+                  consumedCarbs,
+                  carbsGoal,
+                  "carbs",
+                  statusTranslations
+                )}
               />
               <MacroBar
                 label={t.dashboard.todaysSummary.fats}
                 current={consumedFats}
                 goal={fatsGoal}
-                color={getFatsColor()}
-                translations={{
-                  overGoal: t.dashboard.todaysSummary.overGoal,
-                  remaining: t.dashboard.todaysSummary.remaining,
-                  almostThere: t.dashboard.todaysSummary.almostThere,
-                }}
+                color={getProgressColor(consumedFats, fatsGoal, "fats")}
+                statusMessage={getStatusMessage(
+                  consumedFats,
+                  fatsGoal,
+                  "fats",
+                  statusTranslations
+                )}
               />
             </div>
           </div>
