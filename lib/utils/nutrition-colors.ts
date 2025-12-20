@@ -145,20 +145,37 @@ export function getBgColor(
 }
 
 /**
- * Get a human-readable status message
+ * Get a human-readable status message with i18n support
  */
 export function getStatusMessage(
   current: number,
   goal: number,
-  type:
-    | "calories"
-    | "protein"
-    | "carbs"
-    | "fats"
-    | "water"
-    | "default" = "default"
+  type: "calories" | "protein" | "carbs" | "fats" | "water" | "default" = "default",
+  translations?: {
+    overGoal: string;
+    remaining: string;
+    optimal: string;
+    aboveRecommended: string;
+    belowTarget: string;
+    toGo: string;
+    goalReached: string;
+    goalAchieved: string;
+    noGoalSet: string;
+  }
 ): string {
-  if (goal === 0) return "No goal set";
+  const t = translations || {
+    overGoal: "over goal",
+    remaining: "remaining",
+    optimal: "Optimal intake!",
+    aboveRecommended: "Above recommended",
+    belowTarget: "Below target",
+    toGo: "to goal",
+    goalReached: "Goal reached!",
+    goalAchieved: "Goal achieved!",
+    noGoalSet: "No goal set",
+  };
+
+  if (goal === 0) return t.noGoalSet;
 
   const percentage = (current / goal) * 100;
   const remaining = Math.max(0, goal - current);
@@ -166,23 +183,23 @@ export function getStatusMessage(
   if (type === "calories" || type === "fats" || type === "carbs") {
     if (current > goal) {
       const excess = current - goal;
-      return `${excess.toFixed(0)} over goal`;
+      return `+${excess.toFixed(0)} ${t.overGoal}`;
     }
-    return `${remaining.toFixed(0)} remaining`;
+    return `${remaining.toFixed(0)} ${t.remaining}`;
   }
 
   if (type === "protein") {
-    if (percentage >= 90 && percentage <= 120) return "Optimal intake!";
-    if (current > goal * 1.2) return "Above recommended";
-    if (current < goal * 0.7) return "Below target";
-    return `${remaining.toFixed(0)}g to goal`;
+    if (percentage >= 90 && percentage <= 120) return t.optimal;
+    if (current > goal * 1.2) return t.aboveRecommended;
+    if (current < goal * 0.7) return t.belowTarget;
+    return `${remaining.toFixed(0)}g ${t.toGo}`;
   }
 
   if (type === "water") {
-    if (percentage >= 100) return "Goal reached!";
-    return `${remaining.toFixed(0)} glasses left`;
+    if (percentage >= 100) return t.goalReached;
+    return `${remaining.toFixed(0)} ${t.remaining}`;
   }
 
-  if (current >= goal) return "Goal achieved!";
-  return `${(((goal - current) / goal) * 100).toFixed(0)}% remaining`;
+  if (current >= goal) return t.goalAchieved;
+  return `${(((goal - current) / goal) * 100).toFixed(0)}% ${t.remaining}`;
 }

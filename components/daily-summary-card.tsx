@@ -13,6 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalorieRing } from "@/components/calorie-ring";
 import { MacroBar } from "@/components/macro-bar";
+import { getProgressColor } from "@/lib/utils/nutrition-colors";
 
 interface DailySummary {
   total_calories: number;
@@ -87,26 +88,17 @@ export function DailySummaryCard() {
   const consumedFats = dailySummary?.total_fats || 0;
   const fatsGoal = profile?.daily_fats_goal || 65;
 
-  // Determine colors based on progress
+  // Determine colors based on progress using nutrition-colors helper
   const getProteinColor = () => {
-    const percentage = (consumedProtein / proteinGoal) * 100;
-    if (consumedProtein > proteinGoal) return "destructive";
-    if (percentage >= 90) return "success";
-    return "primary";
+    return getProgressColor(consumedProtein, proteinGoal, "protein");
   };
 
   const getCarbsColor = () => {
-    const percentage = (consumedCarbs / carbsGoal) * 100;
-    if (consumedCarbs > carbsGoal) return "destructive";
-    if (percentage >= 90) return "success";
-    return "accent";
+    return getProgressColor(consumedCarbs, carbsGoal, "carbs");
   };
 
   const getFatsColor = () => {
-    const percentage = (consumedFats / fatsGoal) * 100;
-    if (consumedFats > fatsGoal) return "destructive";
-    if (percentage >= 90) return "success";
-    return "chart-3";
+    return getProgressColor(consumedFats, fatsGoal, "fats");
   };
 
   return (

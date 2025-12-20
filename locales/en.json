@@ -363,7 +363,12 @@
       "fats": "Fats",
       "overGoal": "over goal",
       "remaining": "remaining",
-      "almostThere": "Almost there!"
+      "almostThere": "Almost there!",
+      "optimal": "Optimal intake!",
+      "aboveRecommended": "Above recommended",
+      "belowTarget": "Below target",
+      "goalReached": "Goal reached!",
+      "noGoalSet": "No goal set"
     },
     "quickActions": {
       "title": "Quick Actions",
