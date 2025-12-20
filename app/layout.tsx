@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NutriAI - Your Personal Nutrition Assistant",
+  title: "Eat Smart AI - Your Personal Nutrition Assistant",
   description:
     "AI-powered nutrition tracking, meal planning, and dietary guidance. Analyze foods, plan meals, and track your nutrition goals.",
   generator: "v0.app",

@@ -68,7 +68,7 @@ export default function LoginPage() {
             />
           </div>
           <CardTitle className="text-2xl font-bold">
-            Welcome to NutriAI
+            Welcome to Eat Smart AI
           </CardTitle>
           <CardDescription>
             Sign in to start your personalized nutrition journey

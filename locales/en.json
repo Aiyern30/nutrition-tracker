@@ -1,7 +1,7 @@
 {
   "metadata": {
     "default": {
-      "title": "NutriAI - Your Personal Nutrition Assistant",
+      "title": "Eat Smart AI - Your Personal Nutrition Assistant",
       "description": "AI-powered nutrition tracking, meal planning, and dietary guidance."
     },
     "analyzer": {
@@ -30,7 +30,7 @@
     }
   },
   "sidebar": {
-    "appName": "NutriAI",
+    "appName": "Eat Smart AI",
     "appSubtitle": "Nutrition Assistant",
     "dashboard": "Dashboard",
     "aiChat": "AI Chat",

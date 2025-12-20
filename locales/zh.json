@@ -1,7 +1,7 @@
 {
   "metadata": {
     "default": {
-      "title": "NutriAI - 您的个人营养助手",
+      "title": "Eat Smart AI - 您的个人营养助手",
       "description": "AI 驱动的营养追踪、膳食计划和饮食指导。"
     },
     "analyzer": {
@@ -30,7 +30,7 @@
     }
   },
   "sidebar": {
-    "appName": "营养AI",
+    "appName": "Eat Smart AI",
     "appSubtitle": "营养助手",
     "dashboard": "仪表盘",
     "aiChat": "AI聊天",

@@ -22,7 +22,7 @@ export function MetadataUpdater() {
     };
 
     // Update default title and description only
-    const title = getNestedValue(t, "metadata.default.title") || "NutriAI";
+    const title = getNestedValue(t, "metadata.default.title") || "Eat Smart AI";
     const description = getNestedValue(t, "metadata.default.description");
 
     document.title = title;

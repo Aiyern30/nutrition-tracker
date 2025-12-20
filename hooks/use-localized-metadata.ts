@@ -32,10 +32,10 @@ export function useLocalizedMetadata(config?: MetadataConfig) {
       : "metadata.default";
 
     // Set title
-    const title = getNestedValue(t, `${metadataPath}.title`) || "NutriAI";
+    const title = getNestedValue(t, `${metadataPath}.title`) || "Eat Smart AI";
     const finalTitle =
       config?.page && config?.appendSiteName !== false
-        ? `${title} - NutriAI`
+        ? `${title} - Eat Smart AI`
         : title;
     document.title = finalTitle;
 
