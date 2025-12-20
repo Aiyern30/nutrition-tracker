@@ -150,7 +150,13 @@ export function getBgColor(
 export function getStatusMessage(
   current: number,
   goal: number,
-  type: "calories" | "protein" | "carbs" | "fats" | "water" | "default" = "default",
+  type:
+    | "calories"
+    | "protein"
+    | "carbs"
+    | "fats"
+    | "water"
+    | "default" = "default",
   translations?: {
     overGoal: string;
     remaining: string;
