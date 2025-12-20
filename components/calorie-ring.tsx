@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 interface CalorieRingProps {
   consumed: number;
   goal: number;
@@ -7,40 +9,105 @@ interface CalorieRingProps {
 
 export function CalorieRing({ consumed, goal }: CalorieRingProps) {
   const percentage = Math.min((consumed / goal) * 100, 100);
-  const radius = 70;
-  const circumference = 2 * Math.PI * radius;
+  const exceeded = consumed > goal;
+  const nearGoal = percentage >= 90 && percentage <= 100;
+  const remaining = Math.max(goal - consumed, 0);
+  const circumference = 2 * Math.PI * 70;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
+  // Determine ring color based on progress
+  const getRingColor = () => {
+    if (exceeded) return "stroke-red-500";
+    if (nearGoal) return "stroke-green-500";
+    if (percentage >= 75) return "stroke-yellow-500";
+    return "stroke-primary";
+  };
+
+  const getTextColor = () => {
+    if (exceeded) return "text-red-500";
+    if (nearGoal) return "text-green-500";
+    return "text-foreground";
+  };
+
   return (
-    <div className="relative flex items-center justify-center">
-      <svg className="transform -rotate-90" width="180" height="180">
-        {/* Background circle */}
-        <circle
-          cx="90"
-          cy="90"
-          r={radius}
-          stroke="currentColor"
-          strokeWidth="12"
-          fill="none"
-          className="text-muted"
-        />
-        {/* Progress circle */}
-        <circle
-          cx="90"
-          cy="90"
-          r={radius}
-          stroke="currentColor"
-          strokeWidth="12"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          className="text-primary transition-all duration-500"
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className="text-3xl font-bold">{consumed}</span>
-        <span className="text-sm text-muted-foreground">/ {goal} cal</span>
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative">
+        <svg className="h-48 w-48 -rotate-90 transform">
+          {/* Background circle */}
+          <circle
+            cx="96"
+            cy="96"
+            r="70"
+            stroke="currentColor"
+            strokeWidth="12"
+            fill="transparent"
+            className="text-secondary"
+          />
+          {/* Progress circle */}
+          <circle
+            cx="96"
+            cy="96"
+            r="70"
+            stroke="currentColor"
+            strokeWidth="12"
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            className={cn(
+              "transition-all duration-500 ease-out",
+              getRingColor(),
+              exceeded && "animate-pulse"
+            )}
+            strokeLinecap="round"
+          />
+          {/* Exceeded indicator - full red circle overlay */}
+          {exceeded && (
+            <circle
+              cx="96"
+              cy="96"
+              r="70"
+              stroke="currentColor"
+              strokeWidth="12"
+              fill="transparent"
+              strokeDasharray={circumference}
+              strokeDashoffset={0}
+              className="stroke-red-500/20"
+              strokeLinecap="round"
+            />
+          )}
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className={cn("text-3xl font-bold", getTextColor())}>
+            {consumed.toLocaleString()}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            of {goal.toLocaleString()}
+          </span>
+          <span className={cn("text-xs font-medium mt-1", getTextColor())}>
+            {exceeded
+              ? `+${(consumed - goal).toLocaleString()} over`
+              : `${remaining.toLocaleString()} left`}
+          </span>
+        </div>
+      </div>
+
+      {/* Status indicator */}
+      <div
+        className={cn(
+          "text-center text-sm font-medium px-3 py-1 rounded-full",
+          exceeded &&
+            "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
+          nearGoal &&
+            !exceeded &&
+            "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
+          !exceeded &&
+            !nearGoal &&
+            "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+        )}
+      >
+        {exceeded && "⚠️ Over Goal"}
+        {nearGoal && !exceeded && "🎯 On Track"}
+        {!exceeded && !nearGoal && `${Math.round(percentage)}% Progress`}
       </div>
     </div>
   );
