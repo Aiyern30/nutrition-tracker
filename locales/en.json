@@ -27,6 +27,10 @@
     "dashboard": {
       "title": "Dashboard",
       "description": "View your nutrition overview, recent meals, and progress towards your goals."
+    },
+    "chat": {
+      "title": "AI Chat",
+      "description": "Ask nutrition questions and get instant AI-powered dietary guidance and meal suggestions."
     }
   },
   "sidebar": {

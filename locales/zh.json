@@ -27,6 +27,10 @@
     "dashboard": {
       "title": "仪表板",
       "description": "查看您的营养概览、最近的膳食和目标进度。"
+    },
+    "chat": {
+      "title": "AI 聊天",
+      "description": "咨询营养问题，获取 AI 驱动的饮食建议和膳食推荐。"
     }
   },
   "sidebar": {
