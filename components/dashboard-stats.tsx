@@ -4,7 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/contexts/language-context";
 import { StatCard } from "@/components/stat-card";
-import { Flame, Droplets, TrendingUp, Award, AlertTriangle } from "lucide-react";
+import {
+  Flame,
+  Droplets,
+  TrendingUp,
+  Award,
+  AlertTriangle,
+} from "lucide-react";
 
 interface DailySummary {
   total_calories: number;
@@ -119,8 +125,12 @@ export function DashboardStats() {
         value={consumedCalories.toLocaleString()}
         subtitle={
           caloriesExceeded
-            ? `+${(consumedCalories - calorieGoal).toLocaleString()} ${t.dashboard.todaysSummary.overGoal}`
-            : `${remainingCalories.toLocaleString()} ${t.dashboard.stats.dailyCalories.remaining}`
+            ? `+${(consumedCalories - calorieGoal).toLocaleString()} ${
+                t.dashboard.todaysSummary.overGoal
+              }`
+            : `${remainingCalories.toLocaleString()} ${
+                t.dashboard.stats.dailyCalories.remaining
+              }`
         }
         icon={getCalorieIcon()}
         trend={

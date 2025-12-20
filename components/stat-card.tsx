@@ -76,10 +76,7 @@ export function StatCard({
           </div>
           <div className={cn("rounded-full p-3", iconBgStyles[variant])}>
             <Icon
-              className={cn(
-                "h-6 w-6",
-                variantStyles[variant].split(" ")[0]
-              )}
+              className={cn("h-6 w-6", variantStyles[variant].split(" ")[0])}
             />
           </div>
         </div>

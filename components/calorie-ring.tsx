@@ -108,7 +108,9 @@ export function CalorieRing({
           </span>
           <span className={cn("text-xs font-medium mt-1", getTextColor())}>
             {exceeded
-              ? `+${(consumed - goal).toLocaleString()} ${translations.overGoal}`
+              ? `+${(consumed - goal).toLocaleString()} ${
+                  translations.overGoal
+                }`
               : `${remaining.toLocaleString()} ${translations.remaining}`}
           </span>
         </div>
