@@ -363,7 +363,12 @@
       "fats": "脂肪",
       "overGoal": "超出目标",
       "remaining": "剩余",
-      "almostThere": "快到了！"
+      "almostThere": "快到了！",
+      "optimal": "最佳摄入！",
+      "aboveRecommended": "高于推荐",
+      "belowTarget": "低于目标",
+      "goalReached": "达成目标！",
+      "noGoalSet": "未设置目标"
     },
     "quickActions": {
       "title": "快速操作",

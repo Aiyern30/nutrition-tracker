@@ -12,6 +12,8 @@ import {
   Award,
   AlertTriangle,
 } from "lucide-react";
+import { getStatusMessage } from "@/lib/utils/nutrition-colors";
+import { calculateDietScore, getDietScoreColor } from "@/lib/utils/diet-score";
 
 interface DailySummary {
   total_calories: number;
@@ -102,11 +104,31 @@ export function DashboardStats() {
   const remainingCalories = Math.max(0, calorieGoal - consumedCalories);
   const caloriesExceeded = consumedCalories > calorieGoal;
 
+  const consumedProtein = dailySummary?.total_protein || 0;
+  const proteinGoal = profile?.daily_protein_goal || 150;
+
+  const consumedCarbs = dailySummary?.total_carbs || 0;
+  const carbsGoal = profile?.daily_carbs_goal || 200;
+
+  const consumedFats = dailySummary?.total_fats || 0;
+  const fatsGoal = profile?.daily_fats_goal || 65;
+
   const waterIntake = dailySummary?.water_intake || 0;
   const waterGoal = profile?.daily_water_goal || 8;
   const waterComplete = waterIntake >= waterGoal;
 
-  const dietScore = dailySummary?.diet_quality_score || "B+";
+  // Calculate diet score dynamically
+  const dietScore = calculateDietScore(
+    consumedCalories,
+    consumedProtein,
+    consumedCarbs,
+    consumedFats,
+    calorieGoal,
+    proteinGoal,
+    carbsGoal,
+    fatsGoal
+  );
+
   const streak = profile?.current_streak || 0;
 
   const calorieTrend =
@@ -114,15 +136,17 @@ export function DashboardStats() {
       ? Math.round((consumedCalories / calorieGoal) * 100) - 100
       : 0;
 
-  // Determine calorie icon based on status
-  const getCalorieIcon = () => {
-    if (caloriesExceeded) return AlertTriangle;
-    return Flame;
-  };
-
-  // Determine water icon color
-  const getWaterIcon = () => {
-    return Droplets;
+  // Translation object for status messages
+  const statusTranslations = {
+    overGoal: t.dashboard.todaysSummary.overGoal,
+    remaining: t.dashboard.todaysSummary.remaining,
+    optimal: t.dashboard.todaysSummary.almostThere,
+    aboveRecommended: t.dashboard.todaysSummary.overGoal,
+    belowTarget: t.dashboard.todaysSummary.remaining,
+    toGo: t.dashboard.todaysSummary.remaining,
+    goalReached: t.dashboard.stats.dietScore.subtitle,
+    goalAchieved: t.dashboard.stats.dietScore.subtitle,
+    noGoalSet: "",
   };
 
   return (
@@ -130,16 +154,13 @@ export function DashboardStats() {
       <StatCard
         title={t.dashboard.stats.dailyCalories.title}
         value={consumedCalories.toLocaleString()}
-        subtitle={
-          caloriesExceeded
-            ? `+${(consumedCalories - calorieGoal).toLocaleString()} ${
-                t.dashboard.todaysSummary.overGoal
-              }`
-            : `${remainingCalories.toLocaleString()} ${
-                t.dashboard.stats.dailyCalories.remaining
-              }`
-        }
-        icon={getCalorieIcon()}
+        subtitle={getStatusMessage(
+          consumedCalories,
+          calorieGoal,
+          "calories",
+          statusTranslations
+        )}
+        icon={caloriesExceeded ? AlertTriangle : Flame}
         trend={
           calorieTrend !== 0
             ? {
@@ -153,8 +174,13 @@ export function DashboardStats() {
       <StatCard
         title={t.dashboard.stats.waterIntake.title}
         value={`${waterIntake} / ${waterGoal}`}
-        subtitle={t.dashboard.stats.waterIntake.subtitle}
-        icon={getWaterIcon()}
+        subtitle={getStatusMessage(
+          waterIntake,
+          waterGoal,
+          "water",
+          statusTranslations
+        )}
+        icon={Droplets}
         variant={waterComplete ? "success" : "default"}
       />
       <StatCard
@@ -162,7 +188,13 @@ export function DashboardStats() {
         value={dietScore}
         subtitle={t.dashboard.stats.dietScore.subtitle}
         icon={Award}
-        trend={{ value: 8, isPositive: true }}
+        variant={
+          getDietScoreColor(dietScore) as
+            | "success"
+            | "destructive"
+            | "warning"
+            | "default"
+        }
       />
       <StatCard
         title={t.dashboard.stats.streak.title}
