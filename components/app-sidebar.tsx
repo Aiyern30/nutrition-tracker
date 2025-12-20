@@ -1,8 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
 import {
   Home,
   MessageSquare,
@@ -19,6 +16,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useLanguage } from "@/contexts/language-context";
+import { useUser } from "@/contexts/user-context";
 
 import {
   Sidebar,
@@ -40,20 +38,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-interface UserProfile {
-  email: string;
-  name: string;
-  avatar_url?: string;
-}
-
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { setTheme } = useTheme();
   const { t, language, setLanguage } = useLanguage();
-  const supabase = createClient();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useUser(); // Use the context instead
 
   // Update navItems to use translations
   const navItems = [
@@ -89,96 +78,9 @@ export function AppSidebar() {
     },
   ];
 
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
-
-        if (authUser) {
-          setUser({
-            email: authUser.email || "",
-            name:
-              authUser.user_metadata?.full_name ||
-              authUser.user_metadata?.name ||
-              authUser.email?.split("@")[0] ||
-              "User",
-            avatar_url: authUser.user_metadata?.avatar_url,
-          });
-
-          // Load theme from profile
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("theme")
-            .eq("id", authUser.id)
-            .single();
-
-          if (profile?.theme) {
-            setTheme(profile.theme);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getUser();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      async (
-        _event: any,
-        session: {
-          user: {
-            id: string;
-            email: string;
-            user_metadata: { full_name: any; name: any; avatar_url: any };
-          };
-        }
-      ) => {
-        if (session?.user) {
-          setUser({
-            email: session.user.email || "",
-            name:
-              session.user.user_metadata?.full_name ||
-              session.user.user_metadata?.name ||
-              session.user.email?.split("@")[0] ||
-              "User",
-            avatar_url: session.user.user_metadata?.avatar_url,
-          });
-
-          // Load theme from profile
-          try {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("theme")
-              .eq("id", session.user.id)
-              .single();
-
-            if (profile?.theme) {
-              setTheme(profile.theme);
-            }
-          } catch (error) {
-            console.error("Error loading theme:", error);
-          }
-        } else {
-          setUser(null);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase, setTheme]);
-
   const handleLogout = async () => {
     try {
+      const supabase = createClient();
       await supabase.auth.signOut();
       router.push("/login");
     } catch (error) {
@@ -189,8 +91,6 @@ export function AppSidebar() {
   const handleLanguageToggle = async () => {
     try {
       const newLanguage = language === "en" ? "zh" : "en";
-
-      // Just call setLanguage from context - it handles database update
       await setLanguage(newLanguage);
     } catch (error) {
       console.error("Error toggling language:", error);
