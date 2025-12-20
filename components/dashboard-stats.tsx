@@ -101,7 +101,6 @@ export function DashboardStats() {
 
   const consumedCalories = dailySummary?.total_calories || 0;
   const calorieGoal = profile?.daily_calorie_goal || 2000;
-  const remainingCalories = Math.max(0, calorieGoal - consumedCalories);
   const caloriesExceeded = consumedCalories > calorieGoal;
 
   const consumedProtein = dailySummary?.total_protein || 0;
