@@ -164,7 +164,8 @@
       "removeRestrictionError": "移除限制失败",
       "addFoodError": "添加食物失败",
       "removeFoodError": "移除食物失败",
-      "saveSettingsError": "更新设置失败"
+      "saveSettingsError": "更新设置失败",
+      "notLoggedIn": "您必须登录才能查看此页面"
     }
   },
   "analyzer": {

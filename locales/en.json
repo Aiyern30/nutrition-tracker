@@ -164,7 +164,8 @@
       "removeRestrictionError": "Failed to remove restriction",
       "addFoodError": "Failed to add food",
       "removeFoodError": "Failed to remove food",
-      "saveSettingsError": "Failed to update settings"
+      "saveSettingsError": "Failed to update settings",
+      "notLoggedIn": "You must be logged in to view this page"
     }
   },
   "analyzer": {
