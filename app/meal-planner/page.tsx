@@ -199,53 +199,79 @@ export default function MealPlannerPage() {
   };
 
   const savePlan = async () => {
-    if (!pendingPlan || !profile) return;
+    if (!pendingPlan || !profile) {
+      console.log("Missing pending plan or profile");
+      return;
+    }
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user");
+      console.log("Starting save process...");
+
+      // Use profile.id directly to avoid network hang on getUser()
+      const userId = profile.id;
+
+      if (!userId) {
+        // Fallback or error if profile is somehow malformed
+        console.error("Profile missing ID");
+        throw new Error("User profile corrupted");
+      }
+
+      console.log("User ID:", userId);
+      console.log("Plan date:", pendingPlan.date);
 
       // 1. Delete existing meals for this date
+      console.log("Deleting existing meals...");
       const { error: deleteError } = await supabase
         .from('meal_plans')
         .delete()
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('date', pendingPlan.date);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error("Delete Error:", deleteError);
+        throw new Error(`Delete failed: ${deleteError.message}`);
+      }
 
       // 2. Insert new meals
-      const mealsToInsert = pendingPlan.meals.map(meal => ({
-        user_id: user.id,
+      console.log("Preparing meals for insert...");
+      const mealsToInsert = pendingPlan.meals.map((meal: Meal) => ({
+        user_id: userId,
         date: pendingPlan.date,
         daily_summary: pendingPlan.summary,
         meal_type: meal.type,
         name: meal.name,
         description: meal.description,
-        items: meal.items,
-        calories: meal.nutrition.calories,
-        protein: meal.nutrition.protein,
-        carbs: meal.nutrition.carbs,
-        fats: meal.nutrition.fats,
-        tips: meal.tips
+        items: meal.items || [],
+        calories: meal.nutrition.calories || 0,
+        protein: meal.nutrition.protein || 0,
+        carbs: meal.nutrition.carbs || 0,
+        fats: meal.nutrition.fats || 0,
+        tips: meal.tips || ""
       }));
 
+      console.log("Inserting meals count:", mealsToInsert.length);
       const { error: insertError } = await supabase
         .from('meal_plans')
         .insert(mealsToInsert);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Insert Error:", insertError);
+        throw new Error(`Insert failed: ${insertError.message}`);
+      }
 
+      console.log("Save successful!");
+
+      // Update local state by forcing a re-fetch or manual update
       setMealPlans(prev => ({
         ...prev,
         [pendingPlan.date]: pendingPlan
       }));
       setPendingPlan(null);
-      toast.success("Meal plan saved to Supabase!");
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to save plan");
+      toast.success("Meal plan saved successfully!");
+    } catch (e: any) {
+      console.error("Save Plan Exception:", e);
+      toast.error(e.message || "Failed to save plan");
     } finally {
       setLoading(false);
     }
