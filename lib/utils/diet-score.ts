@@ -23,8 +23,10 @@ export function calculateDietScore(
   goals: Goals
 ): { score: string; explanation: string } {
   // Calculate percentage of each macro achieved
-  const caloriePercent = (nutrition.total_calories / goals.daily_calorie_goal) * 100;
-  const proteinPercent = (nutrition.total_protein / goals.daily_protein_goal) * 100;
+  const caloriePercent =
+    (nutrition.total_calories / goals.daily_calorie_goal) * 100;
+  const proteinPercent =
+    (nutrition.total_protein / goals.daily_protein_goal) * 100;
   const carbsPercent = (nutrition.total_carbs / goals.daily_carbs_goal) * 100;
   const fatsPercent = (nutrition.total_fats / goals.daily_fats_goal) * 100;
 
@@ -36,11 +38,11 @@ export function calculateDietScore(
   const fatsScore = Math.max(0, 100 - Math.abs(fatsPercent - 100));
 
   // Weighted average (protein is more important)
-  const totalScore = 
-    (calorieScore * 0.3) + 
-    (proteinScore * 0.35) + 
-    (carbsScore * 0.2) + 
-    (fatsScore * 0.15);
+  const totalScore =
+    calorieScore * 0.3 +
+    proteinScore * 0.35 +
+    carbsScore * 0.2 +
+    fatsScore * 0.15;
 
   // Determine letter grade
   let score: string;
@@ -84,12 +86,12 @@ export function getDietScoreTrend(
 ): { value: number; isPositive: boolean } | undefined {
   const scoreValues: Record<string, number> = {
     "A+": 100,
-    "A": 95,
+    A: 95,
     "B+": 90,
-    "B": 85,
+    B: 85,
     "C+": 75,
-    "C": 65,
-    "D": 50,
+    C: 65,
+    D: 50,
   };
 
   const current = scoreValues[currentScore] || 0;
