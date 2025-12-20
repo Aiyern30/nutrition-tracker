@@ -203,7 +203,7 @@ export function AppSidebar() {
         <div className="flex items-center gap-2 px-4 py-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary overflow-hidden">
             <Image
-              src="/logo.png"
+              src="/Logo.png"
               alt="Logo"
               width={28}
               height={28}
