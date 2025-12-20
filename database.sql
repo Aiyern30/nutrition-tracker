@@ -79,7 +79,7 @@ CREATE TABLE public.meal_plans (
   meal_type text NOT NULL,
   name text,
   description text,
-  items ARRAY DEFAULT '{}'::text[],
+  items text[] DEFAULT '{}'::text[],
   calories integer,
   protein integer,
   carbs integer,
@@ -91,6 +91,22 @@ CREATE TABLE public.meal_plans (
   CONSTRAINT meal_plans_pkey PRIMARY KEY (id),
   CONSTRAINT meal_plans_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+
+-- Enable Row Level Security
+ALTER TABLE public.meal_plans ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Users can view their own meal plans" ON public.meal_plans
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own meal plans" ON public.meal_plans
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own meal plans" ON public.meal_plans
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own meal plans" ON public.meal_plans
+  FOR DELETE USING (auth.uid() = user_id);
 CREATE TABLE public.profiles (
   id uuid NOT NULL,
   display_name text,
