@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getTextColor, getBarColor } from "@/lib/utils/nutrition-colors";
 
 interface NutritionSummaryProps {
   totalCalories: number;
@@ -34,35 +35,6 @@ export function NutritionSummary({
 }: NutritionSummaryProps) {
   const { t } = useLanguage();
 
-  // Helper function to get color classes based on progress
-  const getProgressColor = (current: number, goal: number) => {
-    const percentage = (current / goal) * 100;
-    if (current > goal) return "destructive";
-    if (percentage >= 90) return "success";
-    if (percentage >= 75) return "warning";
-    return "primary";
-  };
-
-  const getTextColor = (current: number, goal: number) => {
-    const colorType = getProgressColor(current, goal);
-    return {
-      destructive: "text-red-500",
-      success: "text-green-500",
-      warning: "text-yellow-500",
-      primary: "text-primary",
-    }[colorType];
-  };
-
-  const getBarColor = (current: number, goal: number) => {
-    const colorType = getProgressColor(current, goal);
-    return {
-      destructive: "bg-red-500 animate-pulse",
-      success: "bg-green-500",
-      warning: "bg-yellow-500",
-      primary: "bg-primary",
-    }[colorType];
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -86,33 +58,21 @@ export function NutritionSummary({
               <span className="text-sm text-muted-foreground">
                 {t.tracker.summary.calories}
               </span>
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  getTextColor(totalCalories, calorieGoal)
-                )}
-              >
+              <span className={cn("text-sm font-medium", getTextColor(totalCalories, calorieGoal, "calories"))}>
                 {totalCalories} / {calorieGoal}
               </span>
             </div>
             <div className="h-2 w-full rounded-full bg-muted">
               <div
-                className={cn(
-                  "h-full rounded-full transition-all",
-                  getBarColor(totalCalories, calorieGoal)
-                )}
+                className={cn("h-full rounded-full transition-all", getBarColor(totalCalories, calorieGoal, "calories"))}
                 style={{
-                  width: `${Math.min(
-                    (totalCalories / calorieGoal) * 100,
-                    100
-                  )}%`,
+                  width: `${Math.min((totalCalories / calorieGoal) * 100, 100)}%`,
                 }}
               />
             </div>
             {totalCalories > calorieGoal && (
               <p className="text-xs text-red-500 font-medium">
-                +{totalCalories - calorieGoal}{" "}
-                {t.dashboard.todaysSummary.overGoal}
+                +{totalCalories - calorieGoal} {t.dashboard.todaysSummary.overGoal}
               </p>
             )}
           </div>
@@ -123,33 +83,21 @@ export function NutritionSummary({
               <span className="text-sm text-muted-foreground">
                 {t.tracker.summary.protein}
               </span>
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  getTextColor(totalProtein, proteinGoal)
-                )}
-              >
+              <span className={cn("text-sm font-medium", getTextColor(totalProtein, proteinGoal, "protein"))}>
                 {totalProtein} / {proteinGoal}g
               </span>
             </div>
             <div className="h-2 w-full rounded-full bg-muted">
               <div
-                className={cn(
-                  "h-full rounded-full transition-all",
-                  getBarColor(totalProtein, proteinGoal)
-                )}
+                className={cn("h-full rounded-full transition-all", getBarColor(totalProtein, proteinGoal, "protein"))}
                 style={{
-                  width: `${Math.min(
-                    (totalProtein / proteinGoal) * 100,
-                    100
-                  )}%`,
+                  width: `${Math.min((totalProtein / proteinGoal) * 100, 100)}%`,
                 }}
               />
             </div>
             {totalProtein > proteinGoal && (
               <p className="text-xs text-red-500 font-medium">
-                +{totalProtein - proteinGoal}g{" "}
-                {t.dashboard.todaysSummary.overGoal}
+                +{totalProtein - proteinGoal}g {t.dashboard.todaysSummary.overGoal}
               </p>
             )}
           </div>
@@ -160,21 +108,13 @@ export function NutritionSummary({
               <span className="text-sm text-muted-foreground">
                 {t.tracker.summary.carbs}
               </span>
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  getTextColor(totalCarbs, carbsGoal)
-                )}
-              >
+              <span className={cn("text-sm font-medium", getTextColor(totalCarbs, carbsGoal, "carbs"))}>
                 {totalCarbs} / {carbsGoal}g
               </span>
             </div>
             <div className="h-2 w-full rounded-full bg-muted">
               <div
-                className={cn(
-                  "h-full rounded-full transition-all",
-                  getBarColor(totalCarbs, carbsGoal)
-                )}
+                className={cn("h-full rounded-full transition-all", getBarColor(totalCarbs, carbsGoal, "carbs"))}
                 style={{
                   width: `${Math.min((totalCarbs / carbsGoal) * 100, 100)}%`,
                 }}
@@ -193,21 +133,13 @@ export function NutritionSummary({
               <span className="text-sm text-muted-foreground">
                 {t.tracker.summary.fats}
               </span>
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  getTextColor(totalFats, fatsGoal)
-                )}
-              >
+              <span className={cn("text-sm font-medium", getTextColor(totalFats, fatsGoal, "fats"))}>
                 {totalFats} / {fatsGoal}g
               </span>
             </div>
             <div className="h-2 w-full rounded-full bg-muted">
               <div
-                className={cn(
-                  "h-full rounded-full transition-all",
-                  getBarColor(totalFats, fatsGoal)
-                )}
+                className={cn("h-full rounded-full transition-all", getBarColor(totalFats, fatsGoal, "fats"))}
                 style={{
                   width: `${Math.min((totalFats / fatsGoal) * 100, 100)}%`,
                 }}
