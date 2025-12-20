@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/contexts/language-context";
+import { useUser } from "@/contexts/user-context";
 
 import {
   SidebarProvider,
@@ -22,142 +23,71 @@ import { NotificationsSettings } from "@/components/profile/notifications-settin
 import { AppSettings } from "@/components/profile/app-settings";
 import { LegalSupport } from "@/components/profile/legal-support";
 
-interface Profile {
-  id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  daily_calorie_goal: number;
-  daily_protein_goal: number;
-  daily_carbs_goal: number;
-  daily_fats_goal: number;
-  daily_water_goal: number;
-  current_streak: number;
-  activity_level: string;
-  goal_type: string;
-  dietary_restrictions: string[];
-  disliked_foods: string[];
-  height: number | null;
-  weight: number | null;
-  meal_reminders: boolean;
-  weekly_summary: boolean;
-  ai_insights: boolean;
-  theme: string;
-  language: string;
-  units: string;
-  created_at: string;
-}
-
 export default function ProfilePage() {
   useLocalizedMetadata({ page: "profile" });
 
   const { setTheme } = useTheme();
   const { t, setLanguage: setAppLanguage } = useLanguage();
-  const [loading, setLoading] = useState(true);
+  const { user, loading, refreshUser } = useUser();
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string>("");
-  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    display_name: "",
-    daily_calorie_goal: 2000,
-    daily_protein_goal: 150,
-    daily_carbs_goal: 200,
-    daily_fats_goal: 65,
-    daily_water_goal: 8,
-    activity_level: "moderate",
-    goal_type: "maintenance",
-    dietary_restrictions: [] as string[],
-    disliked_foods: [] as string[],
-    height: null as number | null,
-    weight: null as number | null,
-    meal_reminders: true,
-    weekly_summary: true,
-    ai_insights: true,
-    theme: "system",
-    language: "en",
-    units: "metric",
+    display_name: user?.profile?.display_name || "",
+    daily_calorie_goal: user?.profile?.daily_calorie_goal || 2000,
+    daily_protein_goal: user?.profile?.daily_protein_goal || 150,
+    daily_carbs_goal: user?.profile?.daily_carbs_goal || 200,
+    daily_fats_goal: user?.profile?.daily_fats_goal || 65,
+    daily_water_goal: user?.profile?.daily_water_goal || 8,
+    activity_level: user?.profile?.activity_level || "moderate",
+    goal_type: user?.profile?.goal_type || "maintenance",
+    dietary_restrictions: user?.profile?.dietary_restrictions || [],
+    disliked_foods: user?.profile?.disliked_foods || [],
+    height: user?.profile?.height || null,
+    weight: user?.profile?.weight || null,
+    meal_reminders: user?.profile?.meal_reminders ?? true,
+    weekly_summary: user?.profile?.weekly_summary ?? true,
+    ai_insights: user?.profile?.ai_insights ?? true,
+    theme: user?.profile?.theme || "system",
+    language: user?.profile?.language || "en",
+    units: user?.profile?.units || "metric",
   });
 
   const supabase = createClient();
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
-
-      setUserEmail(user.email || "");
-      setUserAvatarUrl(user.user_metadata?.avatar_url || null);
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        setProfile(data);
-        setFormData({
-          display_name: data.display_name || "",
-          daily_calorie_goal: data.daily_calorie_goal,
-          daily_protein_goal: data.daily_protein_goal,
-          daily_carbs_goal: data.daily_carbs_goal,
-          daily_fats_goal: data.daily_fats_goal,
-          daily_water_goal: data.daily_water_goal,
-          activity_level: data.activity_level,
-          goal_type: data.goal_type,
-          dietary_restrictions: data.dietary_restrictions || [],
-          disliked_foods: data.disliked_foods || [],
-          height: data.height,
-          weight: data.weight,
-          meal_reminders: data.meal_reminders ?? true,
-          weekly_summary: data.weekly_summary ?? true,
-          ai_insights: data.ai_insights ?? true,
-          theme: data.theme || "system",
-          language: data.language || "en",
-          units: data.units || "metric",
-        });
-
-        if (data.theme) {
-          setTheme(data.theme);
-        }
-        if (data.language) {
-          setAppLanguage(data.language as "en" | "zh");
-        }
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : t.profile.messages.loadError
-      );
-    } finally {
-      setLoading(false);
+  // Update formData when user profile loads
+  useState(() => {
+    if (user?.profile) {
+      setFormData({
+        display_name: user.profile.display_name || "",
+        daily_calorie_goal: user.profile.daily_calorie_goal,
+        daily_protein_goal: user.profile.daily_protein_goal,
+        daily_carbs_goal: user.profile.daily_carbs_goal,
+        daily_fats_goal: user.profile.daily_fats_goal,
+        daily_water_goal: user.profile.daily_water_goal,
+        activity_level: user.profile.activity_level,
+        goal_type: user.profile.goal_type,
+        dietary_restrictions: user.profile.dietary_restrictions || [],
+        disliked_foods: user.profile.disliked_foods || [],
+        height: user.profile.height,
+        weight: user.profile.weight,
+        meal_reminders: user.profile.meal_reminders ?? true,
+        weekly_summary: user.profile.weekly_summary ?? true,
+        ai_insights: user.profile.ai_insights ?? true,
+        theme: user.profile.theme || "system",
+        language: user.profile.language || "en",
+        units: user.profile.units || "metric",
+      });
     }
-  }, [supabase, setTheme, setAppLanguage, t]);
-
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+  });
 
   const handleUpdateGoals = async () => {
     try {
       setSaving(true);
       setError(null);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user?.profile?.id) return;
 
       const { error } = await supabase
         .from("profiles")
@@ -174,10 +104,11 @@ export default function ProfilePage() {
           weight: formData.weight,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user.profile.id);
 
       if (error) throw error;
 
+      await refreshUser();
       setSuccess(t.profile.messages.goalsUpdated);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -194,10 +125,7 @@ export default function ProfilePage() {
       setSaving(true);
       setError(null);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user?.profile?.id) return;
 
       const { error } = await supabase
         .from("profiles")
@@ -210,13 +138,14 @@ export default function ProfilePage() {
           units: formData.units,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user.profile.id);
 
       if (error) throw error;
 
       setTheme(formData.theme);
       setAppLanguage(formData.language as "en" | "zh");
 
+      await refreshUser();
       setSuccess(t.profile.messages.settingsUpdated);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -232,10 +161,7 @@ export default function ProfilePage() {
 
   const addDietaryRestriction = async (restriction: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user?.profile?.id) return;
 
       const updated = [...formData.dietary_restrictions, restriction];
 
@@ -245,11 +171,12 @@ export default function ProfilePage() {
           dietary_restrictions: updated,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user.profile.id);
 
       if (error) throw error;
 
       setFormData({ ...formData, dietary_restrictions: updated });
+      await refreshUser();
       setSuccess(t.profile.messages.restrictionAdded);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -263,10 +190,7 @@ export default function ProfilePage() {
 
   const removeDietaryRestriction = async (item: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user?.profile?.id) return;
 
       const updated = formData.dietary_restrictions.filter((r) => r !== item);
 
@@ -276,11 +200,12 @@ export default function ProfilePage() {
           dietary_restrictions: updated,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user.profile.id);
 
       if (error) throw error;
 
       setFormData({ ...formData, dietary_restrictions: updated });
+      await refreshUser();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to remove restriction"
@@ -290,10 +215,7 @@ export default function ProfilePage() {
 
   const addDislikedFood = async (food: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user?.profile?.id) return;
 
       const updated = [...formData.disliked_foods, food];
 
@@ -303,11 +225,12 @@ export default function ProfilePage() {
           disliked_foods: updated,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user.profile.id);
 
       if (error) throw error;
 
       setFormData({ ...formData, disliked_foods: updated });
+      await refreshUser();
       setSuccess(t.profile.messages.foodAdded);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -319,10 +242,7 @@ export default function ProfilePage() {
 
   const removeDislikedFood = async (item: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user?.profile?.id) return;
 
       const updated = formData.disliked_foods.filter((f) => f !== item);
 
@@ -332,23 +252,16 @@ export default function ProfilePage() {
           disliked_foods: updated,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", user.profile.id);
 
       if (error) throw error;
 
       setFormData({ ...formData, disliked_foods: updated });
+      await refreshUser();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove food");
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <SidebarProvider>
@@ -367,91 +280,106 @@ export default function ProfilePage() {
         </header>
 
         <main className="flex-1 space-y-6 p-6">
-          {error && (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : !user ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                {t.profile.messages.notLoggedIn}
+              </AlertDescription>
             </Alert>
+          ) : (
+            <>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {success && (
+                <Alert>
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
+
+              <ProfileHeader
+                displayName={formData.display_name}
+                userEmail={user.email}
+                userAvatarUrl={user.avatar_url || null}
+                createdAt={user.profile?.created_at || new Date().toISOString()}
+                language={formData.language}
+              />
+
+              <PersonalGoals
+                formData={{
+                  display_name: formData.display_name,
+                  daily_calorie_goal: formData.daily_calorie_goal,
+                  daily_protein_goal: formData.daily_protein_goal,
+                  daily_carbs_goal: formData.daily_carbs_goal,
+                  daily_fats_goal: formData.daily_fats_goal,
+                  activity_level: formData.activity_level,
+                  goal_type: formData.goal_type,
+                  height: formData.height,
+                  weight: formData.weight,
+                  units: formData.units,
+                }}
+                onFormDataChange={(updates) =>
+                  setFormData({ ...formData, ...updates })
+                }
+                onSave={handleUpdateGoals}
+                saving={saving}
+              />
+
+              <DietaryPreferences
+                dietaryRestrictions={formData.dietary_restrictions}
+                dislikedFoods={formData.disliked_foods}
+                onAddRestriction={addDietaryRestriction}
+                onRemoveRestriction={removeDietaryRestriction}
+                onAddDislikedFood={addDislikedFood}
+                onRemoveDislikedFood={removeDislikedFood}
+              />
+
+              <NotificationsSettings
+                mealReminders={formData.meal_reminders}
+                weeklySummary={formData.weekly_summary}
+                aiInsights={formData.ai_insights}
+                onMealRemindersChange={(value) =>
+                  setFormData({ ...formData, meal_reminders: value })
+                }
+                onWeeklySummaryChange={(value) =>
+                  setFormData({ ...formData, weekly_summary: value })
+                }
+                onAiInsightsChange={(value) =>
+                  setFormData({ ...formData, ai_insights: value })
+                }
+                onSave={handleUpdateSettings}
+                saving={saving}
+              />
+
+              <AppSettings
+                theme={formData.theme}
+                language={formData.language}
+                units={formData.units}
+                onThemeChange={(value) =>
+                  setFormData({ ...formData, theme: value })
+                }
+                onLanguageChange={(value) =>
+                  setFormData({ ...formData, language: value })
+                }
+                onUnitsChange={(value) =>
+                  setFormData({ ...formData, units: value })
+                }
+                onSave={handleUpdateSettings}
+                saving={saving}
+              />
+
+              <LegalSupport />
+            </>
           )}
-
-          {success && (
-            <Alert>
-              <AlertDescription>{success}</AlertDescription>
-            </Alert>
-          )}
-
-          <ProfileHeader
-            displayName={formData.display_name}
-            userEmail={userEmail}
-            userAvatarUrl={userAvatarUrl}
-            createdAt={profile?.created_at || new Date().toISOString()}
-            language={formData.language}
-          />
-
-          <PersonalGoals
-            formData={{
-              display_name: formData.display_name,
-              daily_calorie_goal: formData.daily_calorie_goal,
-              daily_protein_goal: formData.daily_protein_goal,
-              daily_carbs_goal: formData.daily_carbs_goal,
-              daily_fats_goal: formData.daily_fats_goal,
-              activity_level: formData.activity_level,
-              goal_type: formData.goal_type,
-              height: formData.height,
-              weight: formData.weight,
-              units: formData.units,
-            }}
-            onFormDataChange={(updates) =>
-              setFormData({ ...formData, ...updates })
-            }
-            onSave={handleUpdateGoals}
-            saving={saving}
-          />
-
-          <DietaryPreferences
-            dietaryRestrictions={formData.dietary_restrictions}
-            dislikedFoods={formData.disliked_foods}
-            onAddRestriction={addDietaryRestriction}
-            onRemoveRestriction={removeDietaryRestriction}
-            onAddDislikedFood={addDislikedFood}
-            onRemoveDislikedFood={removeDislikedFood}
-          />
-
-          <NotificationsSettings
-            mealReminders={formData.meal_reminders}
-            weeklySummary={formData.weekly_summary}
-            aiInsights={formData.ai_insights}
-            onMealRemindersChange={(value) =>
-              setFormData({ ...formData, meal_reminders: value })
-            }
-            onWeeklySummaryChange={(value) =>
-              setFormData({ ...formData, weekly_summary: value })
-            }
-            onAiInsightsChange={(value) =>
-              setFormData({ ...formData, ai_insights: value })
-            }
-            onSave={handleUpdateSettings}
-            saving={saving}
-          />
-
-          <AppSettings
-            theme={formData.theme}
-            language={formData.language}
-            units={formData.units}
-            onThemeChange={(value) =>
-              setFormData({ ...formData, theme: value })
-            }
-            onLanguageChange={(value) =>
-              setFormData({ ...formData, language: value })
-            }
-            onUnitsChange={(value) =>
-              setFormData({ ...formData, units: value })
-            }
-            onSave={handleUpdateSettings}
-            saving={saving}
-          />
-
-          <LegalSupport />
         </main>
       </SidebarInset>
     </SidebarProvider>

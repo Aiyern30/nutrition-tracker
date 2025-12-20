@@ -14,6 +14,29 @@ interface UserProfile {
   email: string;
   name: string;
   avatar_url?: string;
+  profile?: {
+    id: string;
+    display_name: string | null;
+    daily_calorie_goal: number;
+    daily_protein_goal: number;
+    daily_carbs_goal: number;
+    daily_fats_goal: number;
+    daily_water_goal: number;
+    current_streak: number;
+    activity_level: string;
+    goal_type: string;
+    dietary_restrictions: string[];
+    disliked_foods: string[];
+    height: number | null;
+    weight: number | null;
+    meal_reminders: boolean;
+    weekly_summary: boolean;
+    ai_insights: boolean;
+    theme: string;
+    language: string;
+    units: string;
+    created_at: string;
+  };
 }
 
 interface UserContextType {
@@ -37,22 +60,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getUser();
 
       if (authUser) {
+        // Fetch full profile data
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+
         setUser({
           email: authUser.email || "",
           name:
             authUser.user_metadata?.full_name ||
             authUser.user_metadata?.name ||
+            profile?.display_name ||
             authUser.email?.split("@")[0] ||
             "User",
           avatar_url: authUser.user_metadata?.avatar_url,
+          profile: profile || undefined,
         });
-
-        // Load theme from profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("theme")
-          .eq("id", authUser.id)
-          .single();
 
         if (profile?.theme) {
           setTheme(profile.theme);
@@ -73,35 +98,38 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     refreshUser();
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
       if (!mounted) return;
 
       if (session?.user) {
-        setUser({
-          email: session.user.email || "",
-          name:
-            session.user.user_metadata?.full_name ||
-            session.user.user_metadata?.name ||
-            session.user.email?.split("@")[0] ||
-            "User",
-          avatar_url: session.user.user_metadata?.avatar_url,
-        });
-
         try {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("theme")
+            .select("*")
             .eq("id", session.user.id)
             .single();
 
-          if (mounted && profile?.theme) {
-            setTheme(profile.theme);
+          if (mounted) {
+            setUser({
+              email: session.user.email || "",
+              name:
+                session.user.user_metadata?.full_name ||
+                session.user.user_metadata?.name ||
+                profile?.display_name ||
+                session.user.email?.split("@")[0] ||
+                "User",
+              avatar_url: session.user.user_metadata?.avatar_url,
+              profile: profile || undefined,
+            });
+
+            if (profile?.theme) {
+              setTheme(profile.theme);
+            }
           }
         } catch (error) {
-          console.error("Error loading theme:", error);
+          console.error("Error loading profile:", error);
         }
       } else {
         setUser(null);
