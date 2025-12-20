@@ -61,6 +61,7 @@ export default function MealPlannerPage() {
   // Initial State Setup
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [mealPlans, setMealPlans] = useState<Record<string, MealPlan>>({});
+  const [pendingPlan, setPendingPlan] = useState<MealPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -90,6 +91,59 @@ export default function MealPlannerPage() {
         const savedPlans = localStorage.getItem("mealPlans");
         if (savedPlans) {
           setMealPlans(JSON.parse(savedPlans));
+        }
+
+        // Load plans from Supabase
+        if (user) {
+          const { data: dbMeals } = await supabase
+            .from('meal_plans')
+            .select('*')
+            .eq('user_id', user.id);
+
+          if (dbMeals) {
+            const plansMap: Record<string, MealPlan> = {};
+
+            // Group by date
+            const groupedMeals: Record<string, any[]> = {};
+            dbMeals.forEach((meal: any) => {
+              if (!groupedMeals[meal.date]) {
+                groupedMeals[meal.date] = [];
+              }
+              groupedMeals[meal.date].push(meal);
+            });
+
+            // Reconstruct MealPlans
+            Object.entries(groupedMeals).forEach(([date, meals]) => {
+              // Calculate totals from meals
+              const totalNutrition = meals.reduce((acc, meal) => ({
+                calories: acc.calories + (meal.calories || 0),
+                protein: acc.protein + (meal.protein || 0),
+                carbs: acc.carbs + (meal.carbs || 0),
+                fats: acc.fats + (meal.fats || 0)
+              }), { calories: 0, protein: 0, carbs: 0, fats: 0 });
+
+              plansMap[date] = {
+                date: date,
+                summary: meals[0]?.daily_summary || "",
+                total_nutrition: totalNutrition,
+                meals: meals.map(m => ({
+                  type: m.meal_type,
+                  name: m.name,
+                  description: m.description,
+                  items: m.items || [],
+                  nutrition: {
+                    calories: m.calories || 0,
+                    protein: m.protein || 0,
+                    carbs: m.carbs || 0,
+                    fats: m.fats || 0
+                  },
+                  tips: m.tips || ""
+                }))
+              };
+            });
+
+            setMealPlans(prev => ({ ...prev, ...plansMap }));
+          }
         }
       } catch (error) {
         console.error("Error loading data:", error);
@@ -133,12 +187,9 @@ export default function MealPlannerPage() {
         throw new Error(data.error || "Failed to generate plan");
       }
 
-      setMealPlans(prev => ({
-        ...prev,
-        [dateStr]: data.plan
-      }));
+      setPendingPlan(data.plan);
 
-      toast.success("Meal plan generated successfully!");
+      toast.success("Meal plan generated! Please review and save.");
     } catch (error) {
       console.error("Analysis failed:", error);
       toast.error("Failed to generate meal plan. Please try again.");
@@ -147,7 +198,61 @@ export default function MealPlannerPage() {
     }
   };
 
-  const currentPlan = mealPlans[format(selectedDate, "yyyy-MM-dd")];
+  const savePlan = async () => {
+    if (!pendingPlan || !profile) return;
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user");
+
+      // 1. Delete existing meals for this date
+      const { error: deleteError } = await supabase
+        .from('meal_plans')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('date', pendingPlan.date);
+
+      if (deleteError) throw deleteError;
+
+      // 2. Insert new meals
+      const mealsToInsert = pendingPlan.meals.map(meal => ({
+        user_id: user.id,
+        date: pendingPlan.date,
+        daily_summary: pendingPlan.summary,
+        meal_type: meal.type,
+        name: meal.name,
+        description: meal.description,
+        items: meal.items,
+        calories: meal.nutrition.calories,
+        protein: meal.nutrition.protein,
+        carbs: meal.nutrition.carbs,
+        fats: meal.nutrition.fats,
+        tips: meal.tips
+      }));
+
+      const { error: insertError } = await supabase
+        .from('meal_plans')
+        .insert(mealsToInsert);
+
+      if (insertError) throw insertError;
+
+      setMealPlans(prev => ({
+        ...prev,
+        [pendingPlan.date]: pendingPlan
+      }));
+      setPendingPlan(null);
+      toast.success("Meal plan saved to Supabase!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to save plan");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isPending = pendingPlan && isSameDay(new Date(pendingPlan.date), selectedDate);
+  const currentPlan = isPending ? pendingPlan : mealPlans[format(selectedDate, "yyyy-MM-dd")];
 
   const getDayButton = (date: Date) => {
     const isSelected = isSameDay(date, selectedDate);
@@ -253,6 +358,25 @@ export default function MealPlannerPage() {
             </div>
           ) : (
             <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+              {isPending && (
+                <Alert className="bg-primary/10 border-primary/20 shadow-sm animate-pulse">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <AlertTitle className="text-primary font-bold">New Plan Generated</AlertTitle>
+                  <AlertDescription className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mt-2">
+                    <span>This plan is not saved yet. Would you like to keep it?</span>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Button size="sm" variant="outline" onClick={generatePlan} disabled={loading} className="flex-1 sm:flex-none">
+                        <RefreshCw className={`w-3 h-3 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                        Regenerate
+                      </Button>
+                      <Button size="sm" onClick={savePlan} disabled={loading} className="flex-1 sm:flex-none">
+                        Confirm & Save
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Daily Summary */}
               <div className="grid lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2 border-none shadow-md bg-gradient-to-br from-primary/5 to-transparent">
@@ -376,16 +500,18 @@ export default function MealPlannerPage() {
               </div>
 
               <div className="flex justify-center pb-8">
-                <Button variant="outline" onClick={generatePlan} disabled={loading} className="gap-2">
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  {t.mealPlanner.regeneratePlan}
-                </Button>
+                {!isPending && (
+                  <Button variant="outline" onClick={generatePlan} disabled={loading} className="gap-2">
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    {t.mealPlanner.regeneratePlan}
+                  </Button>
+                )}
               </div>
 
             </div>
           )}
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </SidebarProvider >
   );
 }
