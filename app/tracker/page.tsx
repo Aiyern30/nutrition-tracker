@@ -57,6 +57,13 @@ interface DailySummary {
   diet_quality_score: string;
 }
 
+interface Profile {
+  daily_calorie_goal: number;
+  daily_protein_goal: number;
+  daily_carbs_goal: number;
+  daily_fats_goal: number;
+}
+
 export default function TrackerPage() {
   useLocalizedMetadata({ page: "tracker" });
 
@@ -64,6 +71,7 @@ export default function TrackerPage() {
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isAddFoodOpen, setIsAddFoodOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [dailySummary, setDailySummary] = useState<DailySummary>({
     total_calories: 0,
     total_protein: 0,
@@ -73,6 +81,29 @@ export default function TrackerPage() {
     diet_quality_score: "B",
   });
   const supabase = createClient();
+
+  // Fetch profile goals
+  const fetchProfile = useCallback(async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(
+          "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal"
+        )
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  }, [supabase]);
 
   // Fetch daily summary from daily_summaries table
   const fetchDailySummary = useCallback(async () => {
@@ -160,14 +191,15 @@ export default function TrackerPage() {
   }, [supabase, selectedDate]);
 
   useEffect(() => {
+    fetchProfile();
     fetchFoodLogs();
     fetchDailySummary();
-  }, [fetchFoodLogs, fetchDailySummary]);
+  }, [fetchProfile, fetchFoodLogs, fetchDailySummary]);
 
-  const calorieGoal = 2000;
-  const proteinGoal = 150;
-  const carbsGoal = 250;
-  const fatsGoal = 65;
+  const calorieGoal = profile?.daily_calorie_goal || 2000;
+  const proteinGoal = profile?.daily_protein_goal || 150;
+  const carbsGoal = profile?.daily_carbs_goal || 250;
+  const fatsGoal = profile?.daily_fats_goal || 65;
 
   const getEntriesByMealType = (mealType: string) =>
     entries.filter((e) => e.mealType === mealType);
