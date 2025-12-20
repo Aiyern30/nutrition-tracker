@@ -295,5 +295,64 @@
       "required": "*",
       "addToMealButton": "Add to"
     }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "greeting": "Good morning! Here's your nutrition overview",
+    "disclaimer": "This app provides nutritional information for educational purposes only and is not a substitute for professional medical advice.",
+    "stats": {
+      "dailyCalories": {
+        "title": "Daily Calories",
+        "remaining": "remaining"
+      },
+      "waterIntake": {
+        "title": "Water Intake",
+        "subtitle": "glasses today"
+      },
+      "dietScore": {
+        "title": "Diet Score",
+        "subtitle": "Good balance"
+      },
+      "streak": {
+        "title": "Streak",
+        "subtitle": "Keep it up!",
+        "days": "days"
+      }
+    },
+    "todaysSummary": {
+      "title": "Today's Summary",
+      "description": "Track your nutrition progress throughout the day",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fats": "Fats"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "description": "What would you like to do?",
+      "askAI": "Ask AI a Question",
+      "logMeal": "Log a Meal",
+      "analyzeFood": "Analyze Food",
+      "getMealPlan": "Get Meal Plan"
+    },
+    "recentActivity": {
+      "title": "Recent Activity",
+      "description": "Your latest nutrition interactions",
+      "activities": {
+        "loggedLunch": "Logged lunch",
+        "analyzedFood": "Analyzed food",
+        "generatedMealPlan": "Generated meal plan",
+        "askedAI": "Asked AI"
+      },
+      "details": {
+        "grilledChicken": "Grilled chicken salad - 450 cal",
+        "greekYogurt": "Greek yogurt with berries",
+        "balancedDiet": "7-day balanced diet",
+        "proteinSources": "Best protein sources for vegans"
+      },
+      "time": {
+        "hoursAgo": "hours ago",
+        "yesterday": "Yesterday"
+      }
+    }
   }
 }

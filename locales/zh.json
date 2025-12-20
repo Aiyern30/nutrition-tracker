@@ -295,5 +295,64 @@
       "required": "*",
       "addToMealButton": "添加到"
     }
+  },
+  "dashboard": {
+    "title": "仪表板",
+    "greeting": "早上好！这是您的营养概览",
+    "disclaimer": "本应用程序仅为教育目的提供营养信息，不能替代专业医疗建议。",
+    "stats": {
+      "dailyCalories": {
+        "title": "每日卡路里",
+        "remaining": "剩余"
+      },
+      "waterIntake": {
+        "title": "饮水量",
+        "subtitle": "杯今天"
+      },
+      "dietScore": {
+        "title": "饮食评分",
+        "subtitle": "良好的平衡"
+      },
+      "streak": {
+        "title": "连续天数",
+        "subtitle": "保持下去！",
+        "days": "天"
+      }
+    },
+    "todaysSummary": {
+      "title": "今日总结",
+      "description": "追踪您全天的营养进度",
+      "protein": "蛋白质",
+      "carbs": "碳水化合物",
+      "fats": "脂肪"
+    },
+    "quickActions": {
+      "title": "快速操作",
+      "description": "您想做什么？",
+      "askAI": "向AI提问",
+      "logMeal": "记录餐食",
+      "analyzeFood": "分析食物",
+      "getMealPlan": "获取膳食计划"
+    },
+    "recentActivity": {
+      "title": "最近活动",
+      "description": "您最新的营养互动",
+      "activities": {
+        "loggedLunch": "记录午餐",
+        "analyzedFood": "分析食物",
+        "generatedMealPlan": "生成膳食计划",
+        "askedAI": "询问AI"
+      },
+      "details": {
+        "grilledChicken": "烤鸡肉沙拉 - 450卡路里",
+        "greekYogurt": "希腊酸奶配浆果",
+        "balancedDiet": "7天均衡饮食",
+        "proteinSources": "素食者最佳蛋白质来源"
+      },
+      "time": {
+        "hoursAgo": "小时前",
+        "yesterday": "昨天"
+      }
+    }
   }
 }
