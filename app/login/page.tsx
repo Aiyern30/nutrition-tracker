@@ -59,7 +59,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-4">
             <Image
-              src="/logo.png"
+              src="/Logo.png"
               alt="Logo"
               width={28}
               height={28}
