@@ -12,6 +12,7 @@ interface StatCardProps {
     isPositive: boolean;
   };
   variant?: "default" | "success" | "destructive" | "warning";
+  isRefreshing?: boolean;
 }
 
 export function StatCard({
@@ -21,6 +22,7 @@ export function StatCard({
   icon: Icon,
   trend,
   variant = "default",
+  isRefreshing = false,
 }: StatCardProps) {
   const variantStyles = {
     default: "text-primary bg-primary/10",
@@ -37,17 +39,23 @@ export function StatCard({
   };
 
   return (
-    <Card>
+    <Card
+      className={cn(
+        "transition-all duration-300",
+        isRefreshing && "ring-2 ring-primary/20"
+      )}
+    >
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p
               className={cn(
-                "text-2xl font-bold",
+                "text-2xl font-bold transition-all duration-300",
                 variant === "destructive" && "text-red-500",
                 variant === "success" && "text-green-500",
-                variant === "warning" && "text-yellow-500"
+                variant === "warning" && "text-yellow-500",
+                isRefreshing && "opacity-70"
               )}
             >
               {value}
@@ -55,9 +63,10 @@ export function StatCard({
             {subtitle && (
               <p
                 className={cn(
-                  "text-xs text-muted-foreground",
+                  "text-xs text-muted-foreground transition-all duration-300",
                   variant === "destructive" && "text-red-500/70 font-medium",
-                  variant === "success" && "text-green-500/70 font-medium"
+                  variant === "success" && "text-green-500/70 font-medium",
+                  isRefreshing && "opacity-70"
                 )}
               >
                 {subtitle}
@@ -66,15 +75,22 @@ export function StatCard({
             {trend && (
               <p
                 className={cn(
-                  "text-xs font-medium",
-                  trend.isPositive ? "text-green-500" : "text-red-500"
+                  "text-xs font-medium transition-all duration-300",
+                  trend.isPositive ? "text-green-500" : "text-red-500",
+                  isRefreshing && "opacity-70"
                 )}
               >
                 {trend.isPositive ? "↑" : "↓"} {trend.value}%
               </p>
             )}
           </div>
-          <div className={cn("rounded-full p-3", iconBgStyles[variant])}>
+          <div
+            className={cn(
+              "rounded-full p-3 transition-all duration-300",
+              iconBgStyles[variant],
+              isRefreshing && "animate-pulse"
+            )}
+          >
             <Icon
               className={cn("h-6 w-6", variantStyles[variant].split(" ")[0])}
             />

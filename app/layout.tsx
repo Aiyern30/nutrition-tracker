@@ -6,6 +6,7 @@ import { MetadataUpdater } from "@/components/metadata-updater";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import { UserProvider } from "@/contexts/user-context";
+import { DashboardProvider } from "@/contexts/dashboard-context";
 
 export const metadata: Metadata = {
   title: "Eat Smart AI - Your Personal Nutrition Assistant",
@@ -39,9 +40,11 @@ export default function RootLayout({
         >
           <LanguageProvider>
             <UserProvider>
-              <MetadataUpdater />
-              {children}
-              <Toaster />
+              <DashboardProvider>
+                <MetadataUpdater />
+                {children}
+                <Toaster />
+              </DashboardProvider>
             </UserProvider>
           </LanguageProvider>
         </ThemeProvider>
