@@ -102,7 +102,8 @@
         "maintenance": "Maintain Weight",
         "muscleGain": "Muscle Gain",
         "health": "General Health"
-      }
+      },
+      "validationError": "Please fill in all nutrition goals with values greater than 0"
     },
     "dietaryPreferences": {
       "title": "Dietary Preferences",
