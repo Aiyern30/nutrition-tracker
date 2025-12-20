@@ -2,6 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/language-context";
+import { MetadataUpdater } from "@/components/metadata-updater";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -13,19 +14,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
+        url: "/Logo.png",
+        type: "image/png",
       },
     ],
-    apple: "/apple-icon.png",
+    apple: "/Logo.png",
   },
 };
 
@@ -44,6 +37,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
+            <MetadataUpdater />
             {children}
             <Toaster />
           </LanguageProvider>

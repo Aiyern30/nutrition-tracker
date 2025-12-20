@@ -4,6 +4,10 @@
       "title": "NutriAI - Your Personal Nutrition Assistant",
       "description": "AI-powered nutrition tracking, meal planning, and dietary guidance."
     },
+    "analyzer": {
+      "title": "Food Analyzer",
+      "description": "Analyze any food with AI to get detailed nutritional information instantly. Simply snap a photo or describe your meal."
+    },
     "tracker": {
       "title": "Nutrition Tracker",
       "description": "Track your daily nutrition intake, monitor calories, macros, and micronutrients with AI-powered food analysis."

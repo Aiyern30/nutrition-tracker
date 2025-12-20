@@ -33,6 +33,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { AnalyzedFoodsHistory } from "@/components/analyzer/analyzed-foods-history";
+import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 
 interface NutritionResult {
   name: string;
@@ -57,6 +58,8 @@ interface OCRResult {
 }
 
 export default function AnalyzerPage() {
+  useLocalizedMetadata({ page: "analyzer" });
+
   const { t, language } = useLanguage();
   const [description, setDescription] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);

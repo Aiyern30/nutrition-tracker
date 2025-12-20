@@ -4,6 +4,10 @@
       "title": "NutriAI - 您的个人营养助手",
       "description": "AI 驱动的营养追踪、膳食计划和饮食指导。"
     },
+    "analyzer": {
+      "title": "食物分析器",
+      "description": "使用 AI 分析任何食物，立即获取详细的营养信息。只需拍照或描述您的膳食即可。"
+    },
     "tracker": {
       "title": "营养追踪器",
       "description": "追踪您的每日营养摄入，通过 AI 驱动的食物分析监测卡路里、宏量营养素和微量营养素。"
