@@ -5,6 +5,7 @@ import { LanguageProvider } from "@/contexts/language-context";
 import { MetadataUpdater } from "@/components/metadata-updater";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
+import { UserProvider } from "@/contexts/user-context";
 
 export const metadata: Metadata = {
   title: "Eat Smart AI - Your Personal Nutrition Assistant",
@@ -37,9 +38,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
-            <MetadataUpdater />
-            {children}
-            <Toaster />
+            <UserProvider>
+              <MetadataUpdater />
+              {children}
+              <Toaster />
+            </UserProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>
