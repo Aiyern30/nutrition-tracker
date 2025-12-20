@@ -1,5 +1,8 @@
 "use client";
 import { Target } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import {
   Card,
   CardContent,
@@ -9,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,7 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useLanguage } from "@/contexts/language-context";
+import { useEffect } from "react";
 
 interface PersonalGoalsProps {
   formData: {
@@ -44,24 +55,56 @@ export function PersonalGoals({
 }: PersonalGoalsProps) {
   const { t } = useLanguage();
 
-  const handleSave = () => {
-    // Validation: ensure all required fields are filled
-    if (
-      !formData.daily_calorie_goal ||
-      formData.daily_calorie_goal <= 0 ||
-      !formData.daily_protein_goal ||
-      formData.daily_protein_goal <= 0 ||
-      !formData.daily_carbs_goal ||
-      formData.daily_carbs_goal <= 0 ||
-      !formData.daily_fats_goal ||
-      formData.daily_fats_goal <= 0
-    ) {
-      alert(
-        t.profile.personalGoals.validationError ||
-          "Please fill in all nutrition goals with values greater than 0"
-      );
-      return;
-    }
+  // Define validation schema with proper error messages
+  const formSchema = z.object({
+    height: z.number().nullable().optional(),
+    weight: z.number().nullable().optional(),
+    daily_calorie_goal: z
+      .number()
+      .min(1, { message: t.profile.personalGoals.errors.calorieInvalid }),
+    daily_protein_goal: z
+      .number()
+      .min(1, { message: t.profile.personalGoals.errors.proteinInvalid }),
+    daily_carbs_goal: z
+      .number()
+      .min(1, { message: t.profile.personalGoals.errors.carbsInvalid }),
+    daily_fats_goal: z
+      .number()
+      .min(1, { message: t.profile.personalGoals.errors.fatsInvalid }),
+    activity_level: z.string(),
+    goal_type: z.string(),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      height: formData.height,
+      weight: formData.weight,
+      daily_calorie_goal: formData.daily_calorie_goal,
+      daily_protein_goal: formData.daily_protein_goal,
+      daily_carbs_goal: formData.daily_carbs_goal,
+      daily_fats_goal: formData.daily_fats_goal,
+      activity_level: formData.activity_level,
+      goal_type: formData.goal_type,
+    },
+  });
+
+  // Update form when formData changes
+  useEffect(() => {
+    form.reset({
+      height: formData.height,
+      weight: formData.weight,
+      daily_calorie_goal: formData.daily_calorie_goal,
+      daily_protein_goal: formData.daily_protein_goal,
+      daily_carbs_goal: formData.daily_carbs_goal,
+      daily_fats_goal: formData.daily_fats_goal,
+      activity_level: formData.activity_level,
+      goal_type: formData.goal_type,
+    });
+  }, [formData, form]);
+
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    onFormDataChange(values);
     onSave();
   };
 
@@ -74,178 +117,273 @@ export function PersonalGoals({
         </div>
         <CardDescription>{t.profile.personalGoals.subtitle}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Height and Weight */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="height">
-              {t.profile.personalGoals.height} (
-              {formData.units === "metric" ? "cm" : "in"})
-            </Label>
-            <Input
-              id="height"
-              type="number"
-              value={formData.height || ""}
-              onChange={(e) =>
-                onFormDataChange({
-                  height: e.target.value ? parseInt(e.target.value) : null,
-                })
-              }
-              placeholder={formData.units === "metric" ? "170" : "67"}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="weight">
-              {t.profile.personalGoals.weight} (
-              {formData.units === "metric" ? "kg" : "lbs"})
-            </Label>
-            <Input
-              id="weight"
-              type="number"
-              step="0.1"
-              value={formData.weight || ""}
-              onChange={(e) =>
-                onFormDataChange({
-                  weight: e.target.value ? parseFloat(e.target.value) : null,
-                })
-              }
-              placeholder={formData.units === "metric" ? "70.0" : "154.3"}
-            />
-          </div>
-        </div>
+      <CardContent>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-6"
+          >
+            {/* Height and Weight */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="height"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t.profile.personalGoals.height} (
+                      {formData.units === "metric" ? "cm" : "in"})
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder={formData.units === "metric" ? "170" : "67"}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            ? parseInt(e.target.value)
+                            : null;
+                          field.onChange(value);
+                          onFormDataChange({ height: value });
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="calorie-goal">
-              {t.profile.personalGoals.dailyCalorieGoal} *
-            </Label>
-            <Input
-              id="calorie-goal"
-              type="number"
-              min="1"
-              value={formData.daily_calorie_goal || ""}
-              onChange={(e) =>
-                onFormDataChange({
-                  daily_calorie_goal: parseInt(e.target.value) || 0,
-                })
-              }
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="protein-goal">
-              {t.profile.personalGoals.dailyProteinGoal} *
-            </Label>
-            <Input
-              id="protein-goal"
-              type="number"
-              min="1"
-              value={formData.daily_protein_goal || ""}
-              onChange={(e) =>
-                onFormDataChange({
-                  daily_protein_goal: parseInt(e.target.value) || 0,
-                })
-              }
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="carbs-goal">
-              {t.profile.personalGoals.dailyCarbsGoal} *
-            </Label>
-            <Input
-              id="carbs-goal"
-              type="number"
-              min="1"
-              value={formData.daily_carbs_goal || ""}
-              onChange={(e) =>
-                onFormDataChange({
-                  daily_carbs_goal: parseInt(e.target.value) || 0,
-                })
-              }
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="fats-goal">
-              {t.profile.personalGoals.dailyFatsGoal} *
-            </Label>
-            <Input
-              id="fats-goal"
-              type="number"
-              min="1"
-              value={formData.daily_fats_goal || ""}
-              onChange={(e) =>
-                onFormDataChange({
-                  daily_fats_goal: parseInt(e.target.value) || 0,
-                })
-              }
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="activity-level">
-              {t.profile.personalGoals.activityLevel}
-            </Label>
-            <Select
-              value={formData.activity_level}
-              onValueChange={(value) => onFormDataChange({ activity_level: value })}
-            >
-              <SelectTrigger id="activity-level">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sedentary">
-                  {t.profile.personalGoals.activityLevels.sedentary}
-                </SelectItem>
-                <SelectItem value="light">
-                  {t.profile.personalGoals.activityLevels.light}
-                </SelectItem>
-                <SelectItem value="moderate">
-                  {t.profile.personalGoals.activityLevels.moderate}
-                </SelectItem>
-                <SelectItem value="active">
-                  {t.profile.personalGoals.activityLevels.active}
-                </SelectItem>
-                <SelectItem value="very_active">
-                  {t.profile.personalGoals.activityLevels.veryActive}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="goal-type">
-              {t.profile.personalGoals.primaryGoal}
-            </Label>
-            <Select
-              value={formData.goal_type}
-              onValueChange={(value) => onFormDataChange({ goal_type: value })}
-            >
-              <SelectTrigger id="goal-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="weight_loss">
-                  {t.profile.personalGoals.goals.weightLoss}
-                </SelectItem>
-                <SelectItem value="maintenance">
-                  {t.profile.personalGoals.goals.maintenance}
-                </SelectItem>
-                <SelectItem value="muscle_gain">
-                  {t.profile.personalGoals.goals.muscleGain}
-                </SelectItem>
-                <SelectItem value="health">
-                  {t.profile.personalGoals.goals.health}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving
-            ? t.profile.personalGoals.updating
-            : t.profile.personalGoals.updateGoals}
-        </Button>
+              <FormField
+                control={form.control}
+                name="weight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t.profile.personalGoals.weight} (
+                      {formData.units === "metric" ? "kg" : "lbs"})
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder={
+                          formData.units === "metric" ? "70.0" : "154.3"
+                        }
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            ? parseFloat(e.target.value)
+                            : null;
+                          field.onChange(value);
+                          onFormDataChange({ weight: value });
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Nutrition Goals */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="daily_calorie_goal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t.profile.personalGoals.dailyCalorieGoal} *
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            ? parseInt(e.target.value)
+                            : 0;
+                          field.onChange(value);
+                          onFormDataChange({ daily_calorie_goal: value });
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="daily_protein_goal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t.profile.personalGoals.dailyProteinGoal} *
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            ? parseInt(e.target.value)
+                            : 0;
+                          field.onChange(value);
+                          onFormDataChange({ daily_protein_goal: value });
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="daily_carbs_goal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t.profile.personalGoals.dailyCarbsGoal} *
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            ? parseInt(e.target.value)
+                            : 0;
+                          field.onChange(value);
+                          onFormDataChange({ daily_carbs_goal: value });
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="daily_fats_goal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t.profile.personalGoals.dailyFatsGoal} *
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            ? parseInt(e.target.value)
+                            : 0;
+                          field.onChange(value);
+                          onFormDataChange({ daily_fats_goal: value });
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="activity_level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t.profile.personalGoals.activityLevel}
+                    </FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        onFormDataChange({ activity_level: value });
+                      }}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="sedentary">
+                          {t.profile.personalGoals.activityLevels.sedentary}
+                        </SelectItem>
+                        <SelectItem value="light">
+                          {t.profile.personalGoals.activityLevels.light}
+                        </SelectItem>
+                        <SelectItem value="moderate">
+                          {t.profile.personalGoals.activityLevels.moderate}
+                        </SelectItem>
+                        <SelectItem value="active">
+                          {t.profile.personalGoals.activityLevels.active}
+                        </SelectItem>
+                        <SelectItem value="very_active">
+                          {t.profile.personalGoals.activityLevels.veryActive}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="goal_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.profile.personalGoals.primaryGoal}</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        onFormDataChange({ goal_type: value });
+                      }}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="weight_loss">
+                          {t.profile.personalGoals.goals.weightLoss}
+                        </SelectItem>
+                        <SelectItem value="maintenance">
+                          {t.profile.personalGoals.goals.maintenance}
+                        </SelectItem>
+                        <SelectItem value="muscle_gain">
+                          {t.profile.personalGoals.goals.muscleGain}
+                        </SelectItem>
+                        <SelectItem value="health">
+                          {t.profile.personalGoals.goals.health}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Button type="submit" disabled={saving}>
+              {saving
+                ? t.profile.personalGoals.updating
+                : t.profile.personalGoals.updateGoals}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
