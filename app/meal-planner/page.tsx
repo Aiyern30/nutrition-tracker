@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
-import { zhCN, enUS } from 'date-fns/locale';
+import { zhCN, enUS } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/language-context";
 import {
@@ -13,7 +13,13 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -27,11 +33,18 @@ import {
   AlertCircle,
   RefreshCw,
   Sparkles,
-  ArrowRight
+  ArrowRight,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+} from "recharts";
+import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 
 // Types matched to Backend response
 interface Nutrition {
@@ -59,6 +72,8 @@ interface MealPlan {
 
 export default function MealPlannerPage() {
   // Initial State Setup
+  useLocalizedMetadata({ page: "mealPlanner" });
+
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [mealPlans, setMealPlans] = useState<Record<string, MealPlan>>({});
   const [pendingPlan, setPendingPlan] = useState<MealPlan | null>(null);
@@ -67,7 +82,7 @@ export default function MealPlannerPage() {
   const [profile, setProfile] = useState<any>(null);
   const router = useRouter();
   const { t, language } = useLanguage();
-  const dateLocale = language === 'zh' ? zhCN : enUS;
+  const dateLocale = language === "zh" ? zhCN : enUS;
 
   const supabase = createClient();
 
@@ -77,7 +92,9 @@ export default function MealPlannerPage() {
       try {
         setLoadingProfile(true);
         // Load Profile
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           const { data } = await supabase
             .from("profiles")
@@ -96,9 +113,9 @@ export default function MealPlannerPage() {
         // Load plans from Supabase
         if (user) {
           const { data: dbMeals } = await supabase
-            .from('meal_plans')
-            .select('*')
-            .eq('user_id', user.id);
+            .from("meal_plans")
+            .select("*")
+            .eq("user_id", user.id);
 
           if (dbMeals) {
             const plansMap: Record<string, MealPlan> = {};
@@ -115,18 +132,21 @@ export default function MealPlannerPage() {
             // Reconstruct MealPlans
             Object.entries(groupedMeals).forEach(([date, meals]) => {
               // Calculate totals from meals
-              const totalNutrition = meals.reduce((acc, meal) => ({
-                calories: acc.calories + (meal.calories || 0),
-                protein: acc.protein + (meal.protein || 0),
-                carbs: acc.carbs + (meal.carbs || 0),
-                fats: acc.fats + (meal.fats || 0)
-              }), { calories: 0, protein: 0, carbs: 0, fats: 0 });
+              const totalNutrition = meals.reduce(
+                (acc, meal) => ({
+                  calories: acc.calories + (meal.calories || 0),
+                  protein: acc.protein + (meal.protein || 0),
+                  carbs: acc.carbs + (meal.carbs || 0),
+                  fats: acc.fats + (meal.fats || 0),
+                }),
+                { calories: 0, protein: 0, carbs: 0, fats: 0 }
+              );
 
               plansMap[date] = {
                 date: date,
                 summary: meals[0]?.daily_summary || "",
                 total_nutrition: totalNutrition,
-                meals: meals.map(m => ({
+                meals: meals.map((m) => ({
                   type: m.meal_type,
                   name: m.name,
                   description: m.description,
@@ -135,14 +155,14 @@ export default function MealPlannerPage() {
                     calories: m.calories || 0,
                     protein: m.protein || 0,
                     carbs: m.carbs || 0,
-                    fats: m.fats || 0
+                    fats: m.fats || 0,
                   },
-                  tips: m.tips || ""
-                }))
+                  tips: m.tips || "",
+                })),
               };
             });
 
-            setMealPlans(prev => ({ ...prev, ...plansMap }));
+            setMealPlans((prev) => ({ ...prev, ...plansMap }));
           }
         }
       } catch (error) {
@@ -177,7 +197,7 @@ export default function MealPlannerPage() {
         body: JSON.stringify({
           date: dateStr,
           profile: profile,
-          language: profile.language || 'en'
+          language: profile.language || "en",
         }),
       });
 
@@ -223,10 +243,10 @@ export default function MealPlannerPage() {
       // 1. Delete existing meals for this date
       console.log("Deleting existing meals...");
       const { error: deleteError } = await supabase
-        .from('meal_plans')
+        .from("meal_plans")
         .delete()
-        .eq('user_id', userId)
-        .eq('date', pendingPlan.date);
+        .eq("user_id", userId)
+        .eq("date", pendingPlan.date);
 
       if (deleteError) {
         console.error("Delete Error:", deleteError);
@@ -247,12 +267,12 @@ export default function MealPlannerPage() {
         protein: meal.nutrition.protein || 0,
         carbs: meal.nutrition.carbs || 0,
         fats: meal.nutrition.fats || 0,
-        tips: meal.tips || ""
+        tips: meal.tips || "",
       }));
 
       console.log("Inserting meals count:", mealsToInsert.length);
       const { error: insertError } = await supabase
-        .from('meal_plans')
+        .from("meal_plans")
         .insert(mealsToInsert);
 
       if (insertError) {
@@ -263,9 +283,9 @@ export default function MealPlannerPage() {
       console.log("Save successful!");
 
       // Update local state by forcing a re-fetch or manual update
-      setMealPlans(prev => ({
+      setMealPlans((prev) => ({
         ...prev,
-        [pendingPlan.date]: pendingPlan
+        [pendingPlan.date]: pendingPlan,
       }));
       setPendingPlan(null);
       toast.success("Meal plan saved successfully!");
@@ -277,8 +297,11 @@ export default function MealPlannerPage() {
     }
   };
 
-  const isPending = pendingPlan && isSameDay(new Date(pendingPlan.date), selectedDate);
-  const currentPlan = isPending ? pendingPlan : mealPlans[format(selectedDate, "yyyy-MM-dd")];
+  const isPending =
+    pendingPlan && isSameDay(new Date(pendingPlan.date), selectedDate);
+  const currentPlan = isPending
+    ? pendingPlan
+    : mealPlans[format(selectedDate, "yyyy-MM-dd")];
 
   const getDayButton = (date: Date) => {
     const isSelected = isSameDay(date, selectedDate);
@@ -286,25 +309,44 @@ export default function MealPlannerPage() {
       <button
         key={date.toISOString()}
         onClick={() => setSelectedDate(date)}
-        className={`flex flex-col items-center justify-center min-w-[4.5rem] p-3 rounded-2xl transition-all border ${isSelected
-          ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
-          : "bg-card hover:bg-accent/50 border-transparent"
-          }`}
+        className={`flex flex-col items-center justify-center min-w-[4.5rem] p-3 rounded-2xl transition-all border ${
+          isSelected
+            ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
+            : "bg-card hover:bg-accent/50 border-transparent"
+        }`}
       >
-        <span className="text-xs font-medium opacity-80">{format(date, "EEE", { locale: dateLocale })}</span>
+        <span className="text-xs font-medium opacity-80">
+          {format(date, "EEE", { locale: dateLocale })}
+        </span>
         <span className="text-xl font-bold">{format(date, "d")}</span>
       </button>
     );
   };
 
-  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), i));
+  const weekDates = Array.from({ length: 7 }, (_, i) =>
+    addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), i)
+  );
 
   // Pie chart data
-  const macroData = currentPlan ? [
-    { name: t.mealPlanner.protein, value: currentPlan.total_nutrition.protein, color: '#3b82f6' },
-    { name: t.mealPlanner.carbs, value: currentPlan.total_nutrition.carbs, color: '#10b981' },
-    { name: t.mealPlanner.fats, value: currentPlan.total_nutrition.fats, color: '#f59e0b' },
-  ] : [];
+  const macroData = currentPlan
+    ? [
+        {
+          name: t.mealPlanner.protein,
+          value: currentPlan.total_nutrition.protein,
+          color: "#3b82f6",
+        },
+        {
+          name: t.mealPlanner.carbs,
+          value: currentPlan.total_nutrition.carbs,
+          color: "#10b981",
+        },
+        {
+          name: t.mealPlanner.fats,
+          value: currentPlan.total_nutrition.fats,
+          color: "#f59e0b",
+        },
+      ]
+    : [];
 
   return (
     <SidebarProvider>
@@ -314,15 +356,23 @@ export default function MealPlannerPage() {
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold tracking-tight">{t.mealPlanner.title}</h1>
-              <p className="text-xs text-muted-foreground">{t.mealPlanner.subtitle}</p>
+              <h1 className="text-xl font-bold tracking-tight">
+                {t.mealPlanner.title}
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                {t.mealPlanner.subtitle}
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-muted-foreground hidden md:inline-block">
                 {format(selectedDate, "MMMM yyyy", { locale: dateLocale })}
               </span>
-              <Button variant="outline" size="sm" onClick={() => setSelectedDate(new Date())}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedDate(new Date())}
+              >
                 {t.mealPlanner.today}
               </Button>
             </div>
@@ -345,7 +395,10 @@ export default function MealPlannerPage() {
               </div>
 
               <div className="space-y-2 max-w-md">
-                <h2 className="text-2xl font-bold">{t.mealPlanner.noPlan} {format(selectedDate, "EEEE", { locale: dateLocale })}</h2>
+                <h2 className="text-2xl font-bold">
+                  {t.mealPlanner.noPlan}{" "}
+                  {format(selectedDate, "EEEE", { locale: dateLocale })}
+                </h2>
                 <p className="text-muted-foreground">
                   {t.mealPlanner.generatePlanInfo}
                 </p>
@@ -356,7 +409,7 @@ export default function MealPlannerPage() {
               ) : !profile ? (
                 <Button
                   size="lg"
-                  onClick={() => router.push('/profile')}
+                  onClick={() => router.push("/profile")}
                   className="rounded-full px-8 h-12 text-base shadow-lg"
                 >
                   {t.mealPlanner.setupProfile}
@@ -387,15 +440,34 @@ export default function MealPlannerPage() {
               {isPending && (
                 <Alert className="bg-primary/10 border-primary/20 shadow-sm animate-pulse">
                   <Sparkles className="h-4 w-4 text-primary" />
-                  <AlertTitle className="text-primary font-bold">New Plan Generated</AlertTitle>
+                  <AlertTitle className="text-primary font-bold">
+                    New Plan Generated
+                  </AlertTitle>
                   <AlertDescription className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mt-2">
-                    <span>This plan is not saved yet. Would you like to keep it?</span>
+                    <span>
+                      This plan is not saved yet. Would you like to keep it?
+                    </span>
                     <div className="flex gap-2 w-full sm:w-auto">
-                      <Button size="sm" variant="outline" onClick={generatePlan} disabled={loading} className="flex-1 sm:flex-none">
-                        <RefreshCw className={`w-3 h-3 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={generatePlan}
+                        disabled={loading}
+                        className="flex-1 sm:flex-none"
+                      >
+                        <RefreshCw
+                          className={`w-3 h-3 mr-2 ${
+                            loading ? "animate-spin" : ""
+                          }`}
+                        />
                         Regenerate
                       </Button>
-                      <Button size="sm" onClick={savePlan} disabled={loading} className="flex-1 sm:flex-none">
+                      <Button
+                        size="sm"
+                        onClick={savePlan}
+                        disabled={loading}
+                        className="flex-1 sm:flex-none"
+                      >
                         Confirm & Save
                       </Button>
                     </div>
@@ -415,28 +487,48 @@ export default function MealPlannerPage() {
                   </CardHeader>
                   <CardContent className="grid sm:grid-cols-4 gap-4">
                     <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">{t.mealPlanner.calories}</span>
-                      <div className="text-2xl font-bold text-primary mt-1">{currentPlan.total_nutrition.calories}</div>
-                      <span className="text-xs text-muted-foreground">{t.mealPlanner.kcal}</span>
+                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">
+                        {t.mealPlanner.calories}
+                      </span>
+                      <div className="text-2xl font-bold text-primary mt-1">
+                        {currentPlan.total_nutrition.calories}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {t.mealPlanner.kcal}
+                      </span>
                     </div>
                     <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">{t.mealPlanner.protein}</span>
-                      <div className="text-2xl font-bold text-blue-500 mt-1">{currentPlan.total_nutrition.protein}g</div>
+                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">
+                        {t.mealPlanner.protein}
+                      </span>
+                      <div className="text-2xl font-bold text-blue-500 mt-1">
+                        {currentPlan.total_nutrition.protein}g
+                      </div>
                     </div>
                     <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">{t.mealPlanner.carbs}</span>
-                      <div className="text-2xl font-bold text-emerald-500 mt-1">{currentPlan.total_nutrition.carbs}g</div>
+                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">
+                        {t.mealPlanner.carbs}
+                      </span>
+                      <div className="text-2xl font-bold text-emerald-500 mt-1">
+                        {currentPlan.total_nutrition.carbs}g
+                      </div>
                     </div>
                     <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">{t.mealPlanner.fats}</span>
-                      <div className="text-2xl font-bold text-amber-500 mt-1">{currentPlan.total_nutrition.fats}g</div>
+                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">
+                        {t.mealPlanner.fats}
+                      </span>
+                      <div className="text-2xl font-bold text-amber-500 mt-1">
+                        {currentPlan.total_nutrition.fats}g
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
 
                 <Card className="border-none shadow-md">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{t.mealPlanner.macroDistribution}</CardTitle>
+                    <CardTitle className="text-base">
+                      {t.mealPlanner.macroDistribution}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="h-[180px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -459,9 +551,18 @@ export default function MealPlannerPage() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="flex justify-center gap-4 text-xs font-medium">
-                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> {t.mealPlanner.protein}</div>
-                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /> {t.mealPlanner.carbs}</div>
-                      <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" /> {t.mealPlanner.fats}</div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />{" "}
+                        {t.mealPlanner.protein}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />{" "}
+                        {t.mealPlanner.carbs}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />{" "}
+                        {t.mealPlanner.fats}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -470,33 +571,56 @@ export default function MealPlannerPage() {
               {/* Meals Grid */}
               <div className="grid md:grid-cols-2 gap-6 pb-12">
                 {currentPlan.meals.map((meal, index) => (
-                  <Card key={index} className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow group flex flex-col">
+                  <Card
+                    key={index}
+                    className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow group flex flex-col"
+                  >
                     <div className="h-2 bg-primary/20 w-full relative">
-                      <div className="absolute top-0 left-0 h-full bg-primary" style={{ width: `${(meal.nutrition.calories / 800) * 100}%` }} />
+                      <div
+                        className="absolute top-0 left-0 h-full bg-primary"
+                        style={{
+                          width: `${(meal.nutrition.calories / 800) * 100}%`,
+                        }}
+                      />
                     </div>
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
                         <div>
-                          <Badge variant="secondary" className="mb-2">{meal.type}</Badge>
-                          <CardTitle className="text-xl group-hover:text-primary transition-colors">{meal.name}</CardTitle>
+                          <Badge variant="secondary" className="mb-2">
+                            {meal.type}
+                          </Badge>
+                          <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                            {meal.name}
+                          </CardTitle>
                         </div>
                         <div className="text-right">
-                          <span className="font-bold text-lg">{meal.nutrition.calories}</span>
-                          <span className="text-xs text-muted-foreground block">{t.mealPlanner.kcal}</span>
+                          <span className="font-bold text-lg">
+                            {meal.nutrition.calories}
+                          </span>
+                          <span className="text-xs text-muted-foreground block">
+                            {t.mealPlanner.kcal}
+                          </span>
                         </div>
                       </div>
-                      <CardDescription className="line-clamp-2">{meal.description}</CardDescription>
+                      <CardDescription className="line-clamp-2">
+                        {meal.description}
+                      </CardDescription>
                     </CardHeader>
                     <Separator />
                     <CardContent className="pt-4 flex-1">
                       <div className="space-y-4">
                         <div>
                           <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                            <Utensils className="w-4 h-4 text-muted-foreground" /> {t.mealPlanner.ingredients}
+                            <Utensils className="w-4 h-4 text-muted-foreground" />{" "}
+                            {t.mealPlanner.ingredients}
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {meal.items.map((item, i) => (
-                              <Badge key={i} variant="outline" className="bg-background font-normal">
+                              <Badge
+                                key={i}
+                                variant="outline"
+                                className="bg-background font-normal"
+                              >
                                 {item}
                               </Badge>
                             ))}
@@ -504,19 +628,30 @@ export default function MealPlannerPage() {
                         </div>
 
                         <div className="p-3 bg-muted/30 rounded-lg text-sm">
-                          <strong className="text-muted-foreground mr-1">{t.mealPlanner.proTip}</strong>
+                          <strong className="text-muted-foreground mr-1">
+                            {t.mealPlanner.proTip}
+                          </strong>
                           {meal.tips}
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2">
                           <div className="p-2 bg-blue-500/10 rounded text-blue-700 dark:text-blue-400">
-                            <div className="font-bold">{meal.nutrition.protein}g</div> {t.mealPlanner.protein}
+                            <div className="font-bold">
+                              {meal.nutrition.protein}g
+                            </div>{" "}
+                            {t.mealPlanner.protein}
                           </div>
                           <div className="p-2 bg-emerald-500/10 rounded text-emerald-700 dark:text-emerald-400">
-                            <div className="font-bold">{meal.nutrition.carbs}g</div> {t.mealPlanner.carbs}
+                            <div className="font-bold">
+                              {meal.nutrition.carbs}g
+                            </div>{" "}
+                            {t.mealPlanner.carbs}
                           </div>
                           <div className="p-2 bg-amber-500/10 rounded text-amber-700 dark:text-amber-400">
-                            <div className="font-bold">{meal.nutrition.fats}g</div> {t.mealPlanner.fats}
+                            <div className="font-bold">
+                              {meal.nutrition.fats}g
+                            </div>{" "}
+                            {t.mealPlanner.fats}
                           </div>
                         </div>
                       </div>
@@ -527,17 +662,23 @@ export default function MealPlannerPage() {
 
               <div className="flex justify-center pb-8">
                 {!isPending && (
-                  <Button variant="outline" onClick={generatePlan} disabled={loading} className="gap-2">
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  <Button
+                    variant="outline"
+                    onClick={generatePlan}
+                    disabled={loading}
+                    className="gap-2"
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                    />
                     {t.mealPlanner.regeneratePlan}
                   </Button>
                 )}
               </div>
-
             </div>
           )}
         </div>
       </SidebarInset>
-    </SidebarProvider >
+    </SidebarProvider>
   );
 }

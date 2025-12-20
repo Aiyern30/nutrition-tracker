@@ -1,4 +1,6 @@
-/* eslint-disable react/no-unescaped-entities */
+"use client";
+
+import { useLanguage } from "@/contexts/language-context";
 import {
   SidebarProvider,
   SidebarInset,
@@ -13,12 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StatCard } from "@/components/stat-card";
-import { CalorieRing } from "@/components/calorie-ring";
-import { MacroBar } from "@/components/macro-bar";
 import {
-  Flame,
-  Droplets,
   TrendingUp,
   MessageSquare,
   ScanSearch,
@@ -28,8 +25,15 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
+import { DashboardStats } from "@/components/dashboard-stats";
+import { DailySummaryCard } from "@/components/daily-summary-card";
+import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 
 export default function DashboardPage() {
+  useLocalizedMetadata({ page: "dashboard" });
+
+  const { t } = useLanguage();
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -38,9 +42,9 @@ export default function DashboardPage() {
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">Dashboard</h1>
+              <h1 className="text-xl font-semibold">{t.dashboard.title}</h1>
               <p className="text-sm text-muted-foreground">
-                Good morning! Here's your nutrition overview
+                {t.dashboard.greeting}
               </p>
             </div>
           </div>
@@ -51,83 +55,25 @@ export default function DashboardPage() {
           <Alert className="border-accent/50 bg-accent/5">
             <AlertCircle className="h-4 w-4 text-accent" />
             <AlertDescription className="text-sm text-foreground">
-              This app provides nutritional information for educational purposes
-              only and is not a substitute for professional medical advice.
+              {t.dashboard.disclaimer}
             </AlertDescription>
           </Alert>
 
           {/* Stats Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Daily Calories"
-              value="1,458"
-              subtitle="542 remaining"
-              icon={Flame}
-              trend={{ value: 5, isPositive: false }}
-            />
-            <StatCard
-              title="Water Intake"
-              value="6 / 8"
-              subtitle="glasses today"
-              icon={Droplets}
-            />
-            <StatCard
-              title="Diet Score"
-              value="B+"
-              subtitle="Good balance"
-              icon={TrendingUp}
-              trend={{ value: 8, isPositive: true }}
-            />
-            <StatCard
-              title="Streak"
-              value="7 days"
-              subtitle="Keep it up!"
-              icon={TrendingUp}
-            />
-          </div>
+          <DashboardStats />
 
           {/* Main Content Grid */}
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Daily Summary */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Today's Summary</CardTitle>
-                <CardDescription>
-                  Track your nutrition progress throughout the day
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex flex-col items-center gap-6 md:flex-row md:justify-around">
-                  <CalorieRing consumed={1458} goal={2000} />
-                  <div className="w-full max-w-md space-y-4">
-                    <MacroBar
-                      label="Protein"
-                      current={65}
-                      goal={150}
-                      color="primary"
-                    />
-                    <MacroBar
-                      label="Carbs"
-                      current={180}
-                      goal={250}
-                      color="accent"
-                    />
-                    <MacroBar
-                      label="Fats"
-                      current={42}
-                      goal={65}
-                      color="chart-3"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <DailySummaryCard />
 
             {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>What would you like to do?</CardDescription>
+                <CardTitle>{t.dashboard.quickActions.title}</CardTitle>
+                <CardDescription>
+                  {t.dashboard.quickActions.description}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
@@ -137,7 +83,7 @@ export default function DashboardPage() {
                 >
                   <Link href="/chat">
                     <MessageSquare className="mr-2 h-4 w-4" />
-                    Ask AI a Question
+                    {t.dashboard.quickActions.askAI}
                   </Link>
                 </Button>
                 <Button
@@ -147,7 +93,7 @@ export default function DashboardPage() {
                 >
                   <Link href="/tracker">
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Log a Meal
+                    {t.dashboard.quickActions.logMeal}
                   </Link>
                 </Button>
                 <Button
@@ -157,7 +103,7 @@ export default function DashboardPage() {
                 >
                   <Link href="/analyzer">
                     <ScanSearch className="mr-2 h-4 w-4" />
-                    Analyze Food
+                    {t.dashboard.quickActions.analyzeFood}
                   </Link>
                 </Button>
                 <Button
@@ -167,7 +113,7 @@ export default function DashboardPage() {
                 >
                   <Link href="/meal-planner">
                     <Utensils className="mr-2 h-4 w-4" />
-                    Get Meal Plan
+                    {t.dashboard.quickActions.getMealPlan}
                   </Link>
                 </Button>
               </CardContent>
@@ -177,33 +123,34 @@ export default function DashboardPage() {
           {/* Recent Activity */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle>{t.dashboard.recentActivity.title}</CardTitle>
               <CardDescription>
-                Your latest nutrition interactions
+                {t.dashboard.recentActivity.description}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {[
                   {
-                    time: "2 hours ago",
-                    action: "Logged lunch",
-                    details: "Grilled chicken salad - 450 cal",
+                    time: `2 ${t.dashboard.recentActivity.time.hoursAgo}`,
+                    action: t.dashboard.recentActivity.activities.loggedLunch,
+                    details: t.dashboard.recentActivity.details.grilledChicken,
                   },
                   {
-                    time: "5 hours ago",
-                    action: "Analyzed food",
-                    details: "Greek yogurt with berries",
+                    time: `5 ${t.dashboard.recentActivity.time.hoursAgo}`,
+                    action: t.dashboard.recentActivity.activities.analyzedFood,
+                    details: t.dashboard.recentActivity.details.greekYogurt,
                   },
                   {
-                    time: "Yesterday",
-                    action: "Generated meal plan",
-                    details: "7-day balanced diet",
+                    time: t.dashboard.recentActivity.time.yesterday,
+                    action:
+                      t.dashboard.recentActivity.activities.generatedMealPlan,
+                    details: t.dashboard.recentActivity.details.balancedDiet,
                   },
                   {
-                    time: "Yesterday",
-                    action: "Asked AI",
-                    details: "Best protein sources for vegans",
+                    time: t.dashboard.recentActivity.time.yesterday,
+                    action: t.dashboard.recentActivity.activities.askedAI,
+                    details: t.dashboard.recentActivity.details.proteinSources,
                   },
                 ].map((item, i) => (
                   <div

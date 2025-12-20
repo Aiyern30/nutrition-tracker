@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 
 interface Profile {
   id: string;
@@ -70,6 +71,8 @@ interface Profile {
 }
 
 export default function ProfilePage() {
+  useLocalizedMetadata({ page: "profile" });
+
   const { setTheme } = useTheme();
   const { t, setLanguage: setAppLanguage } = useLanguage();
   const [loading, setLoading] = useState(true);
@@ -161,7 +164,9 @@ export default function ProfilePage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.profile.messages.loadError);
+      setError(
+        err instanceof Error ? err.message : t.profile.messages.loadError
+      );
     } finally {
       setLoading(false);
     }
@@ -203,7 +208,9 @@ export default function ProfilePage() {
       setSuccess(t.profile.messages.goalsUpdated);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.profile.messages.updateError);
+      setError(
+        err instanceof Error ? err.message : t.profile.messages.updateError
+      );
     } finally {
       setSaving(false);
     }
@@ -241,7 +248,11 @@ export default function ProfilePage() {
       setSuccess(t.profile.messages.settingsUpdated);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.profile.messages.saveSettingsError);
+      setError(
+        err instanceof Error
+          ? err.message
+          : t.profile.messages.saveSettingsError
+      );
     } finally {
       setSaving(false);
     }
@@ -274,7 +285,9 @@ export default function ProfilePage() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t.profile.messages.addRestrictionError
+        err instanceof Error
+          ? err.message
+          : t.profile.messages.addRestrictionError
       );
     }
   };
@@ -332,7 +345,9 @@ export default function ProfilePage() {
       setSuccess(t.profile.messages.foodAdded);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.profile.messages.addFoodError);
+      setError(
+        err instanceof Error ? err.message : t.profile.messages.addFoodError
+      );
     }
   };
 
@@ -460,7 +475,9 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="display-name">{t.profile.personalGoals.displayName}</Label>
+                <Label htmlFor="display-name">
+                  {t.profile.personalGoals.displayName}
+                </Label>
                 <Input
                   id="display-name"
                   value={formData.display_name}
@@ -475,7 +492,8 @@ export default function ProfilePage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="height">
-                    {t.profile.personalGoals.height} ({formData.units === "metric" ? "cm" : "in"})
+                    {t.profile.personalGoals.height} (
+                    {formData.units === "metric" ? "cm" : "in"})
                   </Label>
                   <Input
                     id="height"
@@ -484,7 +502,9 @@ export default function ProfilePage() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        height: e.target.value ? parseInt(e.target.value) : null,
+                        height: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
                       })
                     }
                     placeholder={formData.units === "metric" ? "170" : "67"}
@@ -492,7 +512,8 @@ export default function ProfilePage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="weight">
-                    {t.profile.personalGoals.weight} ({formData.units === "metric" ? "kg" : "lbs"})
+                    {t.profile.personalGoals.weight} (
+                    {formData.units === "metric" ? "kg" : "lbs"})
                   </Label>
                   <Input
                     id="weight"
@@ -502,7 +523,9 @@ export default function ProfilePage() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        weight: e.target.value ? parseFloat(e.target.value) : null,
+                        weight: e.target.value
+                          ? parseFloat(e.target.value)
+                          : null,
                       })
                     }
                     placeholder={formData.units === "metric" ? "70.0" : "154.3"}
@@ -512,7 +535,9 @@ export default function ProfilePage() {
 
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="calorie-goal">{t.profile.personalGoals.dailyCalorieGoal}</Label>
+                  <Label htmlFor="calorie-goal">
+                    {t.profile.personalGoals.dailyCalorieGoal}
+                  </Label>
                   <Input
                     id="calorie-goal"
                     type="number"
@@ -526,7 +551,9 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="protein-goal">{t.profile.personalGoals.dailyProteinGoal}</Label>
+                  <Label htmlFor="protein-goal">
+                    {t.profile.personalGoals.dailyProteinGoal}
+                  </Label>
                   <Input
                     id="protein-goal"
                     type="number"
@@ -540,7 +567,9 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="carbs-goal">{t.profile.personalGoals.dailyCarbsGoal}</Label>
+                  <Label htmlFor="carbs-goal">
+                    {t.profile.personalGoals.dailyCarbsGoal}
+                  </Label>
                   <Input
                     id="carbs-goal"
                     type="number"
@@ -554,7 +583,9 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="fats-goal">{t.profile.personalGoals.dailyFatsGoal}</Label>
+                  <Label htmlFor="fats-goal">
+                    {t.profile.personalGoals.dailyFatsGoal}
+                  </Label>
                   <Input
                     id="fats-goal"
                     type="number"
@@ -568,7 +599,9 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="activity-level">{t.profile.personalGoals.activityLevel}</Label>
+                  <Label htmlFor="activity-level">
+                    {t.profile.personalGoals.activityLevel}
+                  </Label>
                   <Select
                     value={formData.activity_level}
                     onValueChange={(value) =>
@@ -579,16 +612,28 @@ export default function ProfilePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sedentary">{t.profile.personalGoals.activityLevels.sedentary}</SelectItem>
-                      <SelectItem value="light">{t.profile.personalGoals.activityLevels.light}</SelectItem>
-                      <SelectItem value="moderate">{t.profile.personalGoals.activityLevels.moderate}</SelectItem>
-                      <SelectItem value="active">{t.profile.personalGoals.activityLevels.active}</SelectItem>
-                      <SelectItem value="very_active">{t.profile.personalGoals.activityLevels.veryActive}</SelectItem>
+                      <SelectItem value="sedentary">
+                        {t.profile.personalGoals.activityLevels.sedentary}
+                      </SelectItem>
+                      <SelectItem value="light">
+                        {t.profile.personalGoals.activityLevels.light}
+                      </SelectItem>
+                      <SelectItem value="moderate">
+                        {t.profile.personalGoals.activityLevels.moderate}
+                      </SelectItem>
+                      <SelectItem value="active">
+                        {t.profile.personalGoals.activityLevels.active}
+                      </SelectItem>
+                      <SelectItem value="very_active">
+                        {t.profile.personalGoals.activityLevels.veryActive}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="goal-type">{t.profile.personalGoals.primaryGoal}</Label>
+                  <Label htmlFor="goal-type">
+                    {t.profile.personalGoals.primaryGoal}
+                  </Label>
                   <Select
                     value={formData.goal_type}
                     onValueChange={(value) =>
@@ -599,16 +644,26 @@ export default function ProfilePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weight_loss">{t.profile.personalGoals.goals.weightLoss}</SelectItem>
-                      <SelectItem value="maintenance">{t.profile.personalGoals.goals.maintenance}</SelectItem>
-                      <SelectItem value="muscle_gain">{t.profile.personalGoals.goals.muscleGain}</SelectItem>
-                      <SelectItem value="health">{t.profile.personalGoals.goals.health}</SelectItem>
+                      <SelectItem value="weight_loss">
+                        {t.profile.personalGoals.goals.weightLoss}
+                      </SelectItem>
+                      <SelectItem value="maintenance">
+                        {t.profile.personalGoals.goals.maintenance}
+                      </SelectItem>
+                      <SelectItem value="muscle_gain">
+                        {t.profile.personalGoals.goals.muscleGain}
+                      </SelectItem>
+                      <SelectItem value="health">
+                        {t.profile.personalGoals.goals.health}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <Button onClick={handleUpdateGoals} disabled={saving}>
-                {saving ? t.profile.personalGoals.updating : t.profile.personalGoals.updateGoals}
+                {saving
+                  ? t.profile.personalGoals.updating
+                  : t.profile.personalGoals.updateGoals}
               </Button>
             </CardContent>
           </Card>
@@ -623,7 +678,9 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>{t.profile.dietaryPreferences.allergiesRestrictions}</Label>
+                <Label>
+                  {t.profile.dietaryPreferences.allergiesRestrictions}
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     value={newRestriction}
@@ -736,8 +793,14 @@ export default function ProfilePage() {
                 />
               </div>
               <Separator />
-              <Button onClick={handleUpdateSettings} disabled={saving} className="w-full mt-4">
-                {saving ? t.common.saving : t.profile.notifications.saveSettings}
+              <Button
+                onClick={handleUpdateSettings}
+                disabled={saving}
+                className="w-full mt-4"
+              >
+                {saving
+                  ? t.common.saving
+                  : t.profile.notifications.saveSettings}
               </Button>
             </CardContent>
           </Card>
@@ -746,7 +809,9 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>{t.profile.appSettings.title}</CardTitle>
-              <CardDescription>{t.profile.appSettings.subtitle}</CardDescription>
+              <CardDescription>
+                {t.profile.appSettings.subtitle}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
@@ -764,9 +829,15 @@ export default function ProfilePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="light">{t.profile.appSettings.themes.light}</SelectItem>
-                    <SelectItem value="dark">{t.profile.appSettings.themes.dark}</SelectItem>
-                    <SelectItem value="system">{t.profile.appSettings.themes.system}</SelectItem>
+                    <SelectItem value="light">
+                      {t.profile.appSettings.themes.light}
+                    </SelectItem>
+                    <SelectItem value="dark">
+                      {t.profile.appSettings.themes.dark}
+                    </SelectItem>
+                    <SelectItem value="system">
+                      {t.profile.appSettings.themes.system}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -786,8 +857,12 @@ export default function ProfilePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">{t.profile.appSettings.languages.en}</SelectItem>
-                    <SelectItem value="zh">{t.profile.appSettings.languages.zh}</SelectItem>
+                    <SelectItem value="en">
+                      {t.profile.appSettings.languages.en}
+                    </SelectItem>
+                    <SelectItem value="zh">
+                      {t.profile.appSettings.languages.zh}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -804,13 +879,21 @@ export default function ProfilePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="metric">{t.profile.appSettings.unitsOptions.metric}</SelectItem>
-                    <SelectItem value="imperial">{t.profile.appSettings.unitsOptions.imperial}</SelectItem>
+                    <SelectItem value="metric">
+                      {t.profile.appSettings.unitsOptions.metric}
+                    </SelectItem>
+                    <SelectItem value="imperial">
+                      {t.profile.appSettings.unitsOptions.imperial}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Separator />
-              <Button onClick={handleUpdateSettings} disabled={saving} className="w-full mt-4">
+              <Button
+                onClick={handleUpdateSettings}
+                disabled={saving}
+                className="w-full mt-4"
+              >
                 {saving ? t.common.saving : t.profile.appSettings.saveSettings}
               </Button>
             </CardContent>
@@ -825,7 +908,8 @@ export default function ProfilePage() {
               <Alert className="border-accent/50 bg-accent/5">
                 <AlertCircle className="h-4 w-4 text-accent" />
                 <AlertDescription className="text-sm">
-                  <strong>{t.profile.legal.disclaimer}</strong> {t.profile.legal.disclaimerText}
+                  <strong>{t.profile.legal.disclaimer}</strong>{" "}
+                  {t.profile.legal.disclaimerText}
                 </AlertDescription>
               </Alert>
               <Button

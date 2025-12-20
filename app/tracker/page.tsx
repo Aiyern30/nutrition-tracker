@@ -16,6 +16,7 @@ import { AddFoodDialog } from "@/components/tracker/add-food-dialog";
 import { MealSection } from "@/components/tracker/meal-section";
 import { DateNavigation } from "@/components/tracker/date-navigation";
 import { NutritionSummary } from "@/components/tracker/nutrition-summary";
+import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 
 interface FoodEntry {
   id: string;
@@ -57,6 +58,8 @@ interface DailySummary {
 }
 
 export default function TrackerPage() {
+  useLocalizedMetadata({ page: "tracker" });
+
   const { t } = useLanguage();
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());

@@ -11,8 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Image from "next/image";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Apple, Github, AlertCircle } from "lucide-react";
+import { Github, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -57,10 +58,17 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-4">
-            <Apple className="h-6 w-6 text-primary-foreground" />
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={28}
+              height={28}
+              className="object-contain"
+              priority
+            />
           </div>
           <CardTitle className="text-2xl font-bold">
-            Welcome to NutriAI
+            Welcome to Eat Smart AI
           </CardTitle>
           <CardDescription>
             Sign in to start your personalized nutrition journey
