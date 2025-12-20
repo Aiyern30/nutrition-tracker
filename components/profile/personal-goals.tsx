@@ -21,7 +21,6 @@ import { useLanguage } from "@/contexts/language-context";
 
 interface PersonalGoalsProps {
   formData: {
-    display_name: string;
     daily_calorie_goal: number;
     daily_protein_goal: number;
     daily_carbs_goal: number;
@@ -45,6 +44,27 @@ export function PersonalGoals({
 }: PersonalGoalsProps) {
   const { t } = useLanguage();
 
+  const handleSave = () => {
+    // Validation: ensure all required fields are filled
+    if (
+      !formData.daily_calorie_goal ||
+      formData.daily_calorie_goal <= 0 ||
+      !formData.daily_protein_goal ||
+      formData.daily_protein_goal <= 0 ||
+      !formData.daily_carbs_goal ||
+      formData.daily_carbs_goal <= 0 ||
+      !formData.daily_fats_goal ||
+      formData.daily_fats_goal <= 0
+    ) {
+      alert(
+        t.profile.personalGoals.validationError ||
+          "Please fill in all nutrition goals with values greater than 0"
+      );
+      return;
+    }
+    onSave();
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -55,18 +75,7 @@ export function PersonalGoals({
         <CardDescription>{t.profile.personalGoals.subtitle}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="display-name">
-            {t.profile.personalGoals.displayName}
-          </Label>
-          <Input
-            id="display-name"
-            value={formData.display_name}
-            onChange={(e) => onFormDataChange({ display_name: e.target.value })}
-            placeholder={t.profile.personalGoals.displayNamePlaceholder}
-          />
-        </div>
-
+        {/* Height and Weight */}
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="height">
@@ -108,62 +117,70 @@ export function PersonalGoals({
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="calorie-goal">
-              {t.profile.personalGoals.dailyCalorieGoal}
+              {t.profile.personalGoals.dailyCalorieGoal} *
             </Label>
             <Input
               id="calorie-goal"
               type="number"
-              value={formData.daily_calorie_goal}
+              min="1"
+              value={formData.daily_calorie_goal || ""}
               onChange={(e) =>
                 onFormDataChange({
-                  daily_calorie_goal: parseInt(e.target.value) || 2000,
+                  daily_calorie_goal: parseInt(e.target.value) || 0,
                 })
               }
+              required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="protein-goal">
-              {t.profile.personalGoals.dailyProteinGoal}
+              {t.profile.personalGoals.dailyProteinGoal} *
             </Label>
             <Input
               id="protein-goal"
               type="number"
-              value={formData.daily_protein_goal}
+              min="1"
+              value={formData.daily_protein_goal || ""}
               onChange={(e) =>
                 onFormDataChange({
-                  daily_protein_goal: parseInt(e.target.value) || 150,
+                  daily_protein_goal: parseInt(e.target.value) || 0,
                 })
               }
+              required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="carbs-goal">
-              {t.profile.personalGoals.dailyCarbsGoal}
+              {t.profile.personalGoals.dailyCarbsGoal} *
             </Label>
             <Input
               id="carbs-goal"
               type="number"
-              value={formData.daily_carbs_goal}
+              min="1"
+              value={formData.daily_carbs_goal || ""}
               onChange={(e) =>
                 onFormDataChange({
-                  daily_carbs_goal: parseInt(e.target.value) || 200,
+                  daily_carbs_goal: parseInt(e.target.value) || 0,
                 })
               }
+              required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="fats-goal">
-              {t.profile.personalGoals.dailyFatsGoal}
+              {t.profile.personalGoals.dailyFatsGoal} *
             </Label>
             <Input
               id="fats-goal"
               type="number"
-              value={formData.daily_fats_goal}
+              min="1"
+              value={formData.daily_fats_goal || ""}
               onChange={(e) =>
                 onFormDataChange({
-                  daily_fats_goal: parseInt(e.target.value) || 65,
+                  daily_fats_goal: parseInt(e.target.value) || 0,
                 })
               }
+              required
             />
           </div>
           <div className="space-y-2">
@@ -224,7 +241,7 @@ export function PersonalGoals({
             </Select>
           </div>
         </div>
-        <Button onClick={onSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving}>
           {saving
             ? t.profile.personalGoals.updating
             : t.profile.personalGoals.updateGoals}

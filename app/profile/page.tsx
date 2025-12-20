@@ -22,6 +22,12 @@ import { DietaryPreferences } from "@/components/profile/dietary-preferences";
 import { NotificationsSettings } from "@/components/profile/notifications-settings";
 import { AppSettings } from "@/components/profile/app-settings";
 import { LegalSupport } from "@/components/profile/legal-support";
+import {
+  ProfileHeaderSkeleton,
+  PersonalGoalsSkeleton,
+  DietaryPreferencesSkeleton,
+  SettingsSkeleton,
+} from "@/components/profile/profile-skeleton";
 
 interface Profile {
   id: string;
@@ -59,7 +65,6 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    display_name: "",
     daily_calorie_goal: 2000,
     daily_protein_goal: 150,
     daily_carbs_goal: 200,
@@ -102,7 +107,6 @@ export default function ProfilePage() {
       if (data) {
         setProfile(data);
         setFormData({
-          display_name: data.display_name || "",
           daily_calorie_goal: data.daily_calorie_goal,
           daily_protein_goal: data.daily_protein_goal,
           daily_carbs_goal: data.daily_carbs_goal,
@@ -147,7 +151,6 @@ export default function ProfilePage() {
       const { error } = await supabase
         .from("profiles")
         .update({
-          display_name: formData.display_name,
           daily_calorie_goal: formData.daily_calorie_goal,
           daily_protein_goal: formData.daily_protein_goal,
           daily_carbs_goal: formData.daily_carbs_goal,
@@ -335,11 +338,7 @@ export default function ProfilePage() {
         </header>
 
         <main className="flex-1 space-y-6 p-6">
-          {userLoading || loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : !user ? (
+          {!user && !userLoading ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -361,76 +360,95 @@ export default function ProfilePage() {
                 </Alert>
               )}
 
-              <ProfileHeader
-                displayName={user.name}
-                userEmail={user.email}
-                userAvatarUrl={user.avatar_url || null}
-                createdAt={user.created_at || new Date().toISOString()}
-                language={formData.language}
-              />
+              {loading ? (
+                <ProfileHeaderSkeleton />
+              ) : (
+                <ProfileHeader
+                  displayName={user?.name || "User"}
+                  userEmail={user?.email || ""}
+                  userAvatarUrl={user?.avatar_url || null}
+                  createdAt={user?.created_at || new Date().toISOString()}
+                  language={formData.language}
+                />
+              )}
 
-              <PersonalGoals
-                formData={{
-                  display_name: formData.display_name,
-                  daily_calorie_goal: formData.daily_calorie_goal,
-                  daily_protein_goal: formData.daily_protein_goal,
-                  daily_carbs_goal: formData.daily_carbs_goal,
-                  daily_fats_goal: formData.daily_fats_goal,
-                  activity_level: formData.activity_level,
-                  goal_type: formData.goal_type,
-                  height: formData.height,
-                  weight: formData.weight,
-                  units: formData.units,
-                }}
-                onFormDataChange={(updates) =>
-                  setFormData({ ...formData, ...updates })
-                }
-                onSave={handleUpdateGoals}
-                saving={saving}
-              />
+              {loading ? (
+                <PersonalGoalsSkeleton />
+              ) : (
+                <PersonalGoals
+                  formData={{
+                    daily_calorie_goal: formData.daily_calorie_goal,
+                    daily_protein_goal: formData.daily_protein_goal,
+                    daily_carbs_goal: formData.daily_carbs_goal,
+                    daily_fats_goal: formData.daily_fats_goal,
+                    activity_level: formData.activity_level,
+                    goal_type: formData.goal_type,
+                    height: formData.height,
+                    weight: formData.weight,
+                    units: formData.units,
+                  }}
+                  onFormDataChange={(updates) =>
+                    setFormData({ ...formData, ...updates })
+                  }
+                  onSave={handleUpdateGoals}
+                  saving={saving}
+                />
+              )}
 
-              <DietaryPreferences
-                dietaryRestrictions={formData.dietary_restrictions}
-                dislikedFoods={formData.disliked_foods}
-                onAddRestriction={addDietaryRestriction}
-                onRemoveRestriction={removeDietaryRestriction}
-                onAddDislikedFood={addDislikedFood}
-                onRemoveDislikedFood={removeDislikedFood}
-              />
+              {loading ? (
+                <DietaryPreferencesSkeleton />
+              ) : (
+                <DietaryPreferences
+                  dietaryRestrictions={formData.dietary_restrictions}
+                  dislikedFoods={formData.disliked_foods}
+                  onAddRestriction={addDietaryRestriction}
+                  onRemoveRestriction={removeDietaryRestriction}
+                  onAddDislikedFood={addDislikedFood}
+                  onRemoveDislikedFood={removeDislikedFood}
+                />
+              )}
 
-              <NotificationsSettings
-                mealReminders={formData.meal_reminders}
-                weeklySummary={formData.weekly_summary}
-                aiInsights={formData.ai_insights}
-                onMealRemindersChange={(value) =>
-                  setFormData({ ...formData, meal_reminders: value })
-                }
-                onWeeklySummaryChange={(value) =>
-                  setFormData({ ...formData, weekly_summary: value })
-                }
-                onAiInsightsChange={(value) =>
-                  setFormData({ ...formData, ai_insights: value })
-                }
-                onSave={handleUpdateSettings}
-                saving={saving}
-              />
+              {loading ? (
+                <SettingsSkeleton />
+              ) : (
+                <NotificationsSettings
+                  mealReminders={formData.meal_reminders}
+                  weeklySummary={formData.weekly_summary}
+                  aiInsights={formData.ai_insights}
+                  onMealRemindersChange={(value) =>
+                    setFormData({ ...formData, meal_reminders: value })
+                  }
+                  onWeeklySummaryChange={(value) =>
+                    setFormData({ ...formData, weekly_summary: value })
+                  }
+                  onAiInsightsChange={(value) =>
+                    setFormData({ ...formData, ai_insights: value })
+                  }
+                  onSave={handleUpdateSettings}
+                  saving={saving}
+                />
+              )}
 
-              <AppSettings
-                theme={formData.theme}
-                language={formData.language}
-                units={formData.units}
-                onThemeChange={(value) =>
-                  setFormData({ ...formData, theme: value })
-                }
-                onLanguageChange={(value) =>
-                  setFormData({ ...formData, language: value })
-                }
-                onUnitsChange={(value) =>
-                  setFormData({ ...formData, units: value })
-                }
-                onSave={handleUpdateSettings}
-                saving={saving}
-              />
+              {loading ? (
+                <SettingsSkeleton />
+              ) : (
+                <AppSettings
+                  theme={formData.theme}
+                  language={formData.language}
+                  units={formData.units}
+                  onThemeChange={(value) =>
+                    setFormData({ ...formData, theme: value })
+                  }
+                  onLanguageChange={(value) =>
+                    setFormData({ ...formData, language: value })
+                  }
+                  onUnitsChange={(value) =>
+                    setFormData({ ...formData, units: value })
+                  }
+                  onSave={handleUpdateSettings}
+                  saving={saving}
+                />
+              )}
 
               <LegalSupport />
             </>
