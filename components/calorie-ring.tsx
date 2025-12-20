@@ -5,9 +5,26 @@ import { cn } from "@/lib/utils";
 interface CalorieRingProps {
   consumed: number;
   goal: number;
+  translations?: {
+    of: string;
+    overGoal: string;
+    remaining: string;
+    onTrack: string;
+    progress: string;
+  };
 }
 
-export function CalorieRing({ consumed, goal }: CalorieRingProps) {
+export function CalorieRing({
+  consumed,
+  goal,
+  translations = {
+    of: "of",
+    overGoal: "over",
+    remaining: "left",
+    onTrack: "On Track",
+    progress: "Progress",
+  },
+}: CalorieRingProps) {
   const percentage = Math.min((consumed / goal) * 100, 100);
   const exceeded = consumed > goal;
   const nearGoal = percentage >= 90 && percentage <= 100;
@@ -27,6 +44,12 @@ export function CalorieRing({ consumed, goal }: CalorieRingProps) {
     if (exceeded) return "text-red-500";
     if (nearGoal) return "text-green-500";
     return "text-foreground";
+  };
+
+  const getStatusText = () => {
+    if (exceeded) return `⚠️ ${translations.overGoal}`;
+    if (nearGoal) return `🎯 ${translations.onTrack}`;
+    return `${Math.round(percentage)}% ${translations.progress}`;
   };
 
   return (
@@ -81,12 +104,12 @@ export function CalorieRing({ consumed, goal }: CalorieRingProps) {
             {consumed.toLocaleString()}
           </span>
           <span className="text-sm text-muted-foreground">
-            of {goal.toLocaleString()}
+            {translations.of} {goal.toLocaleString()}
           </span>
           <span className={cn("text-xs font-medium mt-1", getTextColor())}>
             {exceeded
-              ? `+${(consumed - goal).toLocaleString()} over`
-              : `${remaining.toLocaleString()} left`}
+              ? `+${(consumed - goal).toLocaleString()} ${translations.overGoal}`
+              : `${remaining.toLocaleString()} ${translations.remaining}`}
           </span>
         </div>
       </div>
@@ -105,9 +128,7 @@ export function CalorieRing({ consumed, goal }: CalorieRingProps) {
             "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
         )}
       >
-        {exceeded && "⚠️ Over Goal"}
-        {nearGoal && !exceeded && "🎯 On Track"}
-        {!exceeded && !nearGoal && `${Math.round(percentage)}% Progress`}
+        {getStatusText()}
       </div>
     </div>
   );

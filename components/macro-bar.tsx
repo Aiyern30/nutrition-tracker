@@ -4,8 +4,19 @@ interface MacroBarProps {
   label: string;
   current: number;
   goal: number;
-  color?: "primary" | "accent" | "chart-3" | "success" | "warning" | "destructive";
+  color?:
+    | "primary"
+    | "accent"
+    | "chart-3"
+    | "success"
+    | "warning"
+    | "destructive";
   showValues?: boolean;
+  translations?: {
+    overGoal: string;
+    remaining: string;
+    almostThere: string;
+  };
 }
 
 export function MacroBar({
@@ -14,11 +25,16 @@ export function MacroBar({
   goal,
   color,
   showValues = true,
+  translations = {
+    overGoal: "over goal",
+    remaining: "remaining",
+    almostThere: "Almost there!",
+  },
 }: MacroBarProps) {
   const percentage = Math.min((current / goal) * 100, 100);
   const exceeded = current > goal;
   const nearGoal = percentage >= 90 && percentage <= 100;
-  
+
   // Auto-determine color based on progress if not provided
   const determineColor = () => {
     if (color) return color;
@@ -43,11 +59,13 @@ export function MacroBar({
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium">{label}</span>
         {showValues && (
-          <span className={cn(
-            "text-muted-foreground",
-            exceeded && "text-red-500 font-semibold",
-            nearGoal && !exceeded && "text-green-500 font-semibold"
-          )}>
+          <span
+            className={cn(
+              "text-muted-foreground",
+              exceeded && "text-red-500 font-semibold",
+              nearGoal && !exceeded && "text-green-500 font-semibold"
+            )}
+          >
             {Math.round(current)}g / {goal}g
           </span>
         )}
@@ -70,12 +88,13 @@ export function MacroBar({
       </div>
       {exceeded && (
         <p className="text-xs text-red-500 font-medium">
-          +{Math.round(current - goal)}g over goal
+          +{Math.round(current - goal)}g {translations.overGoal}
         </p>
       )}
       {nearGoal && !exceeded && (
         <p className="text-xs text-green-500 font-medium">
-          Almost there! {Math.round(goal - current)}g remaining
+          {translations.almostThere} {Math.round(goal - current)}g{" "}
+          {translations.remaining}
         </p>
       )}
     </div>

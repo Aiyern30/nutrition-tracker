@@ -233,7 +233,9 @@
     "update": "Update",
     "delete": "Delete",
     "edit": "Edit",
-    "close": "Close"
+    "close": "Close",
+    "of": "of",
+    "progress": "Progress"
   },
   "tracker": {
     "title": "Diet Tracker",
@@ -324,7 +326,10 @@
       "description": "Track your nutrition progress throughout the day",
       "protein": "Protein",
       "carbs": "Carbs",
-      "fats": "Fats"
+      "fats": "Fats",
+      "overGoal": "over goal",
+      "remaining": "remaining",
+      "almostThere": "Almost there!"
     },
     "quickActions": {
       "title": "Quick Actions",

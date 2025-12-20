@@ -233,7 +233,9 @@
     "update": "更新",
     "delete": "删除",
     "edit": "编辑",
-    "close": "关闭"
+    "close": "关闭",
+    "of": "共",
+    "progress": "进度"
   },
   "tracker": {
     "title": "饮食追踪器",
@@ -324,7 +326,10 @@
       "description": "追踪您全天的营养进度",
       "protein": "蛋白质",
       "carbs": "碳水化合物",
-      "fats": "脂肪"
+      "fats": "脂肪",
+      "overGoal": "超出目标",
+      "remaining": "剩余",
+      "almostThere": "快到了！"
     },
     "quickActions": {
       "title": "快速操作",

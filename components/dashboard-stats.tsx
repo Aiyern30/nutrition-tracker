@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/contexts/language-context";
 import { StatCard } from "@/components/stat-card";
-import { Flame, Droplets, TrendingUp } from "lucide-react";
+import { Flame, Droplets, TrendingUp, Award, AlertTriangle } from "lucide-react";
 
 interface DailySummary {
   total_calories: number;
@@ -87,9 +87,11 @@ export function DashboardStats() {
   const consumedCalories = dailySummary?.total_calories || 0;
   const calorieGoal = profile?.daily_calorie_goal || 2000;
   const remainingCalories = Math.max(0, calorieGoal - consumedCalories);
+  const caloriesExceeded = consumedCalories > calorieGoal;
 
   const waterIntake = dailySummary?.water_intake || 0;
   const waterGoal = profile?.daily_water_goal || 8;
+  const waterComplete = waterIntake >= waterGoal;
 
   const dietScore = dailySummary?.diet_quality_score || "B+";
   const streak = profile?.current_streak || 0;
@@ -99,15 +101,28 @@ export function DashboardStats() {
       ? Math.round((consumedCalories / calorieGoal) * 100) - 100
       : 0;
 
+  // Determine calorie icon based on status
+  const getCalorieIcon = () => {
+    if (caloriesExceeded) return AlertTriangle;
+    return Flame;
+  };
+
+  // Determine water icon color
+  const getWaterIcon = () => {
+    return Droplets;
+  };
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title={t.dashboard.stats.dailyCalories.title}
         value={consumedCalories.toLocaleString()}
-        subtitle={`${remainingCalories.toLocaleString()} ${
-          t.dashboard.stats.dailyCalories.remaining
-        }`}
-        icon={Flame}
+        subtitle={
+          caloriesExceeded
+            ? `+${(consumedCalories - calorieGoal).toLocaleString()} ${t.dashboard.todaysSummary.overGoal}`
+            : `${remainingCalories.toLocaleString()} ${t.dashboard.stats.dailyCalories.remaining}`
+        }
+        icon={getCalorieIcon()}
         trend={
           calorieTrend !== 0
             ? {
@@ -116,18 +131,20 @@ export function DashboardStats() {
               }
             : undefined
         }
+        variant={caloriesExceeded ? "destructive" : "default"}
       />
       <StatCard
         title={t.dashboard.stats.waterIntake.title}
         value={`${waterIntake} / ${waterGoal}`}
         subtitle={t.dashboard.stats.waterIntake.subtitle}
-        icon={Droplets}
+        icon={getWaterIcon()}
+        variant={waterComplete ? "success" : "default"}
       />
       <StatCard
         title={t.dashboard.stats.dietScore.title}
         value={dietScore}
         subtitle={t.dashboard.stats.dietScore.subtitle}
-        icon={TrendingUp}
+        icon={Award}
         trend={{ value: 8, isPositive: true }}
       />
       <StatCard
@@ -135,6 +152,7 @@ export function DashboardStats() {
         value={`${streak} ${t.dashboard.stats.streak.days}`}
         subtitle={t.dashboard.stats.streak.subtitle}
         icon={TrendingUp}
+        variant={streak > 0 ? "success" : "default"}
       />
     </div>
   );

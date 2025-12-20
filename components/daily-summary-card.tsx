@@ -123,25 +123,50 @@ export function DailySummaryCard() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-6 md:flex-row md:justify-around">
-            <CalorieRing consumed={consumedCalories} goal={calorieGoal} />
+            <CalorieRing
+              consumed={consumedCalories}
+              goal={calorieGoal}
+              translations={{
+                of: t.common.of,
+                overGoal: t.dashboard.todaysSummary.overGoal,
+                remaining: t.dashboard.todaysSummary.remaining,
+                onTrack: t.dashboard.stats.dietScore.subtitle,
+                progress: t.common.progress,
+              }}
+            />
             <div className="w-full max-w-md space-y-4">
               <MacroBar
                 label={t.dashboard.todaysSummary.protein}
                 current={consumedProtein}
                 goal={proteinGoal}
                 color={getProteinColor()}
+                translations={{
+                  overGoal: t.dashboard.todaysSummary.overGoal,
+                  remaining: t.dashboard.todaysSummary.remaining,
+                  almostThere: t.dashboard.todaysSummary.almostThere,
+                }}
               />
               <MacroBar
                 label={t.dashboard.todaysSummary.carbs}
                 current={consumedCarbs}
                 goal={carbsGoal}
                 color={getCarbsColor()}
+                translations={{
+                  overGoal: t.dashboard.todaysSummary.overGoal,
+                  remaining: t.dashboard.todaysSummary.remaining,
+                  almostThere: t.dashboard.todaysSummary.almostThere,
+                }}
               />
               <MacroBar
                 label={t.dashboard.todaysSummary.fats}
                 current={consumedFats}
                 goal={fatsGoal}
                 color={getFatsColor()}
+                translations={{
+                  overGoal: t.dashboard.todaysSummary.overGoal,
+                  remaining: t.dashboard.todaysSummary.remaining,
+                  almostThere: t.dashboard.todaysSummary.almostThere,
+                }}
               />
             </div>
           </div>
