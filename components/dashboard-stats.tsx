@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/contexts/language-context";
 import { StatCard } from "@/components/stat-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Flame,
   Droplets,
@@ -81,10 +82,16 @@ export function DashboardStats() {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            className="h-32 rounded-lg border bg-card animate-pulse"
-          />
+          <div key={i} className="rounded-lg border bg-card p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-3 flex-1">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+              <Skeleton className="h-12 w-12 rounded-full" />
+            </div>
+          </div>
         ))}
       </div>
     );

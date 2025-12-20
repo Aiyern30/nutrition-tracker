@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CalorieRing } from "@/components/calorie-ring";
 import { MacroBar } from "@/components/macro-bar";
 
@@ -118,8 +119,25 @@ export function DailySummaryCard() {
       </CardHeader>
       <CardContent className="space-y-6">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center gap-6 md:flex-row md:justify-around py-6">
+            {/* Calorie Ring Skeleton */}
+            <div className="flex flex-col items-center gap-4">
+              <Skeleton className="h-48 w-48 rounded-full" />
+              <Skeleton className="h-8 w-32 rounded-full" />
+            </div>
+
+            {/* Macro Bars Skeleton */}
+            <div className="w-full max-w-md space-y-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <Skeleton className="h-2 w-full rounded-full" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-6 md:flex-row md:justify-around">
