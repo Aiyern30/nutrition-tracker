@@ -25,10 +25,10 @@ export function StatCard({
   isRefreshing = false,
 }: StatCardProps) {
   const variantStyles = {
-    default: "text-primary bg-primary/10",
-    success: "text-green-500 bg-green-500/10",
-    destructive: "text-red-500 bg-red-500/10",
-    warning: "text-yellow-500 bg-yellow-500/10",
+    default: "text-primary",
+    success: "text-green-500",
+    destructive: "text-red-500",
+    warning: "text-yellow-500",
   };
 
   const iconBgStyles = {
@@ -92,7 +92,7 @@ export function StatCard({
             )}
           >
             <Icon
-              className={cn("h-6 w-6", variantStyles[variant].split(" ")[0])}
+              className={cn("h-6 w-6", variantStyles[variant])}
             />
           </div>
         </div>
