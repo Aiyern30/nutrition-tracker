@@ -1,4 +1,30 @@
 {
+  "metadata": {
+    "default": {
+      "title": "NutriAI - Your Personal Nutrition Assistant",
+      "description": "AI-powered nutrition tracking, meal planning, and dietary guidance."
+    },
+    "tracker": {
+      "title": "Nutrition Tracker",
+      "description": "Track your daily nutrition intake, monitor calories, macros, and micronutrients with AI-powered food analysis."
+    },
+    "mealPlanner": {
+      "title": "Meal Planner",
+      "description": "Plan your meals for the week with personalized recommendations based on your dietary goals."
+    },
+    "foodAnalyzer": {
+      "title": "Food Analyzer",
+      "description": "Analyze any food with AI to get detailed nutritional information instantly."
+    },
+    "profile": {
+      "title": "Profile Settings",
+      "description": "Manage your account settings, dietary preferences, and nutrition goals."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "View your nutrition overview, recent meals, and progress towards your goals."
+    }
+  },
   "sidebar": {
     "appName": "NutriAI",
     "appSubtitle": "Nutrition Assistant",

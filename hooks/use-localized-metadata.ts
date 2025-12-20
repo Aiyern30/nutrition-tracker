@@ -6,70 +6,41 @@ import { useEffect } from "react";
 import { useLanguage } from "@/contexts/language-context";
 
 interface MetadataConfig {
-  titleKey?: string;
-  descriptionKey?: string;
-  usePageTitle?: boolean;
+  page?: string; // e.g., "tracker", "mealPlanner", "dashboard"
+  appendSiteName?: boolean;
 }
 
 export function useLocalizedMetadata(config?: MetadataConfig) {
   const { language, t } = useLanguage();
 
   useEffect(() => {
-    // Get nested value from translation object using dot notation
-    const getNestedValue = (
-      obj: Record<string, any>,
-      path: string
-    ): string | undefined => {
-      return path.split(".").reduce((current, key) => {
-        return current && typeof current === "object"
-          ? current[key]
-          : undefined;
-      }, obj as any) as string | undefined;
+    // Helper to safely get nested values
+    const getNestedValue = (obj: unknown, path: string): string | undefined => {
+      try {
+        const value = path.split(".").reduce((current: any, key: string) => {
+          return current?.[key];
+        }, obj);
+        return typeof value === "string" ? value : undefined;
+      } catch {
+        return undefined;
+      }
     };
 
-    // Set title
-    let title = "NutriAI"; // Default fallback
-    if (
-      "metadata" in t &&
-      t.metadata &&
-      typeof t.metadata === "object" &&
-      "title" in t.metadata
-    ) {
-      title = t.metadata.title as string;
-    }
+    // Determine which metadata to use
+    const metadataPath = config?.page
+      ? `metadata.${config.page}`
+      : "metadata.default";
 
-    if (config?.titleKey) {
-      const pageTitle = getNestedValue(
-        t as Record<string, any>,
-        config.titleKey
-      );
-      if (pageTitle) {
-        title = config.usePageTitle ? pageTitle : `${pageTitle} - NutriAI`;
-      }
-    }
-    document.title = title;
+    // Set title
+    const title = getNestedValue(t, `${metadataPath}.title`) || "NutriAI";
+    const finalTitle =
+      config?.page && config?.appendSiteName !== false
+        ? `${title} - NutriAI`
+        : title;
+    document.title = finalTitle;
 
     // Set description
-    let description: string | undefined;
-    if (
-      "metadata" in t &&
-      t.metadata &&
-      typeof t.metadata === "object" &&
-      "description" in t.metadata
-    ) {
-      description = t.metadata.description as string;
-    }
-
-    if (config?.descriptionKey) {
-      const pageDescription = getNestedValue(
-        t as Record<string, any>,
-        config.descriptionKey
-      );
-      if (pageDescription) {
-        description = pageDescription;
-      }
-    }
-
+    const description = getNestedValue(t, `${metadataPath}.description`);
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription && description) {
       metaDescription.setAttribute("content", description);
