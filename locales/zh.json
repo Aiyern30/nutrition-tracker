@@ -103,7 +103,17 @@
         "muscleGain": "增肌",
         "health": "一般健康"
       },
-      "validationError": "请填写所有营养目标，且数值必须大于0"
+      "validationError": "请填写所有营养目标，且数值必须大于0",
+      "errors": {
+        "calorieRequired": "每日卡路里目标为必填项",
+        "calorieInvalid": "每日卡路里目标必须大于0",
+        "proteinRequired": "每日蛋白质目标为必填项",
+        "proteinInvalid": "每日蛋白质目标必须大于0",
+        "carbsRequired": "每日碳水化合物目标为必填项",
+        "carbsInvalid": "每日碳水化合物目标必须大于0",
+        "fatsRequired": "每日脂肪目标为必填项",
+        "fatsInvalid": "每日脂肪目标必须大于0"
+      }
     },
     "dietaryPreferences": {
       "title": "饮食偏好",

@@ -103,7 +103,17 @@
         "muscleGain": "Muscle Gain",
         "health": "General Health"
       },
-      "validationError": "Please fill in all nutrition goals with values greater than 0"
+      "validationError": "Please fill in all nutrition goals with values greater than 0",
+      "errors": {
+        "calorieRequired": "Daily calorie goal is required",
+        "calorieInvalid": "Daily calorie goal must be greater than 0",
+        "proteinRequired": "Daily protein goal is required",
+        "proteinInvalid": "Daily protein goal must be greater than 0",
+        "carbsRequired": "Daily carbs goal is required",
+        "carbsInvalid": "Daily carbs goal must be greater than 0",
+        "fatsRequired": "Daily fats goal is required",
+        "fatsInvalid": "Daily fats goal must be greater than 0"
+      }
     },
     "dietaryPreferences": {
       "title": "Dietary Preferences",
