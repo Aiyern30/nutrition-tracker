@@ -365,7 +365,7 @@ export default function ProfilePage() {
                 </Alert>
               )}
 
-              {(loading || userLoading) ? (
+              {loading || userLoading ? (
                 <ProfileHeaderSkeleton />
               ) : (
                 <ProfileHeader
@@ -377,7 +377,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {(loading || userLoading) ? (
+              {loading || userLoading ? (
                 <PersonalGoalsSkeleton />
               ) : (
                 <PersonalGoals
@@ -400,7 +400,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {(loading || userLoading) ? (
+              {loading || userLoading ? (
                 <DietaryPreferencesSkeleton />
               ) : (
                 <DietaryPreferences
@@ -413,7 +413,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {(loading || userLoading) ? (
+              {loading || userLoading ? (
                 <SettingsSkeleton />
               ) : (
                 <NotificationsSettings
@@ -434,7 +434,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {(loading || userLoading) ? (
+              {loading || userLoading ? (
                 <SettingsSkeleton />
               ) : (
                 <AppSettings
