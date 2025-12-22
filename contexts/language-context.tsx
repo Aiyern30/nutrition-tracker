@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
 import enTranslations from "@/locales/en.json";
 import zhTranslations from "@/locales/zh.json";
@@ -26,16 +32,25 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useUser();
+  const { user, initializing } = useUser();
   const supabase = createClient();
 
-  // ✅ derive language instead of effect
-  const language: Language =
+  const derivedLanguage: Language =
     (user?.profileSettings?.language as Language) ?? "en";
+
+  const [language, setLanguageState] = useState<Language>(derivedLanguage);
+
+  // sync with user profile
+  useEffect(() => {
+    setLanguageState(derivedLanguage);
+  }, [derivedLanguage]);
 
   const t = useMemo(() => translations[language], [language]);
 
   const setLanguage = async (lang: Language) => {
+    // optimistic update
+    setLanguageState(lang);
+
     try {
       const {
         data: { user: authUser },
@@ -61,7 +76,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         language,
         setLanguage,
         t,
-        loading,
+        loading: initializing,
       }}
     >
       {children}
