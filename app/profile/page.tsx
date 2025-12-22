@@ -136,8 +136,13 @@ export default function ProfilePage() {
   }, [supabase, t]);
 
   useEffect(() => {
-    if (!userLoading && user) {
-      fetchProfile();
+    if (!userLoading) {
+      if (user) {
+        fetchProfile();
+      } else {
+        // User not logged in, stop loading
+        setLoading(false);
+      }
     }
   }, [userLoading, user, fetchProfile]);
 
@@ -360,7 +365,7 @@ export default function ProfilePage() {
                 </Alert>
               )}
 
-              {loading ? (
+              {(loading || userLoading) ? (
                 <ProfileHeaderSkeleton />
               ) : (
                 <ProfileHeader
@@ -372,7 +377,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {loading ? (
+              {(loading || userLoading) ? (
                 <PersonalGoalsSkeleton />
               ) : (
                 <PersonalGoals
@@ -395,7 +400,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {loading ? (
+              {(loading || userLoading) ? (
                 <DietaryPreferencesSkeleton />
               ) : (
                 <DietaryPreferences
@@ -408,7 +413,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {loading ? (
+              {(loading || userLoading) ? (
                 <SettingsSkeleton />
               ) : (
                 <NotificationsSettings
@@ -429,7 +434,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {loading ? (
+              {(loading || userLoading) ? (
                 <SettingsSkeleton />
               ) : (
                 <AppSettings
