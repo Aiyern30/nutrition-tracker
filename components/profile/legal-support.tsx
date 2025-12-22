@@ -29,7 +29,7 @@ export function LegalSupport() {
         >
           <Link href="/legal/privacy">
             <Shield className="mr-2 h-4 w-4" />
-            {t.profile.legal.privacyPolicy}
+            {t.profile.legal.privacyPolicy.title}
           </Link>
         </Button>
         <Button
@@ -39,7 +39,7 @@ export function LegalSupport() {
         >
           <Link href="/legal/terms">
             <FileText className="mr-2 h-4 w-4" />
-            {t.profile.legal.termsOfService}
+            {t.profile.legal.termsOfService.title}
           </Link>
         </Button>
         <Button
@@ -49,7 +49,7 @@ export function LegalSupport() {
         >
           <Link href="/legal/help">
             <HelpCircle className="mr-2 h-4 w-4" />
-            {t.profile.legal.helpSupport}
+            {t.profile.legal.helpSupport.title}
           </Link>
         </Button>
       </CardContent>
