@@ -48,25 +48,40 @@ const DailySummariesDashboard = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      
       if (!user) {
         setError("User not found");
         setLoading(false);
         return;
       }
+      
       console.log("Fetching summaries for user ID:", user.id);
 
-      const response = await fetch(
-        `/api/daily-summaries?user_id=${user.id}&days=${dateRange}`
-      );
+      // Query Supabase directly instead of using API route
+      let query = supabase
+        .from("daily_summaries")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: true });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch summaries");
+      if (dateRange !== "all") {
+        const daysNum = parseInt(dateRange, 10);
+        if (!isNaN(daysNum) && daysNum > 0) {
+          const fromDate = new Date();
+          fromDate.setDate(fromDate.getDate() - daysNum + 1);
+          const fromDateStr = fromDate.toISOString().split("T")[0];
+          query = query.gte("date", fromDateStr);
+        }
       }
 
-      const result = await response.json();
-      console.log("API Response:", result);
-      setSummaries(result.data || []);
+      const { data, error: fetchError } = await query;
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      console.log("Fetched summaries:", data);
+      setSummaries(data || []);
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
