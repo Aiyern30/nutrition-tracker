@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const user_id = searchParams.get("user_id");
     const days = searchParams.get("days");
-
+    const metrics = searchParams.get("metrics");
     // Create Supabase client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,9 +17,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ data: [] });
     }
 
+    // Build select query based on metrics filter
+    let selectFields =
+      "id,user_id,date,created_at,updated_at,diet_quality_score,diet_quality_explanation";
+
+    if (metrics) {
+      const metricsList = metrics.split(",");
+      if (metricsList.includes("calories")) selectFields += ",total_calories";
+      if (metricsList.includes("protein")) selectFields += ",total_protein";
+      if (metricsList.includes("carbs")) selectFields += ",total_carbs";
+      if (metricsList.includes("fats")) selectFields += ",total_fats";
+      if (metricsList.includes("water")) selectFields += ",water_intake";
+    } else {
+      // Default: include all metrics
+      selectFields = "*";
+    }
+
     let query = supabase
       .from("daily_summaries")
-      .select("*")
+      .select(selectFields)
       .eq("user_id", user_id)
       .order("date", { ascending: true });
 
@@ -40,6 +56,8 @@ export async function GET(request: NextRequest) {
       user_id,
       "days:",
       days,
+      "metrics:",
+      metrics,
       "returned rows:",
       data?.length ?? 0,
       "error:",

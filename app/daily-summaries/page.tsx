@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Filter } from "lucide-react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -45,6 +46,14 @@ const DailySummariesDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("7");
   const [error, setError] = useState<string | null>(null);
+  // Filter only for macros chart
+  const [visibleChartMetrics, setVisibleChartMetrics] = useState<string[]>([
+    "calories",
+    "protein",
+    "carbs",
+    "fats",
+  ]);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   const supabase = createClient();
 
@@ -103,13 +112,18 @@ const DailySummariesDashboard = () => {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
+  // Chart data includes only visible metrics for macros chart
   const chartData = summaries.map((s) => ({
     date: formatDate(s.date),
-    Calories: s.total_calories,
-    Protein: s.total_protein,
-    Carbs: s.total_carbs,
-    Fats: s.total_fats,
-    Water: s.water_intake,
+    ...(visibleChartMetrics.includes("calories") && {
+      Calories: s.total_calories,
+    }),
+    ...(visibleChartMetrics.includes("protein") && {
+      Protein: s.total_protein,
+    }),
+    ...(visibleChartMetrics.includes("carbs") && { Carbs: s.total_carbs }),
+    ...(visibleChartMetrics.includes("fats") && { Fats: s.total_fats }),
+    Water: s.water_intake, // Water always included for water chart
   }));
 
   const calculateAverage = (key: keyof DailySummary) => {
@@ -118,12 +132,36 @@ const DailySummariesDashboard = () => {
     return Math.round(sum / summaries.length);
   };
 
+  // All averages shown in stats cards
   const averages = {
     calories: calculateAverage("total_calories"),
     protein: calculateAverage("total_protein"),
     carbs: calculateAverage("total_carbs"),
     water: calculateAverage("water_intake"),
   };
+
+  const toggleChartMetric = (metric: string) => {
+    setVisibleChartMetrics((prev) => {
+      if (prev.includes(metric)) {
+        // Don't allow unchecking if it's the last metric
+        if (prev.length === 1) return prev;
+        return prev.filter((m) => m !== metric);
+      } else {
+        return [...prev, metric];
+      }
+    });
+  };
+
+  // Only macros for chart filter (no water)
+  const chartMetrics = [
+    { key: "calories", label: "Calories" },
+    { key: "protein", label: "Protein" },
+    { key: "carbs", label: "Carbs" },
+    { key: "fats", label: "Fats" },
+  ];
+
+  // All metrics shown in daily details
+  const allVisibleMetrics = ["calories", "protein", "carbs", "fats", "water"];
 
   if (error) {
     return (
@@ -142,75 +180,138 @@ const DailySummariesDashboard = () => {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
+        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold">Daily Summaries</h1>
-              <p className="text-sm text-muted-foreground">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-xl font-semibold truncate">
+                Daily Summaries
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">
                 Track your nutrition progress over time
               </p>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setDateRange("7")}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  dateRange === "7"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200"
-                }`}
-              >
-                Last 7 Days
-              </button>
-              <button
-                onClick={() => setDateRange("30")}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  dateRange === "30"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200"
-                }`}
-              >
-                Last 30 Days
-              </button>
-              <button
-                onClick={() => setDateRange("all")}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  dateRange === "all"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200"
-                }`}
-              >
-                All Time
-              </button>
+        <main className="flex-1 p-3 md:p-8">
+          <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+              <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+                <button
+                  onClick={() => setDateRange("7")}
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm md:text-base font-medium transition whitespace-nowrap ${
+                    dateRange === "7"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  Last 7 Days
+                </button>
+                <button
+                  onClick={() => setDateRange("30")}
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm md:text-base font-medium transition whitespace-nowrap ${
+                    dateRange === "30"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  Last 30 Days
+                </button>
+                <button
+                  onClick={() => setDateRange("all")}
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-sm md:text-base font-medium transition whitespace-nowrap ${
+                    dateRange === "all"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  All Time
+                </button>
+              </div>
             </div>
 
             {loading ? (
               <StatsCardsSkeleton />
             ) : (
-              <StatsCards averages={averages} />
+              <StatsCards
+                averages={averages}
+                visibleMetrics={allVisibleMetrics}
+              />
             )}
 
-            {loading ? (
-              <MacrosChartSkeleton />
-            ) : (
-              <MacrosChart data={chartData} />
-            )}
+            <div className="relative">
+              <div className="absolute top-4 right-4 z-10">
+                <button
+                  onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 shadow-sm"
+                >
+                  <Filter className="w-4 h-4" />
+                  <span className="hidden sm:inline">Filter Lines</span>
+                  <span className="sm:hidden">Filter</span>
+                  <span className="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">
+                    {visibleChartMetrics.length}
+                  </span>
+                </button>
+
+                {showFilterDropdown && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowFilterDropdown(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+                      <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2">
+                          Chart Lines
+                        </p>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        {chartMetrics.map((metric) => (
+                          <label
+                            key={metric.key}
+                            className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={visibleChartMetrics.includes(metric.key)}
+                              onChange={() => toggleChartMetric(metric.key)}
+                              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-200">
+                              {metric.label}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {loading ? (
+                <MacrosChartSkeleton />
+              ) : (
+                <MacrosChart
+                  data={chartData}
+                  visibleMetrics={visibleChartMetrics}
+                />
+              )}
+            </div>
 
             {loading ? (
               <WaterChartSkeleton />
             ) : (
-              <WaterChart data={chartData} />
+              <WaterChart data={chartData} visible={true} />
             )}
 
             {loading ? (
               <DailyDetailsSkeleton />
             ) : (
-              <DailyDetails summaries={summaries} />
+              <DailyDetails
+                summaries={summaries}
+                visibleMetrics={allVisibleMetrics}
+              />
             )}
           </div>
         </main>
