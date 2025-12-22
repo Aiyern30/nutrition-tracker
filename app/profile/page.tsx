@@ -57,7 +57,7 @@ export default function ProfilePage() {
 
   const { setTheme } = useTheme();
   const { t, setLanguage: setAppLanguage } = useLanguage();
-  const { user, loading: userLoading } = useUser();
+  const { user, initializing: userLoading } = useUser();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -366,7 +366,7 @@ export default function ProfilePage() {
                 </Alert>
               )}
 
-              {loading || userLoading ? (
+              {loading ? (
                 <ProfileHeaderSkeleton />
               ) : (
                 <ProfileHeader
@@ -378,7 +378,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {loading || userLoading ? (
+              {loading ? (
                 <PersonalGoalsSkeleton />
               ) : (
                 <PersonalGoals
@@ -401,7 +401,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {loading || userLoading ? (
+              {loading ? (
                 <DietaryPreferencesSkeleton />
               ) : (
                 <DietaryPreferences
@@ -414,7 +414,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {loading || userLoading ? (
+              {loading ? (
                 <SettingsSkeleton />
               ) : (
                 <NotificationsSettings
@@ -435,7 +435,7 @@ export default function ProfilePage() {
                 />
               )}
 
-              {loading || userLoading ? (
+              {loading ? (
                 <SettingsSkeleton />
               ) : (
                 <AppSettings
