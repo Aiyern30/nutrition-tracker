@@ -94,7 +94,10 @@ export default function ProfilePage() {
         data: { user: authUser },
       } = await supabase.auth.getUser();
 
-      if (!authUser) return;
+      if (!authUser) {
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("profiles")
@@ -128,12 +131,12 @@ export default function ProfilePage() {
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t.profile.messages.loadError
+        err instanceof Error ? err.message : "Failed to load profile"
       );
     } finally {
       setLoading(false);
     }
-  }, [supabase, t]);
+  }, [supabase]);
 
   useEffect(() => {
     if (!userLoading) {

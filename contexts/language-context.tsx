@@ -12,6 +12,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => Promise<void>;
   t: Translations;
+  loading: boolean;
 }
 
 const translations: Record<Language, Translations> = {
@@ -25,6 +26,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
+  const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
   // Load language from profile on mount
@@ -34,19 +36,22 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (!user) return;
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("language")
-          .eq("id", user.id)
-          .single();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("language")
+            .eq("id", user.id)
+            .single();
 
-        if (profile?.language) {
-          setLanguageState(profile.language as Language);
+          if (profile?.language) {
+            setLanguageState(profile.language as Language);
+          }
         }
       } catch (error) {
         console.error("Error loading language:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -90,7 +95,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <LanguageContext.Provider
-      value={{ language, setLanguage, t: translations[language] }}
+      value={{ language, setLanguage, t: translations[language], loading }}
     >
       {children}
     </LanguageContext.Provider>

@@ -37,6 +37,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     const supabase = createClient();
     try {
+      setLoading(true);
       const {
         data: { user: authUser },
       } = await supabase.auth.getUser();
@@ -74,6 +75,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error("Error fetching user:", error);
+      setUser(null);
     } finally {
       setLoading(false);
     }
