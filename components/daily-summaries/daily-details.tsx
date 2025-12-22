@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 
 interface DailySummary {
   id: string;
@@ -27,14 +28,16 @@ const getGradeColor = (grade: string) => {
 };
 
 export function DailyDetails({ summaries, visibleMetrics }: DailyDetailsProps) {
+  const { t } = useLanguage();
+
   if (summaries.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
         <h2 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 md:mb-6">
-          Daily Details
+          {t.dailySummaries.details.title}
         </h2>
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          No data available for the selected period
+          {t.dailySummaries.details.noData}
         </div>
       </div>
     );
@@ -43,35 +46,35 @@ export function DailyDetails({ summaries, visibleMetrics }: DailyDetailsProps) {
   const metrics = [
     {
       key: "calories",
-      label: "Calories",
+      label: t.dailySummaries.metrics.calories,
       field: "total_calories",
       unit: "",
       color: "text-gray-800 dark:text-gray-200",
     },
     {
       key: "protein",
-      label: "Protein",
+      label: t.dailySummaries.metrics.protein,
       field: "total_protein",
       unit: "g",
       color: "text-blue-600",
     },
     {
       key: "carbs",
-      label: "Carbs",
+      label: t.dailySummaries.metrics.carbs,
       field: "total_carbs",
       unit: "g",
       color: "text-green-600",
     },
     {
       key: "fats",
-      label: "Fats",
+      label: t.dailySummaries.metrics.fats,
       field: "total_fats",
       unit: "g",
       color: "text-red-600",
     },
     {
       key: "water",
-      label: "Water",
+      label: t.dailySummaries.metrics.water,
       field: "water_intake",
       unit: " 🥤",
       color: "text-cyan-600",
@@ -85,7 +88,7 @@ export function DailyDetails({ summaries, visibleMetrics }: DailyDetailsProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
       <h2 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 md:mb-6">
-        Daily Details
+        {t.dailySummaries.details.title}
       </h2>
       <div className="space-y-3 md:space-y-4">
         {summaries.map((summary) => (

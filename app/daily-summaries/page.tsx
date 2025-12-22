@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Filter } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 import {
   SidebarProvider,
   SidebarInset,
@@ -42,6 +43,7 @@ interface DailySummary {
 }
 
 const DailySummariesDashboard = () => {
+  const { t } = useLanguage();
   const [summaries, setSummaries] = useState<DailySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("7");
@@ -154,10 +156,10 @@ const DailySummariesDashboard = () => {
 
   // Only macros for chart filter (no water)
   const chartMetrics = [
-    { key: "calories", label: "Calories" },
-    { key: "protein", label: "Protein" },
-    { key: "carbs", label: "Carbs" },
-    { key: "fats", label: "Fats" },
+    { key: "calories", label: t.dailySummaries.metrics.calories },
+    { key: "protein", label: t.dailySummaries.metrics.protein },
+    { key: "carbs", label: t.dailySummaries.metrics.carbs },
+    { key: "fats", label: t.dailySummaries.metrics.fats },
   ];
 
   // All metrics shown in daily details
@@ -185,10 +187,10 @@ const DailySummariesDashboard = () => {
           <div className="flex flex-1 items-center justify-between">
             <div className="min-w-0">
               <h1 className="text-lg md:text-xl font-semibold truncate">
-                Daily Summaries
+                {t.dailySummaries.title}
               </h1>
               <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">
-                Track your nutrition progress over time
+                {t.dailySummaries.subtitle}
               </p>
             </div>
           </div>
@@ -206,7 +208,7 @@ const DailySummariesDashboard = () => {
                       : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200"
                   }`}
                 >
-                  Last 7 Days
+                  {t.dailySummaries.dateRanges.last7Days}
                 </button>
                 <button
                   onClick={() => setDateRange("30")}
@@ -216,7 +218,7 @@ const DailySummariesDashboard = () => {
                       : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200"
                   }`}
                 >
-                  Last 30 Days
+                  {t.dailySummaries.dateRanges.last30Days}
                 </button>
                 <button
                   onClick={() => setDateRange("all")}
@@ -226,7 +228,7 @@ const DailySummariesDashboard = () => {
                       : "bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200"
                   }`}
                 >
-                  All Time
+                  {t.dailySummaries.dateRanges.allTime}
                 </button>
               </div>
             </div>
@@ -247,8 +249,12 @@ const DailySummariesDashboard = () => {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 shadow-sm"
                 >
                   <Filter className="w-4 h-4" />
-                  <span className="hidden sm:inline">Filter Lines</span>
-                  <span className="sm:hidden">Filter</span>
+                  <span className="hidden sm:inline">
+                    {t.dailySummaries.filter.filterLines}
+                  </span>
+                  <span className="sm:hidden">
+                    {t.dailySummaries.filter.filter}
+                  </span>
                   <span className="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded">
                     {visibleChartMetrics.length}
                   </span>
@@ -263,7 +269,7 @@ const DailySummariesDashboard = () => {
                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
                       <div className="p-2 border-b border-gray-200 dark:border-gray-700">
                         <p className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2">
-                          Chart Lines
+                          {t.dailySummaries.filter.chartLines}
                         </p>
                       </div>
                       <div className="p-2 space-y-1">

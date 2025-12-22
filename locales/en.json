@@ -410,5 +410,47 @@
         "yesterday": "Yesterday"
       }
     }
+  },
+  "dailySummaries": {
+    "title": "Daily Summaries",
+    "subtitle": "Track your nutrition progress over time",
+    "dateRanges": {
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days",
+      "allTime": "All Time"
+    },
+    "filter": {
+      "filterLines": "Filter Lines",
+      "filter": "Filter",
+      "chartLines": "Chart Lines"
+    },
+    "stats": {
+      "avgPerDay": "Avg/day",
+      "calories": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "water": "Glasses"
+    },
+    "charts": {
+      "macrosTrend": "Calories & Macros Trend",
+      "waterIntake": "Water Intake",
+      "noMetricsSelected": "No metrics selected for chart display"
+    },
+    "details": {
+      "title": "Daily Details",
+      "noData": "No data available for the selected period"
+    },
+    "metrics": {
+      "calories": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fats": "Fats",
+      "water": "Water"
+    },
+    "errors": {
+      "userNotFound": "User not found",
+      "loadError": "An error occurred"
+    },
+    "loading": "Loading your summaries..."
   }
 }
