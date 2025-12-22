@@ -62,6 +62,7 @@ interface Profile {
   daily_protein_goal: number;
   daily_carbs_goal: number;
   daily_fats_goal: number;
+  daily_water_goal: number;
 }
 
 export default function TrackerPage() {
@@ -93,7 +94,7 @@ export default function TrackerPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal"
+          "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal"
         )
         .eq("id", user.id)
         .single();
@@ -200,6 +201,7 @@ export default function TrackerPage() {
   const proteinGoal = profile?.daily_protein_goal || 150;
   const carbsGoal = profile?.daily_carbs_goal || 250;
   const fatsGoal = profile?.daily_fats_goal || 65;
+  const waterGoal = profile?.daily_water_goal || 8;
 
   const getEntriesByMealType = (mealType: string) =>
     entries.filter((e) => e.mealType === mealType);
@@ -283,6 +285,48 @@ export default function TrackerPage() {
     }
   };
 
+  const handleWaterChange = async (delta: number) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const dateStr = selectedDate.toISOString().split("T")[0];
+      const newWaterIntake = Math.max(0, dailySummary.water_intake + delta);
+
+      // Update or insert daily_summaries record
+      const { error } = await supabase
+        .from("daily_summaries")
+        .upsert(
+          {
+            user_id: user.id,
+            date: dateStr,
+            water_intake: newWaterIntake,
+            total_calories: dailySummary.total_calories,
+            total_protein: dailySummary.total_protein,
+            total_carbs: dailySummary.total_carbs,
+            total_fats: dailySummary.total_fats,
+            diet_quality_score: dailySummary.diet_quality_score,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id,date",
+          }
+        );
+
+      if (error) throw error;
+
+      // Update local state
+      setDailySummary({
+        ...dailySummary,
+        water_intake: newWaterIntake,
+      });
+    } catch (error) {
+      console.error("Error updating water intake:", error);
+    }
+  };
+
   const changeDate = (days: number) => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + days);
@@ -322,10 +366,13 @@ export default function TrackerPage() {
             totalProtein={dailySummary.total_protein}
             totalCarbs={dailySummary.total_carbs}
             totalFats={dailySummary.total_fats}
+            waterIntake={dailySummary.water_intake}
             calorieGoal={calorieGoal}
             proteinGoal={proteinGoal}
             carbsGoal={carbsGoal}
             fatsGoal={fatsGoal}
+            waterGoal={waterGoal}
+            onWaterChange={handleWaterChange}
           />
 
           <div className="space-y-4">
