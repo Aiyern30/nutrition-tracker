@@ -8,13 +8,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Shield } from "lucide-react";
 
 export default function PrivacyPolicyPage() {
   useLocalizedMetadata({ page: "default" });
   const { t } = useLanguage();
-  const policy = t.legal.privacyPolicy;
+  const policy = t.profile.legal.privacyPolicy;
 
   return (
     <SidebarProvider>

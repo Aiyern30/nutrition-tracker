@@ -20,7 +20,7 @@ import { HelpCircle, Mail } from "lucide-react";
 export default function HelpSupportPage() {
   useLocalizedMetadata({ page: "default" });
   const { t } = useLanguage();
-  const help = t.legal.helpSupport;
+  const help = t.profile.legal.helpSupport;
 
   return (
     <SidebarProvider>
@@ -42,7 +42,7 @@ export default function HelpSupportPage() {
                   <CardTitle>{section.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {section.questions ? (
+                  {"questions" in section ? (
                     <Accordion type="single" collapsible className="w-full">
                       {section.questions.map((qa, index) => (
                         <AccordionItem key={index} value={`item-${index}`}>
