@@ -59,7 +59,7 @@ export function NutritionSummary({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-5">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {/* Calories */}
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
@@ -201,7 +201,7 @@ export function NutritionSummary({
           </div>
 
           {/* Water Intake */}
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2 lg:col-span-1">
             <div className="flex items-baseline justify-between">
               <span className="text-sm text-muted-foreground">
                 {t.dashboard.stats.waterIntake.title}
