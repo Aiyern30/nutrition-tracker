@@ -184,6 +184,170 @@
       "notLoggedIn": "You must be logged in to view this page"
     }
   },
+  "analyzer": {
+    "title": "Food Analyzer",
+    "subtitle": "Analyze foods with AI using images or descriptions",
+    "inputMethod": {
+      "title": "Input Method",
+      "subtitle": "Choose how to analyze your food",
+      "imageTab": "Image",
+      "descriptionTab": "Description"
+    },
+    "imageUpload": {
+      "title": "Upload Food Image",
+      "clickToUpload": "Click to upload image",
+      "fileTypes": "PNG, JPG up to 10MB",
+      "additionalDesc": "Additional Description (Optional)",
+      "additionalDescPlaceholder": "e.g., serving size, preparation method...",
+      "detectedText": "Detected Text (OCR)"
+    },
+    "descriptionInput": {
+      "title": "Describe your food",
+      "placeholder": "e.g., grilled chicken breast with steamed broccoli",
+      "hint": "Be as detailed as possible for accurate results"
+    },
+    "buttons": {
+      "analyzeFood": "Analyze Food",
+      "processingImage": "Processing Image...",
+      "analyzing": "Analyzing...",
+      "addToTracker": "Add to Tracker",
+      "saving": "Saving...",
+      "addedToTracker": "Added to Tracker",
+      "saveToFavorites": "Save to Favorites",
+      "askAI": "Ask AI About This"
+    },
+    "results": {
+      "readyTitle": "Ready to Analyze",
+      "readyDesc": "Upload a food image or enter a description to get instant nutrition information powered by AI",
+      "analyzingTitle": "Analyzing Your Food...",
+      "analyzingImageDesc": "Processing image and extracting nutrition data",
+      "analyzingTextDesc": "Analyzing description and calculating nutrients",
+      "imageAnalysis": "Image Analysis",
+      "imageAnalysisDesc": "Upload photos of your meals",
+      "textDescription": "Text Description",
+      "textDescriptionDesc": "Describe what you're eating",
+      "serving": "Serving",
+      "calories": "calories",
+      "confidence": "confidence",
+      "nutritionFacts": "Nutrition Facts",
+      "nutritionFactsDesc": "Detailed nutritional breakdown per serving",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fats": "Fats",
+      "fiber": "Fiber",
+      "sugar": "Sugar",
+      "sodium": "Sodium",
+      "analysis": "Analysis",
+      "healthBenefits": "Health Benefits",
+      "considerations": "Considerations",
+      "successMessage": "Successfully added to tracker!"
+    },
+    "confidenceLevels": {
+      "high": "high",
+      "medium": "medium",
+      "low": "low"
+    },
+    "categories": {
+      "sauce": "Sauce",
+      "snack": "Snack",
+      "beverage": "Beverage",
+      "meal": "Meal",
+      "seasoning": "Seasoning"
+    }
+  },
+  "chat": {
+    "title": "AI Chat",
+    "subtitle": "Ask nutrition questions and get AI-powered guidance",
+    "history": "History",
+    "historySubtitle": "Your past conversations.",
+    "newChat": "New Chat",
+    "disclaimer": "Educational purposes only - Not medical advice",
+    "assistantTitle": "Nutrition AI Assistant",
+    "assistantSubtitle": "Ask me anything about nutrition, calorie counting, or dietary advice. I'm here to help!",
+    "suggestedQuestions": "Suggested questions:",
+    "prompts": [
+      "What's a healthy breakfast for weight loss?",
+      "Explain the nutrition facts of salmon",
+      "Create a 1500 calorie meal plan",
+      "How many calories in a chicken Caesar salad?"
+    ],
+    "inputPlaceholder": "Ask about nutrition, meal ideas, or your diet...",
+    "errorResponse": "Sorry, I encountered an error. Please ensure you have run the 'combine_tables.sql' script to update your database schema.",
+    "noHistory": "No conversations yet.",
+    "goToMealPlanner": "Go to Meal Planner"
+  },
+  "common": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "update": "Update",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "of": "of",
+    "progress": "Progress"
+  },
+  "tracker": {
+    "title": "Diet Tracker",
+    "subtitle": "Log and track your daily meals",
+    "addFood": "Add Food",
+    "dateNavigation": {
+      "today": "Today"
+    },
+    "summary": {
+      "title": "Daily Summary",
+      "subtitle": "Your nutrition progress today",
+      "noMeals": "No meals logged yet",
+      "calories": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbs",
+      "fats": "Fats"
+    },
+    "meals": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snacks": "Snacks",
+      "calories": "calories"
+    },
+    "addFoodDialog": {
+      "title": "Add Food to Tracker",
+      "subtitle": "Select from analyzed foods or add manually",
+      "addToMeal": "Add to Meal",
+      "analyzedFoods": "Analyzed Foods",
+      "manualEntry": "Manual Entry",
+      "searchPlaceholder": "Search by name or category...",
+      "allFoods": "All Foods",
+      "favorites": "Favorites",
+      "showing": "Showing",
+      "of": "of",
+      "food": "food",
+      "foods": "foods",
+      "noFoodsFound": "No foods found",
+      "noFoodsHint": "Try analyzing foods in the Analyzer page first",
+      "noMatch": "No foods match your search criteria",
+      "add": "Add",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page",
+      "foodName": "Food Name",
+      "foodNamePlaceholder": "e.g., Grilled Chicken Breast",
+      "category": "Category",
+      "categoryPlaceholder": "e.g., Protein",
+      "servingSize": "Serving Size",
+      "servingSizePlaceholder": "e.g., 100g",
+      "calories": "Calories",
+      "protein": "Protein (g)",
+      "carbs": "Carbs (g)",
+      "fats": "Fats (g)",
+      "fiber": "Fiber (g)",
+      "sugar": "Sugar (g)",
+      "sodium": "Sodium (mg)",
+      "required": "*",
+      "addToMealButton": "Add to"
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "greeting": "Good morning! Here's your nutrition overview",

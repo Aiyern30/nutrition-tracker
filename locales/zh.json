@@ -184,6 +184,170 @@
       "notLoggedIn": "您必须登录才能查看此页面"
     }
   },
+  "analyzer": {
+    "title": "食物分析器",
+    "subtitle": "使用图像或描述通过 AI 分析食物",
+    "inputMethod": {
+      "title": "输入方式",
+      "subtitle": "选择如何分析您的食物",
+      "imageTab": "图片",
+      "descriptionTab": "描述"
+    },
+    "imageUpload": {
+      "title": "上传食物图片",
+      "clickToUpload": "点击上传图片",
+      "fileTypes": "PNG、JPG，最大 10MB",
+      "additionalDesc": "附加描述（可选）",
+      "additionalDescPlaceholder": "例如：份量、烹饪方法...",
+      "detectedText": "识别的文字 (OCR)"
+    },
+    "descriptionInput": {
+      "title": "描述您的食物",
+      "placeholder": "例如：烤鸡胸肉配蒸西兰花",
+      "hint": "尽可能详细以获得准确结果"
+    },
+    "buttons": {
+      "analyzeFood": "分析食物",
+      "processingImage": "处理图片中...",
+      "analyzing": "分析中...",
+      "addToTracker": "添加到追踪",
+      "saving": "保存中...",
+      "addedToTracker": "已添加到追踪",
+      "saveToFavorites": "保存到收藏",
+      "askAI": "询问 AI"
+    },
+    "results": {
+      "readyTitle": "准备分析",
+      "readyDesc": "上传食物图片或输入描述，即可获得 AI 驱动的即时营养信息",
+      "analyzingTitle": "正在分析您的食物...",
+      "analyzingImageDesc": "处理图片并提取营养数据",
+      "analyzingTextDesc": "分析描述并计算营养成分",
+      "imageAnalysis": "图片分析",
+      "imageAnalysisDesc": "上传您的餐食照片",
+      "textDescription": "文字描述",
+      "textDescriptionDesc": "描述您正在吃的食物",
+      "serving": "份量",
+      "calories": "卡路里",
+      "confidence": "可信度",
+      "nutritionFacts": "营养成分",
+      "nutritionFactsDesc": "每份详细营养成分",
+      "protein": "蛋白质",
+      "carbs": "碳水化合物",
+      "fats": "脂肪",
+      "fiber": "纤维",
+      "sugar": "糖",
+      "sodium": "钠",
+      "analysis": "分析",
+      "healthBenefits": "健康益处",
+      "considerations": "注意事项",
+      "successMessage": "成功添加到追踪！"
+    },
+    "confidenceLevels": {
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "categories": {
+      "sauce": "调味料",
+      "snack": "零食",
+      "beverage": "饮料",
+      "meal": "餐食",
+      "seasoning": "调料"
+    }
+  },
+  "chat": {
+    "title": "AI 聊天",
+    "subtitle": "咨询营养问题并获取 AI 驱动的指导",
+    "history": "历史记录",
+    "historySubtitle": "您过去的对话。",
+    "newChat": "新对话",
+    "disclaimer": "仅供教育目的 - 不构成医疗建议",
+    "assistantTitle": "营养 AI 助手",
+    "assistantSubtitle": "问我任何关于营养、卡路里计算或饮食建议的问题。我随时为您提供帮助！",
+    "suggestedQuestions": "建议问题：",
+    "prompts": [
+      "什么样的健康早餐适合减肥？",
+      "解释一下三文鱼的营养成分",
+      "制定一份 1500 卡路里的膳食计划",
+      "一份鸡肉凯撒沙拉有多少卡路里？"
+    ],
+    "inputPlaceholder": "询问关于营养、膳食创意或您的饮食...",
+    "errorResponse": "抱歉，我遇到错误。请确保您已运行 'combine_tables.sql' 脚本以更新您的数据库架构。",
+    "noHistory": "暂无对话。",
+    "goToMealPlanner": "前往膳食计划"
+  },
+  "common": {
+    "loading": "加载中...",
+    "saving": "保存中...",
+    "save": "保存",
+    "cancel": "取消",
+    "update": "更新",
+    "delete": "删除",
+    "edit": "编辑",
+    "close": "关闭",
+    "of": "共",
+    "progress": "进度"
+  },
+  "tracker": {
+    "title": "饮食追踪器",
+    "subtitle": "记录和追踪您的每日膳食",
+    "addFood": "添加食物",
+    "dateNavigation": {
+      "today": "今天"
+    },
+    "summary": {
+      "title": "每日摘要",
+      "subtitle": "您今天的营养进度",
+      "noMeals": "尚未记录任何餐食",
+      "calories": "卡路里",
+      "protein": "蛋白质",
+      "carbs": "碳水化合物",
+      "fats": "脂肪"
+    },
+    "meals": {
+      "breakfast": "早餐",
+      "lunch": "午餐",
+      "dinner": "晚餐",
+      "snacks": "零食",
+      "calories": "卡路里"
+    },
+    "addFoodDialog": {
+      "title": "添加食物到追踪器",
+      "subtitle": "从已分析的食物中选择或手动添加",
+      "addToMeal": "添加到",
+      "analyzedFoods": "已分析的食物",
+      "manualEntry": "手动输入",
+      "searchPlaceholder": "按名称或类别搜索...",
+      "allFoods": "所有食物",
+      "favorites": "收藏夹",
+      "showing": "显示",
+      "of": "共",
+      "food": "种食物",
+      "foods": "种食物",
+      "noFoodsFound": "未找到食物",
+      "noFoodsHint": "请先在分析器页面分析食物",
+      "noMatch": "没有符合您搜索条件的食物",
+      "add": "添加",
+      "previous": "上一页",
+      "next": "下一页",
+      "page": "第",
+      "foodName": "食物名称",
+      "foodNamePlaceholder": "例如：烤鸡胸肉",
+      "category": "类别",
+      "categoryPlaceholder": "例如：蛋白质",
+      "servingSize": "份量",
+      "servingSizePlaceholder": "例如：100克",
+      "calories": "卡路里",
+      "protein": "蛋白质（克）",
+      "carbs": "碳水化合物（克）",
+      "fats": "脂肪（克）",
+      "fiber": "膳食纤维（克）",
+      "sugar": "糖（克）",
+      "sodium": "钠（毫克）",
+      "required": "*",
+      "addToMealButton": "添加到"
+    }
+  },
   "dashboard": {
     "title": "仪表板",
     "greeting": "早上好！这是您的营养概览",
