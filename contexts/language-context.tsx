@@ -31,15 +31,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { user, loading: userLoading } = useUser();
   const supabase = createClient();
 
-  // Load language from profile on mount, but wait for user to load
   useEffect(() => {
     const loadLanguage = async () => {
-      // Wait for user context to finish loading
       if (userLoading) return;
 
       try {
         if (user) {
-          // Get the actual user ID from auth
           const {
             data: { user: authUser },
           } = await supabase.auth.getUser();
@@ -64,17 +61,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadLanguage();
-  }, [supabase, user, userLoading]);
+  }, [user, userLoading, supabase]);
 
   const setLanguage = async (lang: Language) => {
     try {
-      // Update state first for immediate UI response
       setLanguageState(lang);
 
-      // Save to profile in database
       const {
         data: { user: authUser },
       } = await supabase.auth.getUser();
+
       if (!authUser) {
         console.error("No user found, cannot save language preference");
         return;
