@@ -1,7 +1,6 @@
-# Nutrition Tracker & AI Personal Assistant
+# Eat Smart AI
 
 A comprehensive, AI-powered nutrition management platform designed to help users reach their health goals through intelligent tracking, personalized meal planning, and detailed analysis. Built with modern web technologies and powered by the **Baidu Ernie 4.0** Large Language Model.
-
 
 ## 🚀 Live Demo
 
