@@ -39,14 +39,21 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
       try {
         if (user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("language")
-            .eq("id", user.email) // Use email or another identifier
-            .single();
+          // Get the actual user ID from auth
+          const {
+            data: { user: authUser },
+          } = await supabase.auth.getUser();
 
-          if (profile?.language) {
-            setLanguageState(profile.language as Language);
+          if (authUser) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("language")
+              .eq("id", authUser.id) // Use authUser.id (UUID) instead of user.email
+              .single();
+
+            if (profile?.language) {
+              setLanguageState(profile.language as Language);
+            }
           }
         }
       } catch (error) {
