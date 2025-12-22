@@ -48,13 +48,13 @@ const DailySummariesDashboard = () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      
+
       if (!user) {
         setError("User not found");
         setLoading(false);
         return;
       }
-      
+
       console.log("Fetching summaries for user ID:", user.id);
 
       // Query Supabase directly instead of using API route
