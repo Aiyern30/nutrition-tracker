@@ -80,7 +80,7 @@ Experience the AI-powered nutrition tracker in action:
 
 ### Artificial Intelligence
 
-- **LLM**: [Baidu Ernie Bot 4.0](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t) (via Qianfan API)
+- **LLM**: [Baidu Ernie Bot 4.0](https://aistudio.baidu.com/) (via AI Studio ModelBuilder)
 - **Capabilities**: Image Analysis, Natural Language Processing, Meal Generation.
 
 ---
@@ -92,7 +92,7 @@ Experience the AI-powered nutrition tracker in action:
 - Node.js (v18+)
 - npm or yarn
 - Supabase Project
-- Baidu Cloud Account (for Ernie API)
+- Baidu AI Studio Account (for Ernie API)
 
 ### 1. Installation
 
@@ -113,9 +113,8 @@ Create a `.env.local` file in the root directory:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Baidu Ernie (Qianfan) API
-ERNE_API_KEY=your_client_id
-ERNE_SECRET_KEY=your_client_secret
+# Baidu AI Studio Access Token
+ERNIE_API_KEY=your_access_token
 
 # App URL
 NEXT_PUBLIC_APP_URL=http://localhost:3000
