@@ -5,17 +5,10 @@ export async function GET(req: Request) {
   const user_id = searchParams.get("user_id");
   const days = searchParams.get("days");
 
-  // Get the user's access token from the request headers (if sent from client)
-  const authHeader = req.headers.get("authorization");
-  const accessToken = authHeader?.replace("Bearer ", "");
-
-  // Use the user's access token if available, otherwise fallback to anon key
+  // Create Supabase client - RLS policies will handle authentication
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    accessToken
-      ? { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
-      : undefined
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
   if (!user_id) {
@@ -42,13 +35,20 @@ export async function GET(req: Request) {
 
   // Debug: log what is returned
   console.log(
-    "[/api/daily-summaries] user_id:", user_id,
-    "days:", days,
-    "returned rows:", data?.length ?? 0,
-    "first row:", data?.[0] ?? null
+    "[/api/daily-summaries] user_id:",
+    user_id,
+    "days:",
+    days,
+    "returned rows:",
+    data?.length ?? 0,
+    "error:",
+    error,
+    "first row:",
+    data?.[0] ?? null
   );
 
   if (error) {
+    console.error("[/api/daily-summaries] Supabase error:", error);
     return Response.json({ data: [], error: error.message }, { status: 500 });
   }
 

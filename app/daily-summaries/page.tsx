@@ -60,12 +60,15 @@ const DailySummariesDashboard = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch summaries");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch summaries");
       }
 
       const result = await response.json();
+      console.log("API Response:", result);
       setSummaries(result.data || []);
     } catch (err) {
+      console.error("Fetch error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
@@ -303,7 +306,8 @@ const DailySummariesDashboard = () => {
                         })}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {summary.diet_quality_explanation || "No explanation provided."}
+                        {summary.diet_quality_explanation ||
+                          "No explanation provided."}
                       </div>
                     </div>
                   </div>
