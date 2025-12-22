@@ -289,11 +289,6 @@ export default function TrackerPage() {
     setSelectedDate(newDate);
   };
 
-  const manualRefreshSummary = async () => {
-    console.log("Manually refreshing summary...");
-    await fetchDailySummary();
-  };
-
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -308,13 +303,6 @@ export default function TrackerPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={manualRefreshSummary}
-              >
-                🔄 {t.tracker.refresh}
-              </Button>
               <Button onClick={() => setIsAddFoodOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 {t.tracker.addFood}
