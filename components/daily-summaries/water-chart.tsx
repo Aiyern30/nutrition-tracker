@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useLanguage } from "@/contexts/language-context";
+import { useTheme } from "next-themes";
 
 interface WaterChartProps {
   data: Array<{
@@ -21,6 +22,8 @@ interface WaterChartProps {
 
 export function WaterChart({ data, visible }: WaterChartProps) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   if (!visible) {
     return null;
@@ -33,22 +36,32 @@ export function WaterChart({ data, visible }: WaterChartProps) {
       </h2>
       <ResponsiveContainer width="100%" height={200} className="md:h-62.5">
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke={isDark ? "#374151" : "#f0f0f0"}
+          />
           <XAxis
             dataKey="date"
-            stroke="#6b7280"
-            tick={{ fontSize: 12 }}
+            stroke={isDark ? "#9ca3af" : "#6b7280"}
+            tick={{ fontSize: 12, fill: isDark ? "#9ca3af" : "#6b7280" }}
             angle={-45}
             textAnchor="end"
             height={60}
           />
-          <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
+          <YAxis
+            stroke={isDark ? "#9ca3af" : "#6b7280"}
+            tick={{ fontSize: 12, fill: isDark ? "#9ca3af" : "#6b7280" }}
+          />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#fff",
-              border: "1px solid #e5e7eb",
+              backgroundColor: isDark ? "#1f2937" : "#fff",
+              border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
               borderRadius: "8px",
               fontSize: "12px",
+              color: isDark ? "#f3f4f6" : "#111827",
+            }}
+            labelStyle={{
+              color: isDark ? "#f3f4f6" : "#111827",
             }}
           />
           <Bar dataKey="Water" fill="#06b6d4" radius={[8, 8, 0, 0]} />
