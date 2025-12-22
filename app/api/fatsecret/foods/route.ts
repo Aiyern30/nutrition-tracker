@@ -28,6 +28,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("query") || "";
   const page = searchParams.get("page") || "0";
+  const region = searchParams.get("region") || "MY";
+  const language = searchParams.get("language") || "en";
 
   if (!query) {
     return NextResponse.json({ foods: [] });
@@ -38,7 +40,7 @@ export async function GET(req: Request) {
   const res = await fetch(
     `https://platform.fatsecret.com/rest/server.api?method=foods.search&search_expression=${encodeURIComponent(
       query
-    )}&page_number=${page}&format=json`,
+    )}&page_number=${page}&region=${region}&language=${language}&format=json`,
     {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
