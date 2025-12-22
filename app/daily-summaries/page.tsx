@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Filter } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 import {
   SidebarProvider,
   SidebarInset,
@@ -43,6 +44,8 @@ interface DailySummary {
 }
 
 const DailySummariesDashboard = () => {
+  useLocalizedMetadata({ page: "dailySummaries" });
+
   const { t } = useLanguage();
   const [summaries, setSummaries] = useState<DailySummary[]>([]);
   const [loading, setLoading] = useState(true);
