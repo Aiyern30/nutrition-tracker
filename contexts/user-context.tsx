@@ -85,8 +85,62 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     const supabase = createClient();
 
-    refreshUser();
+    // Initial load
+    const loadUser = async () => {
+      try {
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
 
+        if (!mounted) return;
+
+        if (authUser) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("theme, language")
+            .eq("id", authUser.id)
+            .single();
+
+          if (mounted) {
+            setUser({
+              email: authUser.email || "",
+              name:
+                authUser.user_metadata?.full_name ||
+                authUser.user_metadata?.name ||
+                authUser.email?.split("@")[0] ||
+                "User",
+              avatar_url: authUser.user_metadata?.avatar_url,
+              created_at: authUser.created_at,
+              profileSettings: profile
+                ? {
+                    theme: profile.theme || "system",
+                    language: profile.language || "en",
+                  }
+                : undefined,
+            });
+
+            if (profile?.theme) {
+              setTheme(profile.theme);
+            }
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error loading user:", error);
+        if (mounted) {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadUser();
+
+    // Auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
@@ -125,7 +179,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
           console.error("Error loading profile:", error);
         }
-      } else {
+      } else if (mounted) {
         setUser(null);
       }
     });
@@ -134,7 +188,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [setTheme, refreshUser]);
+  }, [setTheme]); // Only depend on setTheme
 
   return (
     <UserContext.Provider value={{ user, loading, refreshUser }}>
