@@ -1,5 +1,18 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
+import { Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useLanguage } from "@/contexts/language-context";
 import {
   Card,
@@ -10,7 +23,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit } from "lucide-react";
 
 interface FoodEntry {
   id: string;
@@ -73,17 +85,38 @@ export function MealSection({
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary">{entry.calories} cal</Badge>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => onDeleteEntry(entry.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Delete food entry?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{entry.name}" from
+                            your {title.toLowerCase()}? This action cannot be
+                            undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => onDeleteEntry(entry.id)}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </div>
