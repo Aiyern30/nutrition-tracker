@@ -410,5 +410,47 @@
         "yesterday": "昨天"
       }
     }
+  },
+  "dailySummaries": {
+    "title": "每日摘要",
+    "subtitle": "追踪您的营养进度",
+    "dateRanges": {
+      "last7Days": "最近7天",
+      "last30Days": "最近30天",
+      "allTime": "全部时间"
+    },
+    "filter": {
+      "filterLines": "筛选线条",
+      "filter": "筛选",
+      "chartLines": "图表线条"
+    },
+    "stats": {
+      "avgPerDay": "平均/天",
+      "calories": "卡路里",
+      "protein": "蛋白质",
+      "carbs": "碳水化合物",
+      "water": "杯水"
+    },
+    "charts": {
+      "macrosTrend": "卡路里与宏量营养素趋势",
+      "waterIntake": "饮水量",
+      "noMetricsSelected": "未选择任何指标用于图表显示"
+    },
+    "details": {
+      "title": "每日详情",
+      "noData": "所选期间无可用数据"
+    },
+    "metrics": {
+      "calories": "卡路里",
+      "protein": "蛋白质",
+      "carbs": "碳水化合物",
+      "fats": "脂肪",
+      "water": "水"
+    },
+    "errors": {
+      "userNotFound": "未找到用户",
+      "loadError": "发生错误"
+    },
+    "loading": "正在加载您的摘要..."
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { TrendingUp, Droplet, Activity } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 
 interface StatsCardsProps {
   averages: {
@@ -13,12 +14,14 @@ interface StatsCardsProps {
 }
 
 export function StatsCards({ averages, visibleMetrics }: StatsCardsProps) {
+  const { t } = useLanguage();
+
   const cards = [
     {
       key: "calories",
       icon: Activity,
       color: "text-orange-500",
-      label: "Calories",
+      label: t.dailySummaries.stats.calories,
       value: averages.calories ?? 0,
       unit: "",
     },
@@ -26,7 +29,7 @@ export function StatsCards({ averages, visibleMetrics }: StatsCardsProps) {
       key: "protein",
       icon: TrendingUp,
       color: "text-blue-500",
-      label: "Protein",
+      label: t.dailySummaries.stats.protein,
       value: averages.protein ?? 0,
       unit: "g",
     },
@@ -34,7 +37,7 @@ export function StatsCards({ averages, visibleMetrics }: StatsCardsProps) {
       key: "carbs",
       icon: Activity,
       color: "text-green-500",
-      label: "Carbs",
+      label: t.dailySummaries.stats.carbs,
       value: averages.carbs ?? 0,
       unit: "g",
     },
@@ -42,7 +45,7 @@ export function StatsCards({ averages, visibleMetrics }: StatsCardsProps) {
       key: "water",
       icon: Droplet,
       color: "text-cyan-500",
-      label: "Glasses",
+      label: t.dailySummaries.stats.water,
       value: averages.water ?? 0,
       unit: "",
     },
@@ -68,7 +71,7 @@ export function StatsCards({ averages, visibleMetrics }: StatsCardsProps) {
           <div className="flex items-center justify-between mb-2">
             <card.icon className={`${card.color} w-5 h-5 md:w-6 md:h-6`} />
             <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-              Avg/day
+              {t.dailySummaries.stats.avgPerDay}
             </span>
           </div>
           <div className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-200">

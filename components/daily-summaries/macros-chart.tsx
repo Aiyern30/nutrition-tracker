@@ -10,6 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useLanguage } from "@/contexts/language-context";
 
 interface MacrosChartProps {
   data: Array<{
@@ -23,6 +24,8 @@ interface MacrosChartProps {
 }
 
 export function MacrosChart({ data, visibleMetrics }: MacrosChartProps) {
+  const { t } = useLanguage();
+
   const metrics = [
     { key: "Calories", stroke: "#f59e0b", strokeWidth: 3, dotR: 4 },
     { key: "Protein", stroke: "#3b82f6", strokeWidth: 2, dotR: 3 },
@@ -38,10 +41,10 @@ export function MacrosChart({ data, visibleMetrics }: MacrosChartProps) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
         <h2 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 md:mb-6">
-          Calories & Macros Trend
+          {t.dailySummaries.charts.macrosTrend}
         </h2>
         <div className="text-center py-8 text-muted-foreground">
-          No metrics selected for chart display
+          {t.dailySummaries.charts.noMetricsSelected}
         </div>
       </div>
     );
@@ -50,7 +53,7 @@ export function MacrosChart({ data, visibleMetrics }: MacrosChartProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
       <h2 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 md:mb-6">
-        Calories & Macros Trend
+        {t.dailySummaries.charts.macrosTrend}
       </h2>
       <ResponsiveContainer width="100%" height={300} className="md:h-87.5">
         <LineChart data={data}>

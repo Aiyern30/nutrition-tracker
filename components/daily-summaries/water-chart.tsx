@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useLanguage } from "@/contexts/language-context";
 
 interface WaterChartProps {
   data: Array<{
@@ -19,6 +20,8 @@ interface WaterChartProps {
 }
 
 export function WaterChart({ data, visible }: WaterChartProps) {
+  const { t } = useLanguage();
+
   if (!visible) {
     return null;
   }
@@ -26,7 +29,7 @@ export function WaterChart({ data, visible }: WaterChartProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
       <h2 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 md:mb-6">
-        Water Intake
+        {t.dailySummaries.charts.waterIntake}
       </h2>
       <ResponsiveContainer width="100%" height={200} className="md:h-62.5">
         <BarChart data={data}>
