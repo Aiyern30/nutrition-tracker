@@ -8,13 +8,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
 export default function TermsOfServicePage() {
   useLocalizedMetadata({ page: "default" });
   const { t } = useLanguage();
-  const terms = t.legal.termsOfService;
+  const terms = t.profile.legal.termsOfService;
 
   return (
     <SidebarProvider>
