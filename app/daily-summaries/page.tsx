@@ -33,6 +33,7 @@ interface DailySummary {
 
 const DailySummariesDashboard = () => {
   const [summaries, setSummaries] = useState<DailySummary[]>([]);
+  console.log("Summaries:", summaries);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("7");
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +53,7 @@ const DailySummariesDashboard = () => {
         setLoading(false);
         return;
       }
+      console.log("Fetching summaries for user ID:", user.id);
 
       const response = await fetch(
         `/api/daily-summaries?user_id=${user.id}&days=${dateRange}`
@@ -301,7 +303,7 @@ const DailySummariesDashboard = () => {
                         })}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {summary.diet_quality_explanation}
+                        {summary.diet_quality_explanation || "No explanation provided."}
                       </div>
                     </div>
                   </div>
