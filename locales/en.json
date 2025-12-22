@@ -165,9 +165,124 @@
       "title": "About & Legal",
       "disclaimer": "Important Disclaimer:",
       "disclaimerText": "This app provides nutritional information and dietary guidance for educational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider before making any dietary changes, especially if you have medical conditions or concerns.",
-      "privacyPolicy": "Privacy Policy",
-      "termsOfService": "Terms of Service",
-      "helpSupport": "Help & Support"
+      "privacyPolicy": {
+        "title": "Privacy Policy",
+        "lastUpdated": "Last Updated: January 2024",
+        "sections": {
+          "intro": {
+            "title": "Introduction",
+            "content": "Eat Smart AI is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our nutrition tracking application."
+          },
+          "dataCollection": {
+            "title": "Information We Collect",
+            "content": "We collect information that you provide directly to us, including:\n• Account information (name, email, password)\n• Profile data (height, weight, dietary preferences)\n• Nutrition data (meals logged, food analyzed)\n• Usage data and analytics"
+          },
+          "dataUse": {
+            "title": "How We Use Your Information",
+            "content": "We use the information we collect to:\n• Provide and maintain our services\n• Personalize your experience\n• Generate AI-powered nutrition insights\n• Improve our application\n• Communicate with you about updates and features"
+          },
+          "dataSecurity": {
+            "title": "Data Security",
+            "content": "We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction."
+          },
+          "dataSharing": {
+            "title": "Information Sharing",
+            "content": "We do not sell your personal information. We may share your information with:\n• Service providers who assist in operating our application\n• AI service providers for nutrition analysis\n• Legal authorities when required by law"
+          },
+          "yourRights": {
+            "title": "Your Rights",
+            "content": "You have the right to:\n• Access your personal data\n• Correct inaccurate data\n• Request deletion of your data\n• Export your data\n• Opt-out of marketing communications"
+          },
+          "contact": {
+            "title": "Contact Us",
+            "content": "If you have questions about this Privacy Policy, please contact us at: privacy@eatsmartai.com"
+          }
+        }
+      },
+      "termsOfService": {
+        "title": "Terms of Service",
+        "lastUpdated": "Last Updated: January 2024",
+        "sections": {
+          "acceptance": {
+            "title": "Acceptance of Terms",
+            "content": "By accessing and using Eat Smart AI, you accept and agree to be bound by the terms and provision of this agreement."
+          },
+          "disclaimer": {
+            "title": "Medical Disclaimer",
+            "content": "Eat Smart AI provides nutritional information for educational purposes only. This application is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition."
+          },
+          "userResponsibilities": {
+            "title": "User Responsibilities",
+            "content": "You agree to:\n• Provide accurate information\n• Keep your account credentials secure\n• Use the service in compliance with applicable laws\n• Not misuse or abuse the service\n• Not attempt to hack or disrupt the service"
+          },
+          "intellectualProperty": {
+            "title": "Intellectual Property",
+            "content": "All content, features, and functionality of Eat Smart AI are owned by us and are protected by international copyright, trademark, and other intellectual property laws."
+          },
+          "limitation": {
+            "title": "Limitation of Liability",
+            "content": "Eat Smart AI shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the service."
+          },
+          "termination": {
+            "title": "Termination",
+            "content": "We reserve the right to terminate or suspend your account at any time for violations of these Terms of Service or for any other reason at our sole discretion."
+          },
+          "changes": {
+            "title": "Changes to Terms",
+            "content": "We reserve the right to modify these terms at any time. We will notify users of any material changes via email or through the application."
+          }
+        }
+      },
+      "helpSupport": {
+        "title": "Help & Support",
+        "sections": {
+          "gettingStarted": {
+            "title": "Getting Started",
+            "questions": [
+              {
+                "q": "How do I create an account?",
+                "a": "Click the 'Sign Up' button on the login page and follow the registration process. You'll need to provide an email address and create a secure password."
+              },
+              {
+                "q": "How do I set my nutrition goals?",
+                "a": "Go to your Profile page and navigate to the 'Personal Goals' section. Here you can set your daily calorie, protein, carbs, and fats goals based on your health objectives."
+              }
+            ]
+          },
+          "foodAnalyzer": {
+            "title": "Food Analyzer",
+            "questions": [
+              {
+                "q": "How accurate is the food analyzer?",
+                "a": "Our AI-powered food analyzer uses advanced image recognition and nutrition databases to provide estimates. Accuracy is highest with clear photos of packaged foods with visible nutrition labels."
+              },
+              {
+                "q": "Can I analyze food without taking a photo?",
+                "a": "Yes! You can use the text description feature to describe your food, and our AI will estimate the nutritional content based on your description."
+              }
+            ]
+          },
+          "mealTracking": {
+            "title": "Meal Tracking",
+            "questions": [
+              {
+                "q": "How do I log my meals?",
+                "a": "Go to the Diet Tracker page, click 'Add Food', and either select from your analyzed foods or manually enter nutritional information."
+              },
+              {
+                "q": "Can I edit or delete logged meals?",
+                "a": "Yes, you can delete meals by clicking the delete icon next to each food entry. A confirmation dialog will appear before deletion."
+              }
+            ]
+          },
+          "contact": {
+            "title": "Still Need Help?",
+            "content": "If you can't find the answer to your question, please contact our support team:",
+            "email": "support@eatsmartai.com",
+            "response": "We typically respond within 24-48 hours."
+          }
+        }
+      }
     },
     "messages": {
       "goalsUpdated": "Goals updated successfully!",
