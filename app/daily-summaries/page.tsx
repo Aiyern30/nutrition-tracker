@@ -1,19 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import { TrendingUp, Droplet, Activity, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   SidebarProvider,
@@ -21,6 +8,22 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import {
+  StatsCards,
+  StatsCardsSkeleton,
+} from "@/components/daily-summaries/stats-cards";
+import {
+  MacrosChart,
+  MacrosChartSkeleton,
+} from "@/components/daily-summaries/macros-chart";
+import {
+  WaterChart,
+  WaterChartSkeleton,
+} from "@/components/daily-summaries/water-chart";
+import {
+  DailyDetails,
+  DailyDetailsSkeleton,
+} from "@/components/daily-summaries/daily-details";
 
 interface DailySummary {
   id: string;
@@ -39,7 +42,6 @@ interface DailySummary {
 
 const DailySummariesDashboard = () => {
   const [summaries, setSummaries] = useState<DailySummary[]>([]);
-  console.log("Summaries:", summaries);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("7");
   const [error, setError] = useState<string | null>(null);
@@ -61,9 +63,6 @@ const DailySummariesDashboard = () => {
         return;
       }
 
-      console.log("Fetching summaries for user ID:", user.id);
-
-      // Query Supabase directly instead of using API route
       let query = supabase
         .from("daily_summaries")
         .select("*")
@@ -86,7 +85,6 @@ const DailySummariesDashboard = () => {
         throw fetchError;
       }
 
-      console.log("Fetched summaries:", data);
       setSummaries(data || []);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -120,25 +118,12 @@ const DailySummariesDashboard = () => {
     return Math.round(sum / summaries.length);
   };
 
-  const getGradeColor = (grade: string) => {
-    if (grade.startsWith("A")) return "text-green-600 bg-green-100";
-    if (grade.startsWith("B")) return "text-blue-600 bg-blue-100";
-    if (grade.startsWith("C")) return "text-yellow-600 bg-yellow-100";
-    return "text-red-600 bg-red-100";
+  const averages = {
+    calories: calculateAverage("total_calories"),
+    protein: calculateAverage("total_protein"),
+    carbs: calculateAverage("total_carbs"),
+    water: calculateAverage("water_intake"),
   };
-
-  if (loading) {
-    return (
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <div className="flex h-screen items-center justify-center">
-            <div className="text-xl text-gray-600">Loading your summaries...</div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    );
-  }
 
   if (error) {
     return (
@@ -204,211 +189,29 @@ const DailySummariesDashboard = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <Activity className="text-orange-500" size={24} />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Avg/day
-                  </span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 dark:text-gray-200">
-                  {calculateAverage("total_calories")}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Calories
-                </div>
-              </div>
+            {loading ? (
+              <StatsCardsSkeleton />
+            ) : (
+              <StatsCards averages={averages} />
+            )}
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <TrendingUp className="text-blue-500" size={24} />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Avg/day
-                  </span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 dark:text-gray-200">
-                  {calculateAverage("total_protein")}g
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Protein
-                </div>
-              </div>
+            {loading ? (
+              <MacrosChartSkeleton />
+            ) : (
+              <MacrosChart data={chartData} />
+            )}
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <Activity className="text-green-500" size={24} />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Avg/day
-                  </span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 dark:text-gray-200">
-                  {calculateAverage("total_carbs")}g
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Carbs
-                </div>
-              </div>
+            {loading ? (
+              <WaterChartSkeleton />
+            ) : (
+              <WaterChart data={chartData} />
+            )}
 
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <Droplet className="text-cyan-500" size={24} />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Avg/day
-                  </span>
-                </div>
-                <div className="text-3xl font-bold text-gray-800 dark:text-gray-200">
-                  {calculateAverage("water_intake")}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Glasses
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">
-                Calories & Macros Trend
-              </h2>
-              <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="Calories"
-                    stroke="#f59e0b"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="Protein"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="Carbs"
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="Fats"
-                    stroke="#ef4444"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">
-                Water Intake
-              </h2>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Bar dataKey="Water" fill="#06b6d4" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">
-                Daily Details
-              </h2>
-              <div className="space-y-4">
-                {summaries.map((summary) => (
-                  <div
-                    key={summary.id}
-                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-md transition"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="text-indigo-600" size={20} />
-                        <div>
-                          <div className="font-semibold text-gray-800">
-                            {new Date(summary.date).toLocaleDateString("en-US", {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {summary.diet_quality_explanation ||
-                              "No explanation provided."}
-                          </div>
-                        </div>
-                      </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-bold ${getGradeColor(
-                          summary.diet_quality_score
-                        )}`}
-                      >
-                        {summary.diet_quality_score}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
-                      <div>
-                        <div className="text-sm text-gray-500">Calories</div>
-                        <div className="text-lg font-bold text-gray-800">
-                          {summary.total_calories}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-500">Protein</div>
-                        <div className="text-lg font-bold text-blue-600">
-                          {summary.total_protein}g
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-500">Carbs</div>
-                        <div className="text-lg font-bold text-green-600">
-                          {summary.total_carbs}g
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-500">Fats</div>
-                        <div className="text-lg font-bold text-red-600">
-                          {summary.total_fats}g
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-500">Water</div>
-                        <div className="text-lg font-bold text-cyan-600">
-                          {summary.water_intake} 🥤
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {loading ? (
+              <DailyDetailsSkeleton />
+            ) : (
+              <DailyDetails summaries={summaries} />
+            )}
           </div>
         </main>
       </SidebarInset>
