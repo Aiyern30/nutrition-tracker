@@ -2,12 +2,11 @@
 
 A comprehensive, AI-powered nutrition management platform designed to help users reach their health goals through intelligent tracking, personalized meal planning, and detailed analysis. Built with modern web technologies and powered by the **Baidu Ernie 4.0** Large Language Model.
 
-![Project Banner](public/og-image.png)
 
 ## 🚀 Live Demo
 
 Experience the AI-powered nutrition tracker in action:
-**[👉 View Live Demo](https://ernie-nutrition-tracker.vercel.app)**
+**[👉 View Live Demo](http://eat-smart-ai.vercel.app/)**
 
 ## 🌟 Key Features
 
