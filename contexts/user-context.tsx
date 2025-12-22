@@ -30,33 +30,17 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Create a singleton to store user data across component remounts
-let cachedUser: UserProfile | null = null;
-let cacheTimestamp: number = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(cachedUser);
-  const [loading, setLoading] = useState(!cachedUser);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
   const { setTheme } = useTheme();
-  const initialLoadDone = useRef(!!cachedUser);
-  const isFetching = useRef(false);
+  const mountedRef = useRef(false);
+  const subscriptionRef = useRef<any>(null);
 
-  const updateUserCache = useCallback((userData: UserProfile | null) => {
-    cachedUser = userData;
-    cacheTimestamp = Date.now();
-    setUser(userData);
-  }, []);
-
-  const refreshUser = useCallback(async () => {
-    const supabase = createClient();
-    try {
-      setLoading(true);
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-
-      if (authUser) {
+  const loadUserData = useCallback(
+    async (authUser: any) => {
+      try {
+        const supabase = createClient();
         const { data: profile } = await supabase
           .from("profiles")
           .select("theme, language")
@@ -80,154 +64,86 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             : undefined,
         };
 
-        updateUserCache(userData);
+        setUser(userData);
 
         if (profile?.theme) {
           setTheme(profile.theme);
         }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        setUser(null);
+      }
+    },
+    [setTheme]
+  );
+
+  const refreshUser = useCallback(async () => {
+    try {
+      setLoading(true);
+      const supabase = createClient();
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+
+      if (authUser) {
+        await loadUserData(authUser);
       } else {
-        updateUserCache(null);
+        setUser(null);
       }
     } catch (error) {
       console.error("Error fetching user:", error);
-      updateUserCache(null);
+      setUser(null);
     } finally {
       setLoading(false);
     }
-  }, [setTheme, updateUserCache]);
+  }, [loadUserData]);
 
   useEffect(() => {
-    // If we have recent cached data, use it
-    const now = Date.now();
-    if (cachedUser && now - cacheTimestamp < CACHE_DURATION) {
-      setUser(cachedUser);
-      setLoading(false);
-      initialLoadDone.current = true;
-      return;
-    }
+    // Prevent double mounting in strict mode
+    if (mountedRef.current) return;
+    mountedRef.current = true;
 
-    // Skip if already fetching
-    if (isFetching.current) return;
-
-    // Skip if already loaded recently
-    if (initialLoadDone.current) {
-      setLoading(false);
-      return;
-    }
-
-    isFetching.current = true;
-    let mounted = true;
     const supabase = createClient();
 
-    const loadUser = async () => {
+    const initialize = async () => {
       try {
         const {
           data: { user: authUser },
         } = await supabase.auth.getUser();
 
-        if (!mounted) return;
-
         if (authUser) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("theme, language")
-            .eq("id", authUser.id)
-            .single();
-
-          if (mounted) {
-            const userData = {
-              email: authUser.email || "",
-              name:
-                authUser.user_metadata?.full_name ||
-                authUser.user_metadata?.name ||
-                authUser.email?.split("@")[0] ||
-                "User",
-              avatar_url: authUser.user_metadata?.avatar_url,
-              created_at: authUser.created_at,
-              profileSettings: profile
-                ? {
-                    theme: profile.theme || "system",
-                    language: profile.language || "en",
-                  }
-                : undefined,
-            };
-
-            updateUserCache(userData);
-
-            if (profile?.theme) {
-              setTheme(profile.theme);
-            }
-          }
+          await loadUserData(authUser);
         } else {
-          updateUserCache(null);
+          setUser(null);
         }
       } catch (error) {
-        console.error("Error loading user:", error);
-        if (mounted) {
-          updateUserCache(null);
-        }
+        console.error("Error initializing user:", error);
+        setUser(null);
       } finally {
-        if (mounted) {
-          setLoading(false);
-          initialLoadDone.current = true;
-          isFetching.current = false;
-        }
+        setLoading(false);
       }
     };
 
-    loadUser();
+    initialize();
 
-    // Auth state listener
+    // Set up auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
-      if (!mounted) return;
-
       if (session?.user) {
-        try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("theme, language")
-            .eq("id", session.user.id)
-            .single();
-
-          if (mounted) {
-            const userData = {
-              email: session.user.email || "",
-              name:
-                session.user.user_metadata?.full_name ||
-                session.user.user_metadata?.name ||
-                session.user.email?.split("@")[0] ||
-                "User",
-              avatar_url: session.user.user_metadata?.avatar_url,
-              created_at: session.user.created_at,
-              profileSettings: profile
-                ? {
-                    theme: profile.theme || "system",
-                    language: profile.language || "en",
-                  }
-                : undefined,
-            };
-
-            updateUserCache(userData);
-
-            if (profile?.theme) {
-              setTheme(profile.theme);
-            }
-          }
-        } catch (error) {
-          console.error("Error loading profile:", error);
-        }
-      } else if (mounted) {
-        updateUserCache(null);
+        await loadUserData(session.user);
+      } else {
+        setUser(null);
       }
     });
 
+    subscriptionRef.current = subscription;
+
     return () => {
-      mounted = false;
       subscription.unsubscribe();
+      mountedRef.current = false;
     };
-  }, [setTheme, updateUserCache]);
+  }, [loadUserData]);
 
   return (
     <UserContext.Provider value={{ user, loading, refreshUser }}>
