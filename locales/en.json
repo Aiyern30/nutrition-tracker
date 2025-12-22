@@ -292,7 +292,6 @@
     "title": "Diet Tracker",
     "subtitle": "Log and track your daily meals",
     "addFood": "Add Food",
-    "refresh": "Refresh",
     "dateNavigation": {
       "today": "Today"
     },
