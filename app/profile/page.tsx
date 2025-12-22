@@ -57,7 +57,7 @@ export default function ProfilePage() {
 
   const { setTheme } = useTheme();
   const { t, setLanguage: setAppLanguage } = useLanguage();
-  const { user, loading: userLoading } = useUser();
+  const { user, initializing: userLoading } = useUser();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -94,7 +94,10 @@ export default function ProfilePage() {
         data: { user: authUser },
       } = await supabase.auth.getUser();
 
-      if (!authUser) return;
+      if (!authUser) {
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("profiles")
@@ -127,17 +130,20 @@ export default function ProfilePage() {
         });
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : t.profile.messages.loadError
-      );
+      setError(err instanceof Error ? err.message : "Failed to load profile");
     } finally {
       setLoading(false);
     }
-  }, [supabase, t]);
+  }, [supabase]);
 
   useEffect(() => {
-    if (!userLoading && user) {
-      fetchProfile();
+    if (!userLoading) {
+      if (user) {
+        fetchProfile();
+      } else {
+        // User not logged in, stop loading
+        setLoading(false);
+      }
     }
   }, [userLoading, user, fetchProfile]);
 

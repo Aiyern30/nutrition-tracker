@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+
 import {
   createContext,
   useContext,
@@ -14,7 +16,7 @@ interface UserProfile {
   email: string;
   name: string;
   avatar_url?: string;
-  created_at?: string; // Add auth user created_at
+  created_at?: string;
   profileSettings?: {
     theme: string;
     language: string;
@@ -23,7 +25,7 @@ interface UserProfile {
 
 interface UserContextType {
   user: UserProfile | null;
-  loading: boolean;
+  initializing: boolean;
   refreshUser: () => Promise<void>;
 }
 
@@ -31,120 +33,90 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
   const { setTheme } = useTheme();
+  const supabase = createClient();
 
-  const refreshUser = useCallback(async () => {
-    const supabase = createClient();
-    try {
+  const loadUserData = useCallback(
+    async (authUser: any) => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("theme, language")
+        .eq("id", authUser.id)
+        .single();
+
+      setUser({
+        email: authUser.email ?? "",
+        name:
+          authUser.user_metadata?.full_name ||
+          authUser.user_metadata?.name ||
+          authUser.email?.split("@")[0] ||
+          "User",
+        avatar_url: authUser.user_metadata?.avatar_url,
+        created_at: authUser.created_at,
+        profileSettings: profile ?? undefined,
+      });
+
+      if (profile?.theme) {
+        setTheme(profile.theme);
+      }
+    },
+    [supabase, setTheme]
+  );
+
+  // Initial load ONLY
+  useEffect(() => {
+    const init = async () => {
       const {
         data: { user: authUser },
       } = await supabase.auth.getUser();
 
       if (authUser) {
-        // Only fetch theme and language from profile, not the entire profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("theme, language")
-          .eq("id", authUser.id)
-          .single();
-
-        setUser({
-          email: authUser.email || "",
-          name:
-            authUser.user_metadata?.full_name ||
-            authUser.user_metadata?.name ||
-            authUser.email?.split("@")[0] ||
-            "User",
-          avatar_url: authUser.user_metadata?.avatar_url,
-          created_at: authUser.created_at,
-          profileSettings: profile
-            ? {
-                theme: profile.theme || "system",
-                language: profile.language || "en",
-              }
-            : undefined,
-        });
-
-        if (profile?.theme) {
-          setTheme(profile.theme);
-        }
-      } else {
-        setUser(null);
+        await loadUserData(authUser);
       }
-    } catch (error) {
-      console.error("Error fetching user:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [setTheme]);
 
+      setInitializing(false);
+    };
+
+    init();
+  }, [loadUserData, supabase]);
+
+  // Auth changes (NO skeleton)
   useEffect(() => {
-    let mounted = true;
-    const supabase = createClient();
-
-    refreshUser();
-
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
-      if (!mounted) return;
-
-      if (session?.user) {
-        try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("theme, language")
-            .eq("id", session.user.id)
-            .single();
-
-          if (mounted) {
-            setUser({
-              email: session.user.email || "",
-              name:
-                session.user.user_metadata?.full_name ||
-                session.user.user_metadata?.name ||
-                session.user.email?.split("@")[0] ||
-                "User",
-              avatar_url: session.user.user_metadata?.avatar_url,
-              created_at: session.user.created_at,
-              profileSettings: profile
-                ? {
-                    theme: profile.theme || "system",
-                    language: profile.language || "en",
-                  }
-                : undefined,
-            });
-
-            if (profile?.theme) {
-              setTheme(profile.theme);
-            }
-          }
-        } catch (error) {
-          console.error("Error loading profile:", error);
+    } = supabase.auth.onAuthStateChange(
+      async (_event: AuthChangeEvent, session: Session | null) => {
+        if (session?.user) {
+          await loadUserData(session.user);
+        } else {
+          setUser(null);
         }
-      } else {
-        setUser(null);
       }
-    });
+    );
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [setTheme, refreshUser]);
+    return () => subscription.unsubscribe();
+  }, [loadUserData, supabase]);
+
+  const refreshUser = async () => {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (authUser) {
+      await loadUserData(authUser);
+    }
+  };
 
   return (
-    <UserContext.Provider value={{ user, loading, refreshUser }}>
+    <UserContext.Provider value={{ user, initializing, refreshUser }}>
       {children}
     </UserContext.Provider>
   );
 }
 
 export function useUser() {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error("useUser must be used within a UserProvider");
-  }
-  return context;
+  const ctx = useContext(UserContext);
+  if (!ctx) throw new Error("useUser must be used within UserProvider");
+  return ctx;
 }

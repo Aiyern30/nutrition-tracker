@@ -42,10 +42,8 @@ import { cn } from "@/lib/utils";
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { t, language, setLanguage } = useLanguage();
-  const { user, loading } = useUser(); // Use the context instead
-
-  // Update navItems to use translations
+  const { t, language, setLanguage, loading: languageLoading } = useLanguage();
+  const { user, initializing: userLoading } = useUser();
   const navItems = [
     {
       title: t.sidebar.dashboard,
@@ -153,7 +151,7 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4">
-        {loading ? (
+        {userLoading || languageLoading ? (
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
             <div className="flex flex-col gap-2">

@@ -278,7 +278,7 @@
           "contact": {
             "title": "Still Need Help?",
             "content": "If you can't find the answer to your question, please contact our support team:",
-            "email": "support@eatsmartai.com",
+            "email": "ianbian2@gmail.com",
             "response": "We typically respond within 24-48 hours."
           }
         }
@@ -508,26 +508,6 @@
       "logMeal": "Log a Meal",
       "analyzeFood": "Analyze Food",
       "getMealPlan": "Get Meal Plan"
-    },
-    "recentActivity": {
-      "title": "Recent Activity",
-      "description": "Your latest nutrition interactions",
-      "activities": {
-        "loggedLunch": "Logged lunch",
-        "analyzedFood": "Analyzed food",
-        "generatedMealPlan": "Generated meal plan",
-        "askedAI": "Asked AI"
-      },
-      "details": {
-        "grilledChicken": "Grilled chicken salad - 450 cal",
-        "greekYogurt": "Greek yogurt with berries",
-        "balancedDiet": "7-day balanced diet",
-        "proteinSources": "Best protein sources for vegans"
-      },
-      "time": {
-        "hoursAgo": "hours ago",
-        "yesterday": "Yesterday"
-      }
     }
   },
   "dailySummaries": {

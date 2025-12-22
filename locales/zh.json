@@ -278,7 +278,7 @@
           "contact": {
             "title": "仍需帮助？",
             "content": "如果您找不到问题的答案，请联系我们的支持团队：",
-            "email": "support@eatsmartai.com",
+            "email": "ianbian2@gmail.com",
             "response": "我们通常在24-48小时内回复。"
           }
         }
@@ -508,26 +508,6 @@
       "logMeal": "记录餐食",
       "analyzeFood": "分析食物",
       "getMealPlan": "获取膳食计划"
-    },
-    "recentActivity": {
-      "title": "最近活动",
-      "description": "您最新的营养互动",
-      "activities": {
-        "loggedLunch": "记录午餐",
-        "analyzedFood": "分析食物",
-        "generatedMealPlan": "生成膳食计划",
-        "askedAI": "询问AI"
-      },
-      "details": {
-        "grilledChicken": "烤鸡肉沙拉 - 450卡路里",
-        "greekYogurt": "希腊酸奶配浆果",
-        "balancedDiet": "7天均衡饮食",
-        "proteinSources": "素食者最佳蛋白质来源"
-      },
-      "time": {
-        "hoursAgo": "小时前",
-        "yesterday": "昨天"
-      }
     }
   },
   "dailySummaries": {

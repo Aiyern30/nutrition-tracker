@@ -38,15 +38,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <LanguageProvider>
-            <UserProvider>
+          <UserProvider>
+            <LanguageProvider>
               <DashboardProvider>
                 <MetadataUpdater />
                 {children}
                 <Toaster />
               </DashboardProvider>
-            </UserProvider>
-          </LanguageProvider>
+            </LanguageProvider>
+          </UserProvider>
         </ThemeProvider>
       </body>
     </html>

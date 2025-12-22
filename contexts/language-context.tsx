@@ -1,9 +1,16 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
 import enTranslations from "@/locales/en.json";
 import zhTranslations from "@/locales/zh.json";
+import { useUser } from "@/contexts/user-context";
 
 type Language = "en" | "zh";
 type Translations = typeof enTranslations;
@@ -12,6 +19,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => Promise<void>;
   t: Translations;
+  loading: boolean;
 }
 
 const translations: Record<Language, Translations> = {
@@ -24,73 +32,52 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
+  const { user, initializing } = useUser();
   const supabase = createClient();
 
-  // Load language from profile on mount
+  const derivedLanguage: Language =
+    (user?.profileSettings?.language as Language) ?? "en";
+
+  const [language, setLanguageState] = useState<Language>(derivedLanguage);
+
+  // sync with user profile
   useEffect(() => {
-    const loadLanguage = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
+    setLanguageState(derivedLanguage);
+  }, [derivedLanguage]);
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("language")
-          .eq("id", user.id)
-          .single();
-
-        if (profile?.language) {
-          setLanguageState(profile.language as Language);
-        }
-      } catch (error) {
-        console.error("Error loading language:", error);
-      }
-    };
-
-    loadLanguage();
-  }, [supabase]);
+  const t = useMemo(() => translations[language], [language]);
 
   const setLanguage = async (lang: Language) => {
+    // optimistic update
+    setLanguageState(lang);
+
     try {
-      // Update state first for immediate UI response
-      setLanguageState(lang);
-
-      // Save to profile in database
       const {
-        data: { user },
+        data: { user: authUser },
       } = await supabase.auth.getUser();
-      if (!user) {
-        console.error("No user found, cannot save language preference");
-        return;
-      }
 
-      const { error } = await supabase
+      if (!authUser) return;
+
+      await supabase
         .from("profiles")
         .update({
           language: lang,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
-
-      if (error) {
-        console.error("Error saving language to database:", error);
-        throw error;
-      }
-
-      console.log("Language successfully updated to:", lang);
-    } catch (error) {
-      console.error("Error in setLanguage:", error);
-      // Optionally revert state if database update fails
-      // setLanguageState(previous language);
+        .eq("id", authUser.id);
+    } catch (err) {
+      console.error("setLanguage error:", err);
     }
   };
 
   return (
     <LanguageContext.Provider
-      value={{ language, setLanguage, t: translations[language] }}
+      value={{
+        language,
+        setLanguage,
+        t,
+        loading: initializing,
+      }}
     >
       {children}
     </LanguageContext.Provider>
@@ -99,8 +86,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
 export function useLanguage() {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
+  if (!context) {
+    throw new Error("useLanguage must be used within LanguageProvider");
   }
   return context;
 }
