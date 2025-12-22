@@ -70,53 +70,56 @@ const DailySummariesDashboard = () => {
 
   const supabase = createClient();
 
-  const fetchDailySummaries = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchDailySummaries = useCallback(
+    async (showSkeleton = false) => {
+      if (showSkeleton) setLoading(true);
+      setError(null);
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (!user) {
-        setError("User not found");
-        setLoading(false);
-        return;
-      }
-
-      // Fetch all summaries for stats and charts (with date range filter)
-      let query = supabase
-        .from("daily_summaries")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("date", { ascending: false });
-
-      if (dateRange !== "all") {
-        const daysNum = parseInt(dateRange, 10);
-        if (!isNaN(daysNum) && daysNum > 0) {
-          const fromDate = new Date();
-          fromDate.setDate(fromDate.getDate() - daysNum + 1);
-          const fromDateStr = fromDate.toISOString().split("T")[0];
-          query = query.gte("date", fromDateStr);
+        if (!user) {
+          setError("User not found");
+          setLoading(false);
+          return;
         }
+
+        // Fetch all summaries for stats and charts (with date range filter)
+        let query = supabase
+          .from("daily_summaries")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false });
+
+        if (dateRange !== "all") {
+          const daysNum = parseInt(dateRange, 10);
+          if (!isNaN(daysNum) && daysNum > 0) {
+            const fromDate = new Date();
+            fromDate.setDate(fromDate.getDate() - daysNum + 1);
+            const fromDateStr = fromDate.toISOString().split("T")[0];
+            query = query.gte("date", fromDateStr);
+          }
+        }
+
+        const { data, error: fetchError } = await query;
+
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        setSummaries(data || []);
+        setTotalCount(data?.length || 0);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        if (showSkeleton) setLoading(false);
       }
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      setSummaries(data || []);
-      setTotalCount(data?.length || 0);
-    } catch (err) {
-      console.error("Fetch error:", err);
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, dateRange]);
+    },
+    [supabase, dateRange]
+  );
 
   const fetchPaginatedDetails = useCallback(
     async (page: number) => {
@@ -150,9 +153,12 @@ const DailySummariesDashboard = () => {
     },
     [supabase]
   );
+  useEffect(() => {
+    fetchPaginatedDetails(1);
+  }, [fetchPaginatedDetails]);
 
   useEffect(() => {
-    fetchDailySummaries();
+    fetchDailySummaries(true);
   }, [fetchDailySummaries]);
 
   useEffect(() => {
@@ -370,7 +376,7 @@ const DailySummariesDashboard = () => {
               <WaterChart data={chartData} visible={true} />
             )}
 
-            {loading || detailsLoading ? (
+            {paginatedSummaries.length === 0 && (loading || detailsLoading) ? (
               <DailyDetailsSkeleton />
             ) : (
               <DailyDetails
