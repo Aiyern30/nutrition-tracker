@@ -43,9 +43,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, setLanguage, loading: languageLoading } = useLanguage();
-  const { user, loading: userLoading } = useUser(); // Use the context instead
-
-  // Update navItems to use translations
+  const { user, initializing: userLoading } = useUser();
   const navItems = [
     {
       title: t.sidebar.dashboard,
