@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -31,7 +32,7 @@ interface DashboardContextType {
   dailySummary: DailySummary | null;
   profile: Profile | null;
   loading: boolean;
-  refreshing: boolean; // New: separate state for background refresh
+  refreshing: boolean;
   refreshDashboard: () => Promise<void>;
   lastUpdated: Date | null;
 }
@@ -46,15 +47,16 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const initialLoadDone = useRef(false);
 
   const fetchData = useCallback(async (isRefresh = false) => {
     const supabase = createClient();
 
     try {
-      // Only show loading spinner on initial load, not on refresh
-      if (!isRefresh) {
+      // Only show loading spinner on initial load
+      if (!isRefresh && !initialLoadDone.current) {
         setLoading(true);
-      } else {
+      } else if (isRefresh) {
         setRefreshing(true);
       }
 
@@ -62,7 +64,11 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
       const today = new Date().toISOString().split("T")[0];
 
@@ -85,6 +91,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       setDailySummary(summaryResult.data);
       setProfile(profileResult.data);
       setLastUpdated(new Date());
+      initialLoadDone.current = true;
     } catch (error) {
       console.error("Error fetching stats:", error);
     } finally {
@@ -98,8 +105,13 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   }, [fetchData]);
 
   useEffect(() => {
-    // Initial fetch
-    fetchData(false);
+    // Only fetch if not already loaded
+    if (!initialLoadDone.current) {
+      fetchData(false);
+    } else {
+      // If already loaded, just set loading to false
+      setLoading(false);
+    }
 
     // Set up realtime subscription for updates
     const supabase = createClient();

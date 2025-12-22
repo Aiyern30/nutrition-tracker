@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "next-themes";
@@ -14,7 +15,7 @@ interface UserProfile {
   email: string;
   name: string;
   avatar_url?: string;
-  created_at?: string; // Add auth user created_at
+  created_at?: string;
   profileSettings?: {
     theme: string;
     language: string;
@@ -29,10 +30,23 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// Create a singleton to store user data across component remounts
+let cachedUser: UserProfile | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<UserProfile | null>(cachedUser);
+  const [loading, setLoading] = useState(!cachedUser);
   const { setTheme } = useTheme();
+  const initialLoadDone = useRef(!!cachedUser);
+  const isFetching = useRef(false);
+
+  const updateUserCache = useCallback((userData: UserProfile | null) => {
+    cachedUser = userData;
+    cacheTimestamp = Date.now();
+    setUser(userData);
+  }, []);
 
   const refreshUser = useCallback(async () => {
     const supabase = createClient();
@@ -43,14 +57,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getUser();
 
       if (authUser) {
-        // Only fetch theme and language from profile, not the entire profile
         const { data: profile } = await supabase
           .from("profiles")
           .select("theme, language")
           .eq("id", authUser.id)
           .single();
 
-        setUser({
+        const userData = {
           email: authUser.email || "",
           name:
             authUser.user_metadata?.full_name ||
@@ -65,27 +78,47 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 language: profile.language || "en",
               }
             : undefined,
-        });
+        };
+
+        updateUserCache(userData);
 
         if (profile?.theme) {
           setTheme(profile.theme);
         }
       } else {
-        setUser(null);
+        updateUserCache(null);
       }
     } catch (error) {
       console.error("Error fetching user:", error);
-      setUser(null);
+      updateUserCache(null);
     } finally {
       setLoading(false);
     }
-  }, [setTheme]);
+  }, [setTheme, updateUserCache]);
 
   useEffect(() => {
+    // If we have recent cached data, use it
+    const now = Date.now();
+    if (cachedUser && now - cacheTimestamp < CACHE_DURATION) {
+      setUser(cachedUser);
+      setLoading(false);
+      initialLoadDone.current = true;
+      return;
+    }
+
+    // Skip if already fetching
+    if (isFetching.current) return;
+
+    // Skip if already loaded recently
+    if (initialLoadDone.current) {
+      setLoading(false);
+      return;
+    }
+
+    isFetching.current = true;
     let mounted = true;
     const supabase = createClient();
 
-    // Initial load
     const loadUser = async () => {
       try {
         const {
@@ -102,7 +135,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             .single();
 
           if (mounted) {
-            setUser({
+            const userData = {
               email: authUser.email || "",
               name:
                 authUser.user_metadata?.full_name ||
@@ -117,23 +150,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     language: profile.language || "en",
                   }
                 : undefined,
-            });
+            };
+
+            updateUserCache(userData);
 
             if (profile?.theme) {
               setTheme(profile.theme);
             }
           }
         } else {
-          setUser(null);
+          updateUserCache(null);
         }
       } catch (error) {
         console.error("Error loading user:", error);
         if (mounted) {
-          setUser(null);
+          updateUserCache(null);
         }
       } finally {
         if (mounted) {
           setLoading(false);
+          initialLoadDone.current = true;
+          isFetching.current = false;
         }
       }
     };
@@ -155,7 +192,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             .single();
 
           if (mounted) {
-            setUser({
+            const userData = {
               email: session.user.email || "",
               name:
                 session.user.user_metadata?.full_name ||
@@ -170,7 +207,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     language: profile.language || "en",
                   }
                 : undefined,
-            });
+            };
+
+            updateUserCache(userData);
 
             if (profile?.theme) {
               setTheme(profile.theme);
@@ -180,7 +219,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           console.error("Error loading profile:", error);
         }
       } else if (mounted) {
-        setUser(null);
+        updateUserCache(null);
       }
     });
 
@@ -188,7 +227,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [setTheme]); // Only depend on setTheme
+  }, [setTheme, updateUserCache]);
 
   return (
     <UserContext.Provider value={{ user, loading, refreshUser }}>

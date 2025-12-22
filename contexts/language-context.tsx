@@ -27,41 +27,15 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
-  const [loading, setLoading] = useState(true);
   const { user, loading: userLoading } = useUser();
   const supabase = createClient();
 
+  // Simply use the language from UserProvider - no need to fetch again!
   useEffect(() => {
-    const loadLanguage = async () => {
-      if (userLoading) return;
-
-      try {
-        if (user) {
-          const {
-            data: { user: authUser },
-          } = await supabase.auth.getUser();
-
-          if (authUser) {
-            const { data: profile, error } = await supabase
-              .from("profiles")
-              .select("language")
-              .eq("id", authUser.id)
-              .single();
-
-            if (!error && profile?.language) {
-              setLanguageState(profile.language as Language);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error loading language:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadLanguage();
-  }, [user, userLoading, supabase]);
+    if (!userLoading && user?.profileSettings?.language) {
+      setLanguageState(user.profileSettings.language as Language);
+    }
+  }, [user, userLoading]);
 
   const setLanguage = async (lang: Language) => {
     try {
@@ -97,7 +71,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <LanguageContext.Provider
-      value={{ language, setLanguage, t: translations[language], loading }}
+      value={{
+        language,
+        setLanguage,
+        t: translations[language],
+        loading: userLoading,
+      }}
     >
       {children}
     </LanguageContext.Provider>
