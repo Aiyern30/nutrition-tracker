@@ -79,7 +79,7 @@ CREATE TABLE public.meal_plans (
   meal_type text NOT NULL,
   name text,
   description text,
-  items text[] DEFAULT '{}'::text[],
+  items ARRAY DEFAULT '{}'::text[],
   calories integer,
   protein integer,
   carbs integer,
@@ -91,22 +91,6 @@ CREATE TABLE public.meal_plans (
   CONSTRAINT meal_plans_pkey PRIMARY KEY (id),
   CONSTRAINT meal_plans_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
-
--- Enable Row Level Security
-ALTER TABLE public.meal_plans ENABLE ROW LEVEL SECURITY;
-
--- Policies
-CREATE POLICY "Users can view their own meal plans" ON public.meal_plans
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own meal plans" ON public.meal_plans
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own meal plans" ON public.meal_plans
-  FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own meal plans" ON public.meal_plans
-  FOR DELETE USING (auth.uid() = user_id);
 CREATE TABLE public.profiles (
   id uuid NOT NULL,
   display_name text,
@@ -133,16 +117,4 @@ CREATE TABLE public.profiles (
   units text DEFAULT 'metric'::text,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
-);
-CREATE TABLE public.recent_activities (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  activity_type text NOT NULL CHECK (activity_type = ANY (ARRAY['food_logged'::text, 'food_analyzed'::text, 'meal_plan_created'::text, 'chat_interaction'::text])),
-  activity_title text NOT NULL,
-  activity_description text,
-  related_id uuid,
-  metadata jsonb DEFAULT '{}'::jsonb,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT recent_activities_pkey PRIMARY KEY (id),
-  CONSTRAINT recent_activities_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
