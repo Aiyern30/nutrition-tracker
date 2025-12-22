@@ -130,9 +130,7 @@ export default function ProfilePage() {
         });
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load profile"
-      );
+      setError(err instanceof Error ? err.message : "Failed to load profile");
     } finally {
       setLoading(false);
     }
