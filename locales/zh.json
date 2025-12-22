@@ -31,6 +31,10 @@
     "chat": {
       "title": "AI 聊天",
       "description": "咨询营养问题，获取 AI 驱动的饮食建议和膳食推荐。"
+    },
+    "dailySummaries": {
+      "title": "每日摘要",
+      "description": "通过详细的每日摘要和趋势追踪您的营养进度。"
     }
   },
   "sidebar": {
@@ -41,6 +45,7 @@
     "mealPlanner": "膳食计划",
     "foodAnalyzer": "食物分析",
     "dietTracker": "饮食追踪",
+    "dailySummaries": "每日摘要",
     "profile": "个人资料",
     "profileSettings": "个人设置",
     "logout": "退出登录",

@@ -6,6 +6,7 @@ import {
   Utensils,
   ScanSearch,
   TrendingUp,
+  BarChart3,
   User,
   LogOut,
   ChevronDown,
@@ -70,6 +71,11 @@ export function AppSidebar() {
       title: t.sidebar.dietTracker,
       icon: TrendingUp,
       href: "/tracker",
+    },
+    {
+      title: t.sidebar.dailySummaries,
+      icon: BarChart3,
+      href: "/daily-summaries",
     },
     {
       title: t.sidebar.profile,

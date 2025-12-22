@@ -31,6 +31,10 @@
     "chat": {
       "title": "AI Chat",
       "description": "Ask nutrition questions and get instant AI-powered dietary guidance and meal suggestions."
+    },
+    "dailySummaries": {
+      "title": "Daily Summaries",
+      "description": "Track your nutrition progress over time with detailed daily summaries and trends."
     }
   },
   "sidebar": {
@@ -41,6 +45,7 @@
     "mealPlanner": "Meal Planner",
     "foodAnalyzer": "Food Analyzer",
     "dietTracker": "Diet Tracker",
+    "dailySummaries": "Daily Summaries",
     "profile": "Profile",
     "profileSettings": "Profile Settings",
     "logout": "Log out",
