@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+
 import {
   createContext,
   useContext,
   useEffect,
   useState,
   useCallback,
-  useRef,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "next-themes";
@@ -34,53 +35,50 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const { setTheme } = useTheme();
-  const mountedRef = useRef(false);
-  const subscriptionRef = useRef<any>(null);
+
+  const supabase = createClient();
 
   const loadUserData = useCallback(
     async (authUser: any) => {
-      try {
-        const supabase = createClient();
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("theme, language")
-          .eq("id", authUser.id)
-          .single();
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("theme, language")
+        .eq("id", authUser.id)
+        .single();
 
-        const userData = {
-          email: authUser.email || "",
-          name:
-            authUser.user_metadata?.full_name ||
-            authUser.user_metadata?.name ||
-            authUser.email?.split("@")[0] ||
-            "User",
-          avatar_url: authUser.user_metadata?.avatar_url,
-          created_at: authUser.created_at,
-          profileSettings: profile
-            ? {
-                theme: profile.theme || "system",
-                language: profile.language || "en",
-              }
-            : undefined,
-        };
+      if (error) {
+        console.error("Error loading profile:", error);
+      }
 
-        setUser(userData);
+      const userData: UserProfile = {
+        email: authUser.email ?? "",
+        name:
+          authUser.user_metadata?.full_name ||
+          authUser.user_metadata?.name ||
+          authUser.email?.split("@")[0] ||
+          "User",
+        avatar_url: authUser.user_metadata?.avatar_url,
+        created_at: authUser.created_at,
+        profileSettings: profile
+          ? {
+              theme: profile.theme ?? "system",
+              language: profile.language ?? "en",
+            }
+          : undefined,
+      };
 
-        if (profile?.theme) {
-          setTheme(profile.theme);
-        }
-      } catch (error) {
-        console.error("Error loading user data:", error);
-        setUser(null);
+      setUser(userData);
+
+      if (profile?.theme) {
+        setTheme(profile.theme);
       }
     },
-    [setTheme]
+    [supabase, setTheme]
   );
 
   const refreshUser = useCallback(async () => {
     try {
       setLoading(true);
-      const supabase = createClient();
       const {
         data: { user: authUser },
       } = await supabase.auth.getUser();
@@ -90,23 +88,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null);
       }
-    } catch (error) {
-      console.error("Error fetching user:", error);
+    } catch (err) {
+      console.error("refreshUser error:", err);
       setUser(null);
     } finally {
       setLoading(false);
     }
-  }, [loadUserData]);
+  }, [loadUserData, supabase]);
 
   useEffect(() => {
-    // Prevent double mounting in strict mode
-    if (mountedRef.current) return;
-    mountedRef.current = true;
-
-    const supabase = createClient();
-
-    const initialize = async () => {
+    const init = async () => {
       try {
+        setLoading(true);
         const {
           data: { user: authUser },
         } = await supabase.auth.getUser();
@@ -116,34 +109,38 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUser(null);
         }
-      } catch (error) {
-        console.error("Error initializing user:", error);
+      } catch (err) {
+        console.error("init auth error:", err);
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    initialize();
+    init();
 
-    // Set up auth state listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
-      if (session?.user) {
-        await loadUserData(session.user);
-      } else {
-        setUser(null);
-      }
-    });
+    } = supabase.auth.onAuthStateChange(
+      async (_event: AuthChangeEvent, session: Session | null) => {
+        try {
+          setLoading(true);
 
-    subscriptionRef.current = subscription;
+          if (session?.user) {
+            await loadUserData(session.user);
+          } else {
+            setUser(null);
+          }
+        } finally {
+          setLoading(false);
+        }
+      }
+    );
 
     return () => {
       subscription.unsubscribe();
-      mountedRef.current = false;
     };
-  }, [loadUserData]);
+  }, [loadUserData, supabase]);
 
   return (
     <UserContext.Provider value={{ user, loading, refreshUser }}>
@@ -154,8 +151,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
 export function useUser() {
   const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error("useUser must be used within a UserProvider");
+  if (!context) {
+    throw new Error("useUser must be used within UserProvider");
   }
   return context;
 }

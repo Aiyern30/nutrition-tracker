@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import enTranslations from "@/locales/en.json";
 import zhTranslations from "@/locales/zh.json";
@@ -26,46 +26,32 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
-  const { user, loading: userLoading } = useUser();
+  const { user, loading } = useUser();
   const supabase = createClient();
 
-  // Simply use the language from UserProvider - no need to fetch again!
-  useEffect(() => {
-    if (!userLoading && user?.profileSettings?.language) {
-      setLanguageState(user.profileSettings.language as Language);
-    }
-  }, [user, userLoading]);
+  // ✅ derive language instead of effect
+  const language: Language =
+    (user?.profileSettings?.language as Language) ?? "en";
+
+  const t = useMemo(() => translations[language], [language]);
 
   const setLanguage = async (lang: Language) => {
     try {
-      setLanguageState(lang);
-
       const {
         data: { user: authUser },
       } = await supabase.auth.getUser();
 
-      if (!authUser) {
-        console.error("No user found, cannot save language preference");
-        return;
-      }
+      if (!authUser) return;
 
-      const { error } = await supabase
+      await supabase
         .from("profiles")
         .update({
           language: lang,
           updated_at: new Date().toISOString(),
         })
         .eq("id", authUser.id);
-
-      if (error) {
-        console.error("Error saving language to database:", error);
-        throw error;
-      }
-
-      console.log("Language successfully updated to:", lang);
-    } catch (error) {
-      console.error("Error in setLanguage:", error);
+    } catch (err) {
+      console.error("setLanguage error:", err);
     }
   };
 
@@ -74,8 +60,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       value={{
         language,
         setLanguage,
-        t: translations[language],
-        loading: userLoading,
+        t,
+        loading,
       }}
     >
       {children}
@@ -85,8 +71,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
 export function useLanguage() {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
+  if (!context) {
+    throw new Error("useLanguage must be used within LanguageProvider");
   }
   return context;
 }
