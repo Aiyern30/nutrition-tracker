@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import enTranslations from "@/locales/en.json";
 import zhTranslations from "@/locales/zh.json";
+import { useUser } from "@/contexts/user-context";
 
 type Language = "en" | "zh";
 type Translations = typeof enTranslations;
@@ -27,21 +28,21 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
   const [loading, setLoading] = useState(true);
+  const { user, loading: userLoading } = useUser();
   const supabase = createClient();
 
-  // Load language from profile on mount
+  // Load language from profile on mount, but wait for user to load
   useEffect(() => {
     const loadLanguage = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+      // Wait for user context to finish loading
+      if (userLoading) return;
 
+      try {
         if (user) {
           const { data: profile } = await supabase
             .from("profiles")
             .select("language")
-            .eq("id", user.id)
+            .eq("id", user.email) // Use email or another identifier
             .single();
 
           if (profile?.language) {
@@ -56,7 +57,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadLanguage();
-  }, [supabase]);
+  }, [supabase, user, userLoading]);
 
   const setLanguage = async (lang: Language) => {
     try {
@@ -65,9 +66,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
       // Save to profile in database
       const {
-        data: { user },
+        data: { user: authUser },
       } = await supabase.auth.getUser();
-      if (!user) {
+      if (!authUser) {
         console.error("No user found, cannot save language preference");
         return;
       }
@@ -78,7 +79,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           language: lang,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", authUser.id);
 
       if (error) {
         console.error("Error saving language to database:", error);
@@ -88,8 +89,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       console.log("Language successfully updated to:", lang);
     } catch (error) {
       console.error("Error in setLanguage:", error);
-      // Optionally revert state if database update fails
-      // setLanguageState(previous language);
     }
   };
 
