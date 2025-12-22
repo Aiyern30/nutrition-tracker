@@ -296,24 +296,22 @@ export default function TrackerPage() {
       const newWaterIntake = Math.max(0, dailySummary.water_intake + delta);
 
       // Update or insert daily_summaries record
-      const { error } = await supabase
-        .from("daily_summaries")
-        .upsert(
-          {
-            user_id: user.id,
-            date: dateStr,
-            water_intake: newWaterIntake,
-            total_calories: dailySummary.total_calories,
-            total_protein: dailySummary.total_protein,
-            total_carbs: dailySummary.total_carbs,
-            total_fats: dailySummary.total_fats,
-            diet_quality_score: dailySummary.diet_quality_score,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "user_id,date",
-          }
-        );
+      const { error } = await supabase.from("daily_summaries").upsert(
+        {
+          user_id: user.id,
+          date: dateStr,
+          water_intake: newWaterIntake,
+          total_calories: dailySummary.total_calories,
+          total_protein: dailySummary.total_protein,
+          total_carbs: dailySummary.total_carbs,
+          total_fats: dailySummary.total_fats,
+          diet_quality_score: dailySummary.diet_quality_score,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id,date",
+        }
+      );
 
       if (error) throw error;
 

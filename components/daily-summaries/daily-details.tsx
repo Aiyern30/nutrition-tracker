@@ -1,7 +1,8 @@
 "use client";
 
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
+import { Button } from "@/components/ui/button";
 
 interface DailySummary {
   id: string;
@@ -18,6 +19,10 @@ interface DailySummary {
 interface DailyDetailsProps {
   summaries: DailySummary[];
   visibleMetrics: string[];
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  loading?: boolean;
 }
 
 const getGradeColor = (grade: string) => {
@@ -27,21 +32,15 @@ const getGradeColor = (grade: string) => {
   return "text-red-600 bg-red-100";
 };
 
-export function DailyDetails({ summaries, visibleMetrics }: DailyDetailsProps) {
+export function DailyDetails({
+  summaries,
+  visibleMetrics,
+  currentPage,
+  totalPages,
+  onPageChange,
+  loading = false,
+}: DailyDetailsProps) {
   const { t } = useLanguage();
-
-  if (summaries.length === 0) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
-        <h2 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 md:mb-6">
-          {t.dailySummaries.details.title}
-        </h2>
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          {t.dailySummaries.details.noData}
-        </div>
-      </div>
-    );
-  }
 
   const metrics = [
     {
@@ -87,73 +86,105 @@ export function DailyDetails({ summaries, visibleMetrics }: DailyDetailsProps) {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
-      <h2 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 md:mb-6">
-        {t.dailySummaries.details.title}
-      </h2>
-      <div className="space-y-3 md:space-y-4">
-        {summaries.map((summary) => (
-          <div
-            key={summary.id}
-            className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-5 hover:shadow-md transition"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-              <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
-                <Calendar className="text-indigo-600 shrink-0 w-4 h-4 md:w-5 md:h-5 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm md:text-base text-gray-800 dark:text-gray-200 truncate">
-                    {new Date(summary.date).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </div>
-                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                    {summary.diet_quality_explanation ||
-                      "No explanation provided."}
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <h2 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-200">
+          {t.dailySummaries.details.title}
+        </h2>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {currentPage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === totalPages || loading}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {summaries.length === 0 ? (
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          {t.dailySummaries.details.noData}
+        </div>
+      ) : (
+        <div className="space-y-3 md:space-y-4">
+          {summaries.map((summary) => (
+            <div
+              key={summary.id}
+              className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-5 hover:shadow-md transition"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
+                  <Calendar className="text-indigo-600 shrink-0 w-4 h-4 md:w-5 md:h-5 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm md:text-base text-gray-800 dark:text-gray-200 truncate">
+                      {new Date(summary.date).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </div>
+                    <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                      {summary.diet_quality_explanation ||
+                        "No explanation provided."}
+                    </div>
                   </div>
                 </div>
+                <span
+                  className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-bold shrink-0 self-start ${getGradeColor(
+                    summary.diet_quality_score
+                  )}`}
+                >
+                  {summary.diet_quality_score}
+                </span>
               </div>
-              <span
-                className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-bold shrink-0 self-start ${getGradeColor(
-                  summary.diet_quality_score
-                )}`}
-              >
-                {summary.diet_quality_score}
-              </span>
+
+              {visibleMetricsList.length > 0 && (
+                <div
+                  className={`grid grid-cols-2 ${
+                    visibleMetricsList.length >= 3
+                      ? "md:grid-cols-5"
+                      : "md:grid-cols-" + visibleMetricsList.length
+                  } gap-3 md:gap-4 mt-3 md:mt-4`}
+                >
+                  {visibleMetricsList.map((metric) => {
+                    const value = summary[metric.field as keyof DailySummary];
+                    if (value === undefined) return null;
+
+                    return (
+                      <div key={metric.key}>
+                        <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                          {metric.label}
+                        </div>
+                        <div
+                          className={`text-base md:text-lg font-bold ${metric.color}`}
+                        >
+                          {value}
+                          {metric.unit}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-
-            {visibleMetricsList.length > 0 && (
-              <div
-                className={`grid grid-cols-2 ${
-                  visibleMetricsList.length >= 3
-                    ? "md:grid-cols-5"
-                    : "md:grid-cols-" + visibleMetricsList.length
-                } gap-3 md:gap-4 mt-3 md:mt-4`}
-              >
-                {visibleMetricsList.map((metric) => {
-                  const value = summary[metric.field as keyof DailySummary];
-                  if (value === undefined) return null;
-
-                  return (
-                    <div key={metric.key}>
-                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                        {metric.label}
-                      </div>
-                      <div
-                        className={`text-base md:text-lg font-bold ${metric.color}`}
-                      >
-                        {value}
-                        {metric.unit}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
