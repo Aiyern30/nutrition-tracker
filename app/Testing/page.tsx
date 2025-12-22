@@ -14,6 +14,15 @@ interface FatSecretFood {
   food_description: string;
 }
 
+const REGION_OPTIONS = [
+  { value: "MY", label: "Malaysia" },
+  // Add more regions if needed
+];
+const LANGUAGE_OPTIONS = [
+  { value: "en", label: "English" },
+  // Add more languages if needed
+];
+
 export default function FatSecretFoodPage() {
   const [query, setQuery] = useState("");
   const [foods, setFoods] = useState<FatSecretFood[]>([]);
@@ -21,6 +30,8 @@ export default function FatSecretFoodPage() {
   const [loading, setLoading] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [region, setRegion] = useState("MY");
+  const [language, setLanguage] = useState("en");
 
   // Get unique brands and types from current foods
   const brands = Array.from(
@@ -31,8 +42,15 @@ export default function FatSecretFoodPage() {
 
   // Initial load on mount
   useEffect(() => {
-    fetchFoods("chicken"); // Default search term
+    fetchFoods("chicken rice", region, language); // Default search term and region/language
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refetch when region/language changes
+  useEffect(() => {
+    fetchFoods(query || "chicken rice", region, language);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [region, language]);
 
   // Apply filters whenever selection changes
   useEffect(() => {
@@ -49,17 +67,22 @@ export default function FatSecretFoodPage() {
     setFilteredFoods(filtered);
   }, [selectedType, selectedBrand, foods]);
 
-  async function fetchFoods(search: string) {
+  async function fetchFoods(
+    search: string,
+    regionParam: string = region,
+    languageParam: string = language
+  ) {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/fatsecret/foods?query=${encodeURIComponent(search)}`
+        `/api/fatsecret/foods?query=${encodeURIComponent(
+          search
+        )}&region=${regionParam}&language=${languageParam}`
       );
       const data = await res.json();
       const list = data?.foods?.food ?? [];
       setFoods(list);
       setFilteredFoods(list);
-      // Reset filters on new search
       setSelectedType(null);
       setSelectedBrand(null);
     } catch (error) {
@@ -71,7 +94,7 @@ export default function FatSecretFoodPage() {
 
   function handleSearch() {
     if (query.trim()) {
-      fetchFoods(query);
+      fetchFoods(query, region, language);
     }
   }
 
@@ -97,6 +120,38 @@ export default function FatSecretFoodPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold">Food Search</h1>
+
+      {/* Region & Language Selectors */}
+      <div className="flex gap-4 items-center">
+        <div>
+          <label className="block text-xs font-semibold mb-1">Region</label>
+          <select
+            className="border rounded px-2 py-1"
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+          >
+            {REGION_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold mb-1">Language</label>
+          <select
+            className="border rounded px-2 py-1"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+          >
+            {LANGUAGE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {/* Search Bar */}
       <div className="flex gap-2">
