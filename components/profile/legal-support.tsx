@@ -1,14 +1,10 @@
 "use client";
 import { Shield, FileText, HelpCircle, AlertCircle } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLanguage } from "@/contexts/language-context";
+import Link from "next/link";
 
 export function LegalSupport() {
   const { t } = useLanguage();
@@ -27,25 +23,34 @@ export function LegalSupport() {
           </AlertDescription>
         </Alert>
         <Button
+          asChild
           variant="outline"
           className="w-full justify-start bg-transparent"
         >
-          <Shield className="mr-2 h-4 w-4" />
-          {t.profile.legal.privacyPolicy}
+          <Link href="/legal/privacy">
+            <Shield className="mr-2 h-4 w-4" />
+            {t.profile.legal.privacyPolicy}
+          </Link>
         </Button>
         <Button
+          asChild
           variant="outline"
           className="w-full justify-start bg-transparent"
         >
-          <FileText className="mr-2 h-4 w-4" />
-          {t.profile.legal.termsOfService}
+          <Link href="/legal/terms">
+            <FileText className="mr-2 h-4 w-4" />
+            {t.profile.legal.termsOfService}
+          </Link>
         </Button>
         <Button
+          asChild
           variant="outline"
           className="w-full justify-start bg-transparent"
         >
-          <HelpCircle className="mr-2 h-4 w-4" />
-          {t.profile.legal.helpSupport}
+          <Link href="/legal/help">
+            <HelpCircle className="mr-2 h-4 w-4" />
+            {t.profile.legal.helpSupport}
+          </Link>
         </Button>
       </CardContent>
     </Card>

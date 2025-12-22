@@ -43,6 +43,8 @@ interface DailySummary {
   updated_at: string;
 }
 
+const ITEMS_PER_PAGE = 7; // Show 7 days per page
+
 const DailySummariesDashboard = () => {
   useLocalizedMetadata({ page: "dailySummaries" });
 
@@ -59,6 +61,12 @@ const DailySummariesDashboard = () => {
     "fats",
   ]);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [paginatedSummaries, setPaginatedSummaries] = useState<DailySummary[]>(
+    []
+  );
 
   const supabase = createClient();
 
@@ -77,11 +85,12 @@ const DailySummariesDashboard = () => {
         return;
       }
 
+      // Fetch all summaries for stats and charts (with date range filter)
       let query = supabase
         .from("daily_summaries")
         .select("*")
         .eq("user_id", user.id)
-        .order("date", { ascending: true });
+        .order("date", { ascending: false });
 
       if (dateRange !== "all") {
         const daysNum = parseInt(dateRange, 10);
@@ -100,6 +109,7 @@ const DailySummariesDashboard = () => {
       }
 
       setSummaries(data || []);
+      setTotalCount(data?.length || 0);
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -108,9 +118,53 @@ const DailySummariesDashboard = () => {
     }
   }, [supabase, dateRange]);
 
+  const fetchPaginatedDetails = useCallback(
+    async (page: number) => {
+      setDetailsLoading(true);
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) return;
+
+        const offset = (page - 1) * ITEMS_PER_PAGE;
+
+        // Fetch only 7 items for the current page
+        const { data, error } = await supabase
+          .from("daily_summaries")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false })
+          .range(offset, offset + ITEMS_PER_PAGE - 1);
+
+        if (error) throw error;
+
+        setPaginatedSummaries(data || []);
+      } catch (err) {
+        console.error("Fetch paginated details error:", err);
+      } finally {
+        setDetailsLoading(false);
+      }
+    },
+    [supabase]
+  );
+
   useEffect(() => {
     fetchDailySummaries();
   }, [fetchDailySummaries]);
+
+  useEffect(() => {
+    // Reset to page 1 when date range changes
+    setCurrentPage(1);
+    fetchPaginatedDetails(1);
+  }, [dateRange, fetchPaginatedDetails]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchPaginatedDetails(page);
+  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -180,6 +234,8 @@ const DailySummariesDashboard = () => {
       </SidebarProvider>
     );
   }
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
     <SidebarProvider>
@@ -314,12 +370,16 @@ const DailySummariesDashboard = () => {
               <WaterChart data={chartData} visible={true} />
             )}
 
-            {loading ? (
+            {loading || detailsLoading ? (
               <DailyDetailsSkeleton />
             ) : (
               <DailyDetails
-                summaries={summaries}
+                summaries={paginatedSummaries}
                 visibleMetrics={allVisibleMetrics}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                loading={detailsLoading}
               />
             )}
           </div>
