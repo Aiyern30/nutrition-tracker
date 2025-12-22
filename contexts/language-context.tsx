@@ -45,13 +45,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           } = await supabase.auth.getUser();
 
           if (authUser) {
-            const { data: profile } = await supabase
+            const { data: profile, error } = await supabase
               .from("profiles")
               .select("language")
-              .eq("id", authUser.id) // Use authUser.id (UUID) instead of user.email
+              .eq("id", authUser.id)
               .single();
 
-            if (profile?.language) {
+            if (!error && profile?.language) {
               setLanguageState(profile.language as Language);
             }
           }
