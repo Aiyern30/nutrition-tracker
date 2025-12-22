@@ -54,16 +54,20 @@ export async function POST(request: NextRequest) {
     let prompt: string;
 
     if (lang === "zh") {
-      prompt = `你是一位专业的营养师。请根据以下用户档案，为 ${date} 制定一份详细的每日膳食计划。
+      prompt = `你是一位专业的营养师。请根据以下用户档案，为 ${date} 制定一份**完全不同且富有创意**的每日膳食计划。
             
             ${profile_text}
 
             请生成一份结构化的膳食计划，包含早餐、午餐、晚餐和加餐（可选）。
             
+            **关键要求：**
+            1. **多样性**：请确保今天的餐食组合具有独特性，不要使用千篇一律的通用食谱。
+            2. **避免重复**：如果这是一次重新生成，请尝试提供与常规建议完全不同的选择。
+            
             输出必须是严格的 JSON 格式，如下所示：
             {
                 "date": "YYYY-MM-DD",
-                "summary": "通过一两句话总结今天的计划（中文）",
+                "summary": "通过一两句话总结今天的计划（中文），强调其特色",
                 "total_nutrition": {
                     "calories": 总卡路里,
                     "protein": 总蛋白质(g),
@@ -73,7 +77,7 @@ export async function POST(request: NextRequest) {
                 "meals": [
                     {
                         "type": "早餐",
-                        "name": "餐食名称",
+                        "name": "创意餐食名称",
                         "description": "简短描述",
                         "items": ["食物1", "食物2"],
                         "nutrition": {
@@ -91,16 +95,20 @@ export async function POST(request: NextRequest) {
             只输出 JSON。不要输出其他文本。
             `;
     } else {
-      prompt = `You are a professional nutritionist. Please create a detailed daily meal plan for ${date} based on the following user profile.
+      prompt = `You are a professional nutritionist. Please create a **unique and creative** daily meal plan for ${date} based on the following user profile.
 
             ${profile_text}
 
             Generate a structured daily meal plan including Breakfast, Lunch, Dinner, and optionally Snacks.
 
+            **Key Requirements:**
+            1. **Variety**: Ensure the meals are distinct and interesting. Do not output generic default plans.
+            2. **Uniqueness**: Try to suggest meals that are different from typical automated suggestions.
+
             The output must be in strict JSON format as follows:
             {
                 "date": "YYYY-MM-DD",
-                "summary": "A brief 1-2 sentence summary of the day's plan",
+                "summary": "A brief 1-2 sentence summary of the day's unique plan",
                 "total_nutrition": {
                     "calories": total_calories_int,
                     "protein": total_protein_g,
@@ -110,7 +118,7 @@ export async function POST(request: NextRequest) {
                 "meals": [
                     {
                         "type": "Breakfast",
-                        "name": "Meal Name",
+                        "name": "Creative Meal Name",
                         "description": "Short description",
                         "items": ["Item 1", "Item 2"],
                         "nutrition": {
@@ -134,6 +142,7 @@ export async function POST(request: NextRequest) {
     const response = await client.chat.completions.create({
       model: "ernie-4.0-8k-latest",
       messages: messages,
+      temperature: 0.85,
       max_completion_tokens: 2048,
       stream: false,
     });
