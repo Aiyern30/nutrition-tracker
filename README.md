@@ -76,7 +76,7 @@ Experience the AI-powered nutrition tracker in action:
 
 - **Database**: [Supabase](https://supabase.com/) (PostgreSQL)
 - **Authentication**: Supabase Auth
-- **Storage**: Supabase Storage (for food images)
+- **Storage**: Supabase Storage 
 
 ### Artificial Intelligence
 
