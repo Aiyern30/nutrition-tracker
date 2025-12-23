@@ -1,6 +1,6 @@
 # Eat Smart AI
 
-A comprehensive, AI-powered nutrition management platform designed to help users reach their health goals through intelligent tracking, personalized meal planning, and detailed analysis. Built with modern web technologies and powered by the **Baidu Ernie 4.0** Large Language Model.
+A comprehensive, AI-powered nutrition management platform designed to help users reach their health goals through intelligent tracking, personalized meal planning, and detailed analysis. Built with modern web technologies and powered by the **Baidu Ernie 5.0 Thinking model (with support from Ernie 4.0-8K)** Large Language Model.
 
 ## 🚀 Live Demo
 
@@ -80,7 +80,7 @@ Experience the AI-powered nutrition tracker in action:
 
 ### Artificial Intelligence
 
-- **LLM**: [Baidu Ernie Bot 4.0](https://aistudio.baidu.com/) (via AI Studio ModelBuilder)
+- **LLM**: [Baidu Ernie 5.0 Thinking](https://aistudio.baidu.com/) (primary) and [Ernie 4.0 8K latest](https://aistudio.baidu.com/) (secondary where applicable)
 - **Capabilities**: Image Analysis, Natural Language Processing, Meal Generation.
 
 ---
@@ -99,7 +99,7 @@ Experience the AI-powered nutrition tracker in action:
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/your-username/nutrition-tracker.git
+git clone https://github.com/Aiyern30/nutrition-tracker.git
 cd nutrition-tracker
 npm install
 ```
@@ -120,7 +120,19 @@ ERNIE_API_KEY=your_access_token
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### 3. Run the App
+### 3. Database Setup
+
+1. **Create a Project**: Go to [Supabase](https://supabase.com/) and create a new project.
+2. **Setup Schema**:
+   - Go to the **SQL Editor** in your Supabase dashboard.
+   - Run the contents of `database.sql` (located in the root of this repo) to create the tables.
+   - Run the contents of `setup-triggers.sql` to configure RLS and triggers.
+3. **Get Credentials**:
+   - Go to **Project Settings** -> **API**.
+   - Copy the `Project URL` and `anon public` key.
+   - Update your `.env.local` file with these values.
+
+### 4. Run the App
 
 ```bash
 npm run dev
