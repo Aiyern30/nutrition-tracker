@@ -5,7 +5,7 @@ A comprehensive, AI-powered nutrition management platform designed to help users
 ## 🚀 Live Demo
 
 Experience the AI-powered nutrition tracker in action:
-**[👉 View Live Demo](http://eat-smart-ai.vercel.app/)**
+**<a href="http://eat-smart-ai.vercel.app/" target="_blank">👉 View Live Demo</a>**
 
 ## 🌟 Key Features
 
