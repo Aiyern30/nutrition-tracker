@@ -32,7 +32,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const { user, initializing, refreshUser } = useUser();
+  const { user, initializing, refreshUser, updateUserProfileSettings } = useUser();
   const supabase = useRef(createClient());
 
   // derive language directly from user profile (no local state / cache)
@@ -49,6 +49,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
         if (!authUser) return;
 
+        // Optimistically update the language in the UI immediately
+        updateUserProfileSettings({ language: lang });
+
+        // Update in database
         const { error } = await supabase.current
           .from("profiles")
           .update({
@@ -59,16 +63,33 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
         if (error) {
           console.error("Error updating language:", error);
+          // Revert optimistic update on error by refreshing from server
+          await refreshUser();
           return;
         }
 
-        // refresh user context so derived language updates app-wide
-        await refreshUser();
+        // Refresh user context after a delay to ensure database consistency
+        // The delay allows the database update to propagate and avoids race conditions
+        // We already updated the UI optimistically, so this is just for consistency
+        setTimeout(async () => {
+          try {
+            await refreshUser();
+          } catch (err) {
+            // If refresh fails, the optimistic update is still in place
+            console.error("Error refreshing user after language update:", err);
+          }
+        }, 300);
       } catch (err) {
         console.error("setLanguage error:", err);
+        // Revert optimistic update on error
+        try {
+          await refreshUser();
+        } catch (refreshErr) {
+          console.error("Error reverting language update:", refreshErr);
+        }
       }
     },
-    [refreshUser]
+    [refreshUser, updateUserProfileSettings]
   );
 
   return (

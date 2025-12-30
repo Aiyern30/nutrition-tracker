@@ -28,6 +28,9 @@ interface UserContextType {
   user: UserProfile | null;
   initializing: boolean;
   refreshUser: () => Promise<void>;
+  updateUserProfileSettings: (
+    updates: Partial<UserProfile["profileSettings"]>
+  ) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -74,15 +77,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserData = useCallback(
     async (authUser: any, silent = false) => {
-      // If already loading, wait a bit and retry (prevents race conditions)
+      // If already loading, wait for current load to complete
       if (isLoadingRef.current) {
-        // Wait for current load to finish (max 2 seconds)
+        // Wait for current load (max 2 seconds)
         let waitCount = 0;
-        while (isLoadingRef.current && waitCount < 20) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+        while (isLoadingRef.current && waitCount < 40) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
           waitCount++;
         }
-        // If still loading after wait, proceed anyway to prevent deadlock
+        // If still loading after wait, skip this load to prevent deadlock
+        // The current load will update the state anyway
+        if (isLoadingRef.current) {
+          console.warn("Skipping concurrent loadUserData call");
+          return;
+        }
       }
 
       isLoadingRef.current = true;
@@ -281,8 +289,36 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [loadUserData]);
 
+  // Optimistically update user profile settings (for language/theme changes)
+  const updateUserProfileSettings = useCallback(
+    (updates: Partial<UserProfile["profileSettings"]>) => {
+      setUser((prev) => {
+        if (!prev) return prev;
+        const updated = {
+          ...prev,
+          profileSettings: {
+            ...prev.profileSettings,
+            ...updates,
+          } as UserProfile["profileSettings"],
+        };
+        // Update cache
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(updated));
+          } catch (error) {
+            console.error("Error updating cache:", error);
+          }
+        }
+        return updated;
+      });
+    },
+    []
+  );
+
   return (
-    <UserContext.Provider value={{ user, initializing, refreshUser }}>
+    <UserContext.Provider
+      value={{ user, initializing, refreshUser, updateUserProfileSettings }}
+    >
       {children}
     </UserContext.Provider>
   );
