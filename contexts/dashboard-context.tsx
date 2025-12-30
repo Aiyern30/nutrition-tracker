@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -47,15 +48,18 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // track whether we've completed the initial successful load
+  const initialLoadDone = useRef(false);
+
   const fetchData = useCallback(async (isRefresh = false) => {
     const supabase = createClient();
 
     try {
-      // Show loading spinner only if there's no cached data and it's not a refresh
-      if (!isRefresh) {
-        setLoading(true);
-      } else {
+      // Only show loading spinner for the very first (initial) load
+      if (isRefresh) {
         setRefreshing(true);
+      } else if (!initialLoadDone.current) {
+        setLoading(true);
       }
 
       const {
@@ -63,8 +67,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setLoading(false);
-        setRefreshing(false);
+        // no user -> nothing to load
         return;
       }
 
@@ -89,9 +92,13 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       setDailySummary(summaryResult.data);
       setProfile(profileResult.data);
       setLastUpdated(new Date());
+
+      // mark initial load as done so subsequent mounts/refreshes won't show global loading
+      initialLoadDone.current = true;
     } catch (error) {
       console.error("Error fetching stats:", error);
     } finally {
+      // ensure we clear flags; initialLoadDone prevents re-showing spinner
       setLoading(false);
       setRefreshing(false);
     }
@@ -116,7 +123,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           table: "daily_summaries",
         },
         () => {
-          // Silently refresh in background
+          // Silently refresh in background (won't flip initial loading UI)
           fetchData(true);
         }
       )
