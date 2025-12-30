@@ -50,46 +50,59 @@ const loadCachedUser = (): UserProfile | null => {
 };
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  // Load cached user once during initialization
+  // Load cached user once during initialization - use function initializer
   const [user, setUser] = useState<UserProfile | null>(() => loadCachedUser());
-  const [initializing, setInitializing] = useState(() => !loadCachedUser());
+  const [initializing, setInitializing] = useState(() => {
+    // If we have cached user, we're not initializing
+    return loadCachedUser() === null;
+  });
+
   const { setTheme } = useTheme();
   const supabase = useRef(createClient());
   const isInitialized = useRef(false);
+  const isLoadingRef = useRef(false); // Prevent concurrent loads
 
   const loadUserData = useCallback(
-    async (authUser: any) => {
-      const { data: profile } = await supabase.current
-        .from("profiles")
-        .select("theme, language")
-        .eq("id", authUser.id)
-        .single();
+    async (authUser: any, silent = false) => {
+      // Prevent concurrent loads
+      if (isLoadingRef.current) return;
+      isLoadingRef.current = true;
 
-      const userData = {
-        email: authUser.email ?? "",
-        name:
-          authUser.user_metadata?.full_name ||
-          authUser.user_metadata?.name ||
-          authUser.email?.split("@")[0] ||
-          "User",
-        avatar_url: authUser.user_metadata?.avatar_url,
-        created_at: authUser.created_at,
-        profileSettings: profile ?? undefined,
-      };
+      try {
+        const { data: profile } = await supabase.current
+          .from("profiles")
+          .select("theme, language")
+          .eq("id", authUser.id)
+          .single();
 
-      setUser(userData);
+        const userData = {
+          email: authUser.email ?? "",
+          name:
+            authUser.user_metadata?.full_name ||
+            authUser.user_metadata?.name ||
+            authUser.email?.split("@")[0] ||
+            "User",
+          avatar_url: authUser.user_metadata?.avatar_url,
+          created_at: authUser.created_at,
+          profileSettings: profile ?? undefined,
+        };
 
-      // Cache user data
-      if (typeof window !== "undefined") {
-        try {
-          sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
-        } catch (error) {
-          console.error("Error caching user data:", error);
+        setUser(userData);
+
+        // Cache user data
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
+          } catch (error) {
+            console.error("Error caching user data:", error);
+          }
         }
-      }
 
-      if (profile?.theme) {
-        setTheme(profile.theme);
+        if (profile?.theme && !silent) {
+          setTheme(profile.theme);
+        }
+      } finally {
+        isLoadingRef.current = false;
       }
     },
     [setTheme]
@@ -125,15 +138,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     init();
   }, [loadUserData]);
 
-  // Auth changes (NO skeleton)
+  // Auth changes - SILENT updates (no loading state)
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.current.auth.onAuthStateChange(
-      async (_event: AuthChangeEvent, session: Session | null) => {
+      async (event: AuthChangeEvent, session: Session | null) => {
+        // Skip if this is just a token refresh or session restoration
+        if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+          return;
+        }
+
         if (session?.user) {
-          await loadUserData(session.user);
-        } else {
+          // Silent update - don't trigger loading states
+          await loadUserData(session.user, true);
+        } else if (event === "SIGNED_OUT") {
           setUser(null);
           if (typeof window !== "undefined") {
             sessionStorage.removeItem(USER_CACHE_KEY);
@@ -145,15 +164,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [loadUserData]);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const {
       data: { user: authUser },
     } = await supabase.current.auth.getUser();
 
     if (authUser) {
-      await loadUserData(authUser);
+      await loadUserData(authUser, true); // Silent refresh
     }
-  };
+  }, [loadUserData]);
 
   return (
     <UserContext.Provider value={{ user, initializing, refreshUser }}>

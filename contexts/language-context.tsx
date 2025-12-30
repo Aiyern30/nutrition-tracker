@@ -5,7 +5,8 @@ import React, {
   useContext,
   useMemo,
   useState,
-  useEffect,
+  useRef,
+  useCallback,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import enTranslations from "@/locales/en.json";
@@ -31,44 +32,101 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined
 );
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const { user, initializing } = useUser();
-  const supabase = createClient();
+const LANGUAGE_CACHE_KEY = "language_cache";
 
-  const derivedLanguage: Language =
+// Helper to load cached language
+const loadCachedLanguage = (): Language | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = sessionStorage.getItem(LANGUAGE_CACHE_KEY);
+    return cached as Language | null;
+  } catch {
+    return null;
+  }
+};
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const { user, initializing, refreshUser } = useUser();
+  const supabase = useRef(createClient());
+  const lastUserLanguageRef = useRef<Language | null>(null);
+
+  // Get the current language from user profile
+  const userProfileLanguage =
     (user?.profileSettings?.language as Language) ?? "en";
 
-  const [language, setLanguageState] = useState<Language>(derivedLanguage);
+  // Initialize language state
+  const [language, setLanguageState] = useState<Language>(() => {
+    const cached = loadCachedLanguage();
+    if (cached) return cached;
+    return userProfileLanguage;
+  });
 
-  // sync with user profile
-  useEffect(() => {
-    setLanguageState(derivedLanguage);
-  }, [derivedLanguage]);
+  // Sync language when user profile language changes
+  // Use a ref to track the last value and only update if it actually changed
+  if (userProfileLanguage !== lastUserLanguageRef.current) {
+    lastUserLanguageRef.current = userProfileLanguage;
+
+    // Only update state if it's different from current language
+    if (userProfileLanguage !== language) {
+      // This is safe because it only happens during render phase
+      // when the user data actually changes
+      setLanguageState(userProfileLanguage);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(LANGUAGE_CACHE_KEY, userProfileLanguage);
+      }
+    }
+  }
 
   const t = useMemo(() => translations[language], [language]);
 
-  const setLanguage = async (lang: Language) => {
-    // optimistic update
-    setLanguageState(lang);
+  const setLanguage = useCallback(
+    async (lang: Language) => {
+      // Optimistic update
+      setLanguageState(lang);
 
-    try {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+      // Cache immediately
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(LANGUAGE_CACHE_KEY, lang);
+      }
 
-      if (!authUser) return;
+      try {
+        const {
+          data: { user: authUser },
+        } = await supabase.current.auth.getUser();
 
-      await supabase
-        .from("profiles")
-        .update({
-          language: lang,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", authUser.id);
-    } catch (err) {
-      console.error("setLanguage error:", err);
-    }
-  };
+        if (!authUser) return;
+
+        const { error } = await supabase.current
+          .from("profiles")
+          .update({
+            language: lang,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", authUser.id);
+
+        if (error) {
+          console.error("Error updating language:", error);
+          // Revert on error
+          setLanguageState(userProfileLanguage);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(LANGUAGE_CACHE_KEY, userProfileLanguage);
+          }
+          return;
+        }
+
+        // Refresh user context to sync the change
+        await refreshUser();
+      } catch (err) {
+        console.error("setLanguage error:", err);
+        // Revert on error
+        setLanguageState(userProfileLanguage);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(LANGUAGE_CACHE_KEY, userProfileLanguage);
+        }
+      }
+    },
+    [refreshUser, userProfileLanguage]
+  );
 
   return (
     <LanguageContext.Provider
@@ -76,7 +134,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         language,
         setLanguage,
         t,
-        loading: initializing,
+        loading: initializing && !user,
       }}
     >
       {children}

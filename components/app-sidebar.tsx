@@ -42,8 +42,12 @@ import { cn } from "@/lib/utils";
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { t, language, setLanguage, loading: languageLoading } = useLanguage();
-  const { user, initializing: userLoading } = useUser();
+  const { t, language, setLanguage } = useLanguage();
+  const { user, initializing: userInitializing } = useUser();
+
+  // Only show loading on INITIAL load, not on subsequent updates
+  const showLoading = userInitializing && !user;
+
   const navItems = [
     {
       title: t.sidebar.dashboard,
@@ -151,7 +155,7 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4">
-        {userLoading || languageLoading ? (
+        {showLoading ? (
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
             <div className="flex flex-col gap-2">
