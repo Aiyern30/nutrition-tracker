@@ -54,18 +54,37 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(() => loadCachedUser());
   const [initializing, setInitializing] = useState(() => {
     // If we have cached user, we're not initializing
-    return loadCachedUser() === null;
+    const cached = loadCachedUser();
+    return cached === null;
   });
 
   const { setTheme } = useTheme();
   const supabase = useRef(createClient());
   const isInitialized = useRef(false);
   const isLoadingRef = useRef(false); // Prevent concurrent loads
+  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // If we have cached user, ensure initializing is false immediately
+  useEffect(() => {
+    const cached = loadCachedUser();
+    if (cached) {
+      setInitializing(false);
+    }
+  }, []); // Run only once on mount
 
   const loadUserData = useCallback(
     async (authUser: any, silent = false) => {
-      // Prevent concurrent loads
-      if (isLoadingRef.current) return;
+      // If already loading, wait a bit and retry (prevents race conditions)
+      if (isLoadingRef.current) {
+        // Wait for current load to finish (max 2 seconds)
+        let waitCount = 0;
+        while (isLoadingRef.current && waitCount < 20) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          waitCount++;
+        }
+        // If still loading after wait, proceed anyway to prevent deadlock
+      }
+
       isLoadingRef.current = true;
 
       try {
@@ -101,6 +120,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (profile?.theme && !silent) {
           setTheme(profile.theme);
         }
+
+        // Ensure initializing is false once we have user data
+        if (isInitialized.current) {
+          setInitializing(false);
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
       } finally {
         isLoadingRef.current = false;
       }
@@ -116,26 +142,63 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [setTheme]);
 
-  // Initial load ONLY
+  // Initial load ONLY - ensure it always completes
   useEffect(() => {
     const init = async () => {
-      if (isInitialized.current) return;
+      if (isInitialized.current) {
+        // Already initialized, but ensure initializing is false
+        setInitializing(false);
+        return;
+      }
       isInitialized.current = true;
 
-      const {
-        data: { user: authUser },
-      } = await supabase.current.auth.getUser();
-
-      if (authUser) {
-        await loadUserData(authUser);
-      } else {
-        setUser(null);
+      // Clear any existing timeout
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
       }
 
-      setInitializing(false);
+      // Safety timeout: ensure initializing is set to false after max 3 seconds
+      initTimeoutRef.current = setTimeout(() => {
+        console.warn(
+          "User initialization timeout - forcing initializing to false"
+        );
+        setInitializing(false);
+      }, 3000);
+
+      try {
+        const {
+          data: { user: authUser },
+        } = await supabase.current.auth.getUser();
+
+        if (authUser) {
+          await loadUserData(authUser);
+        } else {
+          setUser(null);
+          setInitializing(false);
+        }
+      } catch (error) {
+        console.error("Error during user initialization:", error);
+        // Even on error, ensure we're not stuck in initializing state
+        setUser(null);
+        setInitializing(false);
+      } finally {
+        // Always clear initializing state and timeout
+        setInitializing(false);
+        if (initTimeoutRef.current) {
+          clearTimeout(initTimeoutRef.current);
+          initTimeoutRef.current = null;
+        }
+      }
     };
 
     init();
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
+      }
+    };
   }, [loadUserData]);
 
   // Auth changes - SILENT updates (no loading state)
@@ -146,23 +209,67 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       async (event: AuthChangeEvent, session: Session | null) => {
         // Skip if this is just a token refresh or session restoration
         if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+          // If we're past initial load and have a session, silently update user data
+          if (isInitialized.current && session?.user) {
+            await loadUserData(session.user, true);
+          }
           return;
         }
 
         if (session?.user) {
           // Silent update - don't trigger loading states
           await loadUserData(session.user, true);
+          // Ensure we're not stuck in initializing state
+          if (isInitialized.current) {
+            setInitializing(false);
+          }
         } else if (event === "SIGNED_OUT") {
           setUser(null);
           if (typeof window !== "undefined") {
             sessionStorage.removeItem(USER_CACHE_KEY);
           }
+          // Ensure we're not stuck in initializing state
+          setInitializing(false);
         }
       }
     );
 
     return () => subscription.unsubscribe();
   }, [loadUserData]);
+
+  // Handle window focus - ensure we're not stuck in initializing state
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleFocus = async () => {
+      // Only check if we're past initial load and stuck in initializing state
+      if (!isInitialized.current) return;
+
+      // Use a ref check to avoid dependency on initializing state
+      // This prevents the effect from re-running when initializing changes
+      const checkStuck = async () => {
+        const {
+          data: { user: authUser },
+        } = await supabase.current.auth.getUser();
+
+        // If we have a user but are still initializing, fix it
+        if (authUser) {
+          setInitializing(false);
+          // Silently refresh user data
+          await loadUserData(authUser, true);
+        } else {
+          // No user, ensure we're not initializing
+          setInitializing(false);
+        }
+      };
+
+      // Small delay to avoid race conditions with other auth events
+      setTimeout(checkStuck, 100);
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [loadUserData]); // Removed initializing from dependencies
 
   const refreshUser = useCallback(async () => {
     const {
