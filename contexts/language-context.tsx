@@ -39,7 +39,7 @@ const loadCachedLanguage = (): Language | null => {
   if (typeof window === "undefined") return null;
   try {
     const cached = sessionStorage.getItem(LANGUAGE_CACHE_KEY);
-    return cached as Language | null;
+    return (cached as Language) ?? null;
   } catch {
     return null;
   }
@@ -48,43 +48,26 @@ const loadCachedLanguage = (): Language | null => {
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { user, initializing, refreshUser } = useUser();
   const supabase = useRef(createClient());
-  const lastUserLanguageRef = useRef<Language | null>(null);
 
-  // Get the current language from user profile
-  const userProfileLanguage =
-    (user?.profileSettings?.language as Language) ?? "en";
-
-  // Initialize language state
-  const [language, setLanguageState] = useState<Language>(() => {
+  // initialize from cache or fallback to 'en'
+  const initialLanguage: Language = (() => {
     const cached = loadCachedLanguage();
     if (cached) return cached;
-    return userProfileLanguage;
-  });
+    return "en";
+  })();
 
-  // Sync language when user profile language changes
-  // Use a ref to track the last value and only update if it actually changed
-  if (userProfileLanguage !== lastUserLanguageRef.current) {
-    lastUserLanguageRef.current = userProfileLanguage;
+  const [language, setLanguageState] = useState<Language>(initialLanguage);
 
-    // Only update state if it's different from current language
-    if (userProfileLanguage !== language) {
-      // This is safe because it only happens during render phase
-      // when the user data actually changes
-      setLanguageState(userProfileLanguage);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(LANGUAGE_CACHE_KEY, userProfileLanguage);
-      }
-    }
-  }
+  // derive user language (may be null) and prefer it for rendering without calling setState in effects
+  const userLang = (user?.profileSettings?.language as Language) ?? null;
+  const effectiveLanguage: Language = (userLang ?? language) as Language;
 
-  const t = useMemo(() => translations[language], [language]);
+  const t = useMemo(() => translations[effectiveLanguage], [effectiveLanguage]);
 
   const setLanguage = useCallback(
     async (lang: Language) => {
-      // Optimistic update
+      // Optimistic update + cache
       setLanguageState(lang);
-
-      // Cache immediately
       if (typeof window !== "undefined") {
         sessionStorage.setItem(LANGUAGE_CACHE_KEY, lang);
       }
@@ -106,35 +89,36 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
         if (error) {
           console.error("Error updating language:", error);
-          // Revert on error
-          setLanguageState(userProfileLanguage);
+          const fallback =
+            (user?.profileSettings?.language as Language) ?? "en";
+          setLanguageState(fallback);
           if (typeof window !== "undefined") {
-            sessionStorage.setItem(LANGUAGE_CACHE_KEY, userProfileLanguage);
+            sessionStorage.setItem(LANGUAGE_CACHE_KEY, fallback);
           }
           return;
         }
 
-        // Refresh user context to sync the change
+        // refresh user to sync profile
         await refreshUser();
       } catch (err) {
         console.error("setLanguage error:", err);
-        // Revert on error
-        setLanguageState(userProfileLanguage);
+        const fallback = (user?.profileSettings?.language as Language) ?? "en";
+        setLanguageState(fallback);
         if (typeof window !== "undefined") {
-          sessionStorage.setItem(LANGUAGE_CACHE_KEY, userProfileLanguage);
+          sessionStorage.setItem(LANGUAGE_CACHE_KEY, fallback);
         }
       }
     },
-    [refreshUser, userProfileLanguage]
+    [refreshUser, user]
   );
 
   return (
     <LanguageContext.Provider
       value={{
-        language,
+        language: effectiveLanguage,
         setLanguage,
         t,
-        loading: initializing && !user,
+        loading: initializing,
       }}
     >
       {children}
