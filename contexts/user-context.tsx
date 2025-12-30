@@ -66,17 +66,40 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const isInitialized = useRef(false);
   const isLoadingRef = useRef(false); // Prevent concurrent loads
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastLoadTimeRef = useRef<number>(0); // Track last load time for debouncing
+  const lastUserIdRef = useRef<string | null>(null); // Track last loaded user ID
 
   // If we have cached user, ensure initializing is false immediately
   useEffect(() => {
     const cached = loadCachedUser();
     if (cached) {
       setInitializing(false);
+      isInitialized.current = true; // Mark as initialized if we have cache
     }
   }, []); // Run only once on mount
 
+  // Safety: Never allow initializing to be true after initialization completes
+  useEffect(() => {
+    if (isInitialized.current && initializing) {
+      setInitializing(false);
+    }
+  }, [initializing]);
+
   const loadUserData = useCallback(
-    async (authUser: any, silent = false) => {
+    async (authUser: any, silent = false, force = false) => {
+      // Skip if same user and recent load (debounce - prevent rapid reloads)
+      const now = Date.now();
+      const timeSinceLastLoad = now - lastLoadTimeRef.current;
+      if (
+        !force &&
+        !silent &&
+        lastUserIdRef.current === authUser.id &&
+        timeSinceLastLoad < 2000
+      ) {
+        // Same user, loaded less than 2 seconds ago - skip
+        return;
+      }
+
       // If already loading, wait for current load to complete
       if (isLoadingRef.current) {
         // Wait for current load (max 2 seconds)
@@ -86,14 +109,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           waitCount++;
         }
         // If still loading after wait, skip this load to prevent deadlock
-        // The current load will update the state anyway
         if (isLoadingRef.current) {
-          console.warn("Skipping concurrent loadUserData call");
           return;
         }
       }
 
       isLoadingRef.current = true;
+      lastLoadTimeRef.current = now;
+      lastUserIdRef.current = authUser.id;
 
       try {
         const { data: profile } = await supabase.current
@@ -130,6 +153,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Ensure initializing is false once we have user data
+        // NEVER set it back to true after initial load
         if (isInitialized.current) {
           setInitializing(false);
         }
@@ -215,24 +239,35 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.current.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-        // Skip if this is just a token refresh or session restoration
+        // Completely ignore token refresh and initial session events if we already have user
+        // These fire when switching tabs and don't indicate actual auth changes
         if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
-          // If we're past initial load and have a session, silently update user data
-          if (isInitialized.current && session?.user) {
+          // Only update if we don't have a user yet (during initial load)
+          if (!isInitialized.current && session?.user) {
             await loadUserData(session.user, true);
           }
+          // Otherwise, completely ignore - we already have the user data
           return;
         }
 
         if (session?.user) {
-          // Silent update - don't trigger loading states
-          await loadUserData(session.user, true);
+          // Check if user actually changed
+          const currentUserId = user?.email || null;
+          const newUserId = session.user.email || null;
+          
+          // Only reload if user actually changed or we don't have user yet
+          if (currentUserId !== newUserId || !user) {
+            await loadUserData(session.user, true);
+          }
+          
           // Ensure we're not stuck in initializing state
+          // NEVER set it to true after initial load
           if (isInitialized.current) {
             setInitializing(false);
           }
         } else if (event === "SIGNED_OUT") {
           setUser(null);
+          lastUserIdRef.current = null;
           if (typeof window !== "undefined") {
             sessionStorage.removeItem(USER_CACHE_KEY);
           }
@@ -243,41 +278,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => subscription.unsubscribe();
-  }, [loadUserData]);
+  }, [loadUserData, user]);
 
   // Handle window focus - ensure we're not stuck in initializing state
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const handleFocus = async () => {
-      // Only check if we're past initial load and stuck in initializing state
+    const handleFocus = () => {
+      // Only fix if we're past initial load and stuck in initializing state
       if (!isInitialized.current) return;
 
-      // Use a ref check to avoid dependency on initializing state
-      // This prevents the effect from re-running when initializing changes
-      const checkStuck = async () => {
-        const {
-          data: { user: authUser },
-        } = await supabase.current.auth.getUser();
-
-        // If we have a user but are still initializing, fix it
-        if (authUser) {
-          setInitializing(false);
-          // Silently refresh user data
-          await loadUserData(authUser, true);
-        } else {
-          // No user, ensure we're not initializing
-          setInitializing(false);
-        }
-      };
-
-      // Small delay to avoid race conditions with other auth events
-      setTimeout(checkStuck, 100);
+      // If we have a user but are still initializing, just fix the state
+      // Don't reload - we already have the data
+      if (user) {
+        setInitializing(false);
+      }
     };
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [loadUserData]); // Removed initializing from dependencies
+  }, [user]); // Only depend on user, not loadUserData
 
   const refreshUser = useCallback(async () => {
     const {

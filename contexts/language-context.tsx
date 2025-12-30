@@ -32,11 +32,13 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const { user, initializing, refreshUser, updateUserProfileSettings } = useUser();
+  const { user, initializing, refreshUser, updateUserProfileSettings } =
+    useUser();
   const supabase = useRef(createClient());
 
   // derive language directly from user profile (no local state / cache)
-  const language: Language = (user?.profileSettings?.language as Language) ?? "en";
+  const language: Language =
+    (user?.profileSettings?.language as Language) ?? "en";
 
   const t = useMemo(() => translations[language], [language]);
 
