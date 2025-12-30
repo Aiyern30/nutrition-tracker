@@ -61,13 +61,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     return cached === null;
   });
 
-  const { setTheme } = useTheme();
+  const { setTheme, theme: currentTheme } = useTheme();
   const supabase = useRef(createClient());
   const isInitialized = useRef(false);
   const isLoadingRef = useRef(false); // Prevent concurrent loads
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastLoadTimeRef = useRef<number>(0); // Track last load time for debouncing
   const lastUserIdRef = useRef<string | null>(null); // Track last loaded user ID
+  const lastAppliedThemeRef = useRef<string | null>(null); // Track last applied theme to prevent loops
 
   // If we have cached user, ensure initializing is false immediately
   useEffect(() => {
@@ -148,8 +149,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        if (profile?.theme && !silent) {
-          setTheme(profile.theme);
+        // Only apply theme if it's different from what we last applied and not silent
+        // This prevents loops when theme is updated elsewhere
+        if (profile?.theme && !silent && lastAppliedThemeRef.current !== profile.theme) {
+          // Only apply if it's actually different from current theme
+          if (currentTheme !== profile.theme) {
+            setTheme(profile.theme);
+            lastAppliedThemeRef.current = profile.theme;
+          }
         }
 
         // Ensure initializing is false once we have user data
@@ -163,7 +170,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         isLoadingRef.current = false;
       }
     },
-    [setTheme]
+    [setTheme, currentTheme, user]
   );
 
   // Apply cached theme on mount (only once)
@@ -171,6 +178,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const cached = loadCachedUser();
     if (cached?.profileSettings?.theme) {
       setTheme(cached.profileSettings.theme);
+      lastAppliedThemeRef.current = cached.profileSettings.theme;
     }
   }, [setTheme]);
 
