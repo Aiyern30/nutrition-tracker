@@ -4,9 +4,8 @@ import React, {
   createContext,
   useContext,
   useMemo,
-  useState,
-  useRef,
   useCallback,
+  useRef,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import enTranslations from "@/locales/en.json";
@@ -32,46 +31,17 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined
 );
 
-const LANGUAGE_CACHE_KEY = "language_cache";
-
-// Helper to load cached language
-const loadCachedLanguage = (): Language | null => {
-  if (typeof window === "undefined") return null;
-  try {
-    const cached = sessionStorage.getItem(LANGUAGE_CACHE_KEY);
-    return (cached as Language) ?? null;
-  } catch {
-    return null;
-  }
-};
-
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { user, initializing, refreshUser } = useUser();
   const supabase = useRef(createClient());
 
-  // initialize from cache or fallback to 'en'
-  const initialLanguage: Language = (() => {
-    const cached = loadCachedLanguage();
-    if (cached) return cached;
-    return "en";
-  })();
+  // derive language directly from user profile (no local state / cache)
+  const language: Language = (user?.profileSettings?.language as Language) ?? "en";
 
-  const [language, setLanguageState] = useState<Language>(initialLanguage);
-
-  // derive user language (may be null) and prefer it for rendering without calling setState in effects
-  const userLang = (user?.profileSettings?.language as Language) ?? null;
-  const effectiveLanguage: Language = (userLang ?? language) as Language;
-
-  const t = useMemo(() => translations[effectiveLanguage], [effectiveLanguage]);
+  const t = useMemo(() => translations[language], [language]);
 
   const setLanguage = useCallback(
     async (lang: Language) => {
-      // Optimistic update + cache
-      setLanguageState(lang);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(LANGUAGE_CACHE_KEY, lang);
-      }
-
       try {
         const {
           data: { user: authUser },
@@ -89,33 +59,22 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
         if (error) {
           console.error("Error updating language:", error);
-          const fallback =
-            (user?.profileSettings?.language as Language) ?? "en";
-          setLanguageState(fallback);
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem(LANGUAGE_CACHE_KEY, fallback);
-          }
           return;
         }
 
-        // refresh user to sync profile
+        // refresh user context so derived language updates app-wide
         await refreshUser();
       } catch (err) {
         console.error("setLanguage error:", err);
-        const fallback = (user?.profileSettings?.language as Language) ?? "en";
-        setLanguageState(fallback);
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem(LANGUAGE_CACHE_KEY, fallback);
-        }
       }
     },
-    [refreshUser, user]
+    [refreshUser]
   );
 
   return (
     <LanguageContext.Provider
       value={{
-        language: effectiveLanguage,
+        language,
         setLanguage,
         t,
         loading: initializing,
