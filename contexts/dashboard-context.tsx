@@ -6,7 +6,6 @@ import {
   useEffect,
   useState,
   useCallback,
-  useRef,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -47,16 +46,15 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const initialLoadDone = useRef(false);
 
   const fetchData = useCallback(async (isRefresh = false) => {
     const supabase = createClient();
 
     try {
-      // Only show loading spinner on initial load
-      if (!isRefresh && !initialLoadDone.current) {
+      // Show loading spinner only if there's no cached data and it's not a refresh
+      if (!isRefresh) {
         setLoading(true);
-      } else if (isRefresh) {
+      } else {
         setRefreshing(true);
       }
 
@@ -91,7 +89,6 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       setDailySummary(summaryResult.data);
       setProfile(profileResult.data);
       setLastUpdated(new Date());
-      initialLoadDone.current = true;
     } catch (error) {
       console.error("Error fetching stats:", error);
     } finally {
@@ -105,13 +102,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   }, [fetchData]);
 
   useEffect(() => {
-    // Only fetch if not already loaded
-    if (!initialLoadDone.current) {
-      fetchData(false);
-    } else {
-      // If already loaded, just set loading to false
-      setLoading(false);
-    }
+    fetchData(false);
 
     // Set up realtime subscription for updates
     const supabase = createClient();
