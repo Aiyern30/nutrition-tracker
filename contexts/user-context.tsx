@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import type { AuthChangeEvent } from "@supabase/supabase-js";
 
 import {
   createContext,
@@ -29,7 +29,7 @@ interface UserContextType {
   initializing: boolean;
   refreshUser: () => Promise<void>;
   updateUserProfileSettings: (
-    updates: Partial<UserProfile["profileSettings"]>
+    settings: Partial<{ theme: string; language: string }>
   ) => void;
 }
 
@@ -53,71 +53,22 @@ const loadCachedUser = (): UserProfile | null => {
 };
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  // Load cached user once during initialization - use function initializer
   const [user, setUser] = useState<UserProfile | null>(() => loadCachedUser());
-  const [initializing, setInitializing] = useState(() => {
-    // If we have cached user, we're not initializing
-    const cached = loadCachedUser();
-    return cached === null;
-  });
+  const [initializing, setInitializing] = useState(
+    () => loadCachedUser() === null
+  );
 
-  const { setTheme, theme: currentTheme } = useTheme();
+  const { setTheme } = useTheme();
   const supabase = useRef(createClient());
   const isInitialized = useRef(false);
-  const isLoadingRef = useRef(false); // Prevent concurrent loads
-  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastLoadTimeRef = useRef<number>(0); // Track last load time for debouncing
-  const lastUserIdRef = useRef<string | null>(null); // Track last loaded user ID
-  const lastAppliedThemeRef = useRef<string | null>(null); // Track last applied theme to prevent loops
-
-  // If we have cached user, ensure initializing is false immediately
-  useEffect(() => {
-    const cached = loadCachedUser();
-    if (cached) {
-      setInitializing(false);
-      isInitialized.current = true; // Mark as initialized if we have cache
-    }
-  }, []); // Run only once on mount
-
-  // Safety: Never allow initializing to be true after initialization completes
-  useEffect(() => {
-    if (isInitialized.current && initializing) {
-      setInitializing(false);
-    }
-  }, [initializing]);
+  const isLoadingRef = useRef(false);
+  const hasSetInitialTheme = useRef(false);
+  const authListenerActive = useRef(false); // Track if auth listener should process events
 
   const loadUserData = useCallback(
-    async (authUser: any, silent = false, force = false) => {
-      // Skip if same user and recent load (debounce - prevent rapid reloads)
-      const now = Date.now();
-      const timeSinceLastLoad = now - lastLoadTimeRef.current;
-      if (
-        !force &&
-        !silent &&
-        lastUserIdRef.current === authUser.id &&
-        timeSinceLastLoad < 2000
-      ) {
-        // Same user, loaded less than 2 seconds ago - skip
-        return;
-      }
-
-      // If already loading, wait for current load to complete
-      if (isLoadingRef.current) {
-        // Wait for current load (max 2 seconds)
-        let waitCount = 0;
-        while (isLoadingRef.current && waitCount < 40) {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-          waitCount++;
-        }
-        // If still loading after wait, skip this load to prevent deadlock
-        if (isLoadingRef.current) {
-          return;
-        }
-      }
-
+    async (authUser: any, silent = false) => {
+      if (isLoadingRef.current) return;
       isLoadingRef.current = true;
-      lastLoadTimeRef.current = now;
-      lastUserIdRef.current = authUser.id;
 
       try {
         const { data: profile } = await supabase.current
@@ -138,9 +89,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           profileSettings: profile ?? undefined,
         };
 
-        setUser(userData);
+        setUser((prev) => {
+          if (JSON.stringify(prev) === JSON.stringify(userData)) {
+            return prev;
+          }
+          return userData;
+        });
 
-        // Cache user data
         if (typeof window !== "undefined") {
           try {
             sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
@@ -149,199 +104,146 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Only apply theme if it's different from what we last applied and not silent
-        // This prevents loops when theme is updated elsewhere
-        if (profile?.theme && !silent && lastAppliedThemeRef.current !== profile.theme) {
-          // Only apply if it's actually different from current theme
-          if (currentTheme !== profile.theme) {
-            setTheme(profile.theme);
-            lastAppliedThemeRef.current = profile.theme;
-          }
+        if (profile?.theme && !silent && !hasSetInitialTheme.current) {
+          setTheme(profile.theme);
+          hasSetInitialTheme.current = true;
         }
-
-        // Ensure initializing is false once we have user data
-        // NEVER set it back to true after initial load
-        if (isInitialized.current) {
-          setInitializing(false);
-        }
-      } catch (error) {
-        console.error("Error loading user data:", error);
       } finally {
         isLoadingRef.current = false;
       }
     },
-    [setTheme, currentTheme, user]
+    [setTheme]
+  );
+
+  const updateUserProfileSettings = useCallback(
+    (settings: Partial<{ theme: string; language: string }>) => {
+      setUser((prev) => {
+        if (!prev) return prev;
+
+        const updatedUser = {
+          ...prev,
+          profileSettings: {
+            theme: prev.profileSettings?.theme ?? "system",
+            language: prev.profileSettings?.language ?? "en",
+            ...settings,
+          },
+        };
+
+        if (
+          JSON.stringify(prev.profileSettings) ===
+          JSON.stringify(updatedUser.profileSettings)
+        ) {
+          return prev;
+        }
+
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(updatedUser));
+          } catch (error) {
+            console.error("Error updating user cache:", error);
+          }
+        }
+
+        return updatedUser;
+      });
+    },
+    []
   );
 
   // Apply cached theme on mount (only once)
   useEffect(() => {
+    if (hasSetInitialTheme.current) return;
+
     const cached = loadCachedUser();
     if (cached?.profileSettings?.theme) {
       setTheme(cached.profileSettings.theme);
-      lastAppliedThemeRef.current = cached.profileSettings.theme;
+      hasSetInitialTheme.current = true;
     }
   }, [setTheme]);
 
-  // Initial load ONLY - ensure it always completes
+  // Initial load ONLY
   useEffect(() => {
     const init = async () => {
-      if (isInitialized.current) {
-        // Already initialized, but ensure initializing is false
-        setInitializing(false);
-        return;
-      }
+      if (isInitialized.current) return;
       isInitialized.current = true;
 
-      // Clear any existing timeout
-      if (initTimeoutRef.current) {
-        clearTimeout(initTimeoutRef.current);
-      }
+      const {
+        data: { user: authUser },
+      } = await supabase.current.auth.getUser();
 
-      // Safety timeout: ensure initializing is set to false after max 3 seconds
-      initTimeoutRef.current = setTimeout(() => {
-        console.warn(
-          "User initialization timeout - forcing initializing to false"
-        );
-        setInitializing(false);
-      }, 3000);
-
-      try {
-        const {
-          data: { user: authUser },
-        } = await supabase.current.auth.getUser();
-
-        if (authUser) {
-          await loadUserData(authUser);
-        } else {
-          setUser(null);
-          setInitializing(false);
-        }
-      } catch (error) {
-        console.error("Error during user initialization:", error);
-        // Even on error, ensure we're not stuck in initializing state
+      if (authUser) {
+        await loadUserData(authUser);
+      } else {
         setUser(null);
-        setInitializing(false);
-      } finally {
-        // Always clear initializing state and timeout
-        setInitializing(false);
-        if (initTimeoutRef.current) {
-          clearTimeout(initTimeoutRef.current);
-          initTimeoutRef.current = null;
-        }
       }
+
+      setInitializing(false);
+
+      // Enable auth listener ONLY after initial load is complete
+      authListenerActive.current = true;
     };
 
     init();
-
-    // Cleanup timeout on unmount
-    return () => {
-      if (initTimeoutRef.current) {
-        clearTimeout(initTimeoutRef.current);
-      }
-    };
   }, [loadUserData]);
 
-  // Auth changes - SILENT updates (no loading state)
+  // Auth changes - COMPLETELY DISABLED until initial load completes
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.current.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        // Completely ignore token refresh and initial session events if we already have user
-        // These fire when switching tabs and don't indicate actual auth changes
-        if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
-          // Only update if we don't have a user yet (during initial load)
-          if (!isInitialized.current && session?.user) {
-            await loadUserData(session.user, true);
-          }
-          // Otherwise, completely ignore - we already have the user data
+      async (event: AuthChangeEvent) => {
+        // CRITICAL: Don't process ANY events until auth listener is explicitly enabled
+        if (!authListenerActive.current) {
           return;
         }
 
-        if (session?.user) {
-          // Check if user actually changed
-          const currentUserId = user?.email || null;
-          const newUserId = session.user.email || null;
-          
-          // Only reload if user actually changed or we don't have user yet
-          if (currentUserId !== newUserId || !user) {
-            await loadUserData(session.user, true);
-          }
-          
-          // Ensure we're not stuck in initializing state
-          // NEVER set it to true after initial load
-          if (isInitialized.current) {
-            setInitializing(false);
-          }
-        } else if (event === "SIGNED_OUT") {
+        // Only process explicit sign out events
+        if (event === "SIGNED_OUT") {
           setUser(null);
-          lastUserIdRef.current = null;
+          hasSetInitialTheme.current = false;
           if (typeof window !== "undefined") {
             sessionStorage.removeItem(USER_CACHE_KEY);
           }
-          // Ensure we're not stuck in initializing state
-          setInitializing(false);
+          return;
         }
+
+        // Ignore ALL other events (TOKEN_REFRESHED, INITIAL_SESSION, USER_UPDATED, etc.)
+        // This prevents unnecessary reloads when switching tabs
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [loadUserData, user]);
+  }, []);
 
-  // Handle window focus - ensure we're not stuck in initializing state
+  // Prevent visibility change from triggering auth updates
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleFocus = () => {
-      // Only fix if we're past initial load and stuck in initializing state
-      if (!isInitialized.current) return;
-
-      // If we have a user but are still initializing, just fix the state
-      // Don't reload - we already have the data
-      if (user) {
-        setInitializing(false);
-      }
+    const handleVisibilityChange = () => {
+      // When tab becomes visible again, do nothing
+      // The cached data is sufficient
     };
 
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [user]); // Only depend on user, not loadUserData
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      return () => {
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
+      };
+    }
+  }, []);
 
   const refreshUser = useCallback(async () => {
+    if (isLoadingRef.current) return;
+
     const {
       data: { user: authUser },
     } = await supabase.current.auth.getUser();
 
     if (authUser) {
-      await loadUserData(authUser, true); // Silent refresh
+      await loadUserData(authUser, true);
     }
   }, [loadUserData]);
-
-  // Optimistically update user profile settings (for language/theme changes)
-  const updateUserProfileSettings = useCallback(
-    (updates: Partial<UserProfile["profileSettings"]>) => {
-      setUser((prev) => {
-        if (!prev) return prev;
-        const updated = {
-          ...prev,
-          profileSettings: {
-            ...prev.profileSettings,
-            ...updates,
-          } as UserProfile["profileSettings"],
-        };
-        // Update cache
-        if (typeof window !== "undefined") {
-          try {
-            sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(updated));
-          } catch (error) {
-            console.error("Error updating cache:", error);
-          }
-        }
-        return updated;
-      });
-    },
-    []
-  );
 
   return (
     <UserContext.Provider
