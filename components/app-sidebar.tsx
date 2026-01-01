@@ -45,8 +45,9 @@ export function AppSidebar() {
   const { t, language, setLanguage } = useLanguage();
   const { user, initializing: userInitializing } = useUser();
 
-  // Only show loading on INITIAL load, not on subsequent updates.
-  const showLoading = userInitializing && !user;
+  // Only show loading on INITIAL load when there's no user data at all
+  // Don't show loading if we have cached user or if we're just refreshing
+  const showLoading = userInitializing && user === null;
 
   const navItems = [
     {

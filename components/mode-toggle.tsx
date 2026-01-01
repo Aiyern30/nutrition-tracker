@@ -4,41 +4,19 @@ import * as React from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
+import { useUser } from "@/contexts/user-context";
 
 import { Button } from "@/components/ui/button";
 
 export function ModeToggle() {
   const { setTheme, resolvedTheme } = useTheme();
+  const { user, updateUserProfileSettings } = useUser();
   const [mounted, setMounted] = React.useState(false);
   const supabase = createClient();
 
   React.useEffect(() => {
     setMounted(true);
-
-    // Load theme from profile on mount
-    const loadThemeFromProfile = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("theme")
-          .eq("id", user.id)
-          .single();
-
-        if (profile?.theme) {
-          setTheme(profile.theme);
-        }
-      } catch (error) {
-        console.error("Error loading theme from profile:", error);
-      }
-    };
-
-    loadThemeFromProfile();
-  }, [supabase, setTheme]);
+  }, []);
 
   if (!mounted) {
     return (
@@ -51,14 +29,19 @@ export function ModeToggle() {
 
   const toggleTheme = async () => {
     const newTheme = resolvedTheme === "dark" ? "light" : "dark";
+    
+    // Optimistically update theme in UI and user context
     setTheme(newTheme);
+    if (user) {
+      updateUserProfileSettings({ theme: newTheme });
+    }
 
-    // Save theme to profile
+    // Save theme to profile (don't wait for it)
     try {
       const {
-        data: { user },
+        data: { user: authUser },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!authUser) return;
 
       await supabase
         .from("profiles")
@@ -66,9 +49,11 @@ export function ModeToggle() {
           theme: newTheme,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq("id", authUser.id);
     } catch (error) {
       console.error("Error saving theme to profile:", error);
+      // On error, revert by refreshing user context
+      // But don't revert the theme immediately to avoid flicker
     }
   };
 

@@ -32,11 +32,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const { user, initializing, refreshUser } = useUser();
+  const { user, updateUserProfileSettings } = useUser();
   const supabase = useRef(createClient());
 
   // derive language directly from user profile (no local state / cache)
-  const language: Language = (user?.profileSettings?.language as Language) ?? "en";
+  const language: Language =
+    (user?.profileSettings?.language as Language) ?? "en";
 
   const t = useMemo(() => translations[language], [language]);
 
@@ -49,7 +50,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
         if (!authUser) return;
 
-        const { error } = await supabase.current
+        // Optimistically update the language in the UI immediately
+        updateUserProfileSettings({ language: lang });
+
+        // Update in database (fire and forget - optimistic update is already done)
+        await supabase.current
           .from("profiles")
           .update({
             language: lang,
@@ -57,18 +62,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           })
           .eq("id", authUser.id);
 
-        if (error) {
-          console.error("Error updating language:", error);
-          return;
-        }
-
-        // refresh user context so derived language updates app-wide
-        await refreshUser();
+        // No need to refresh - the optimistic update is sufficient
+        // The next natural data load will sync from the database
       } catch (err) {
         console.error("setLanguage error:", err);
+        // On error, the database update failed but optimistic update remains
+        // This is acceptable - next page load will sync from database
       }
     },
-    [refreshUser]
+    [updateUserProfileSettings]
   );
 
   return (
@@ -77,7 +79,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         language,
         setLanguage,
         t,
-        loading: initializing,
+        loading: false, // Never show loading since we use optimistic updates
       }}
     >
       {children}
