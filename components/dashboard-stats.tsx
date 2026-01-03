@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/contexts/language-context";
+import { format, subDays } from "date-fns";
 import { StatCard } from "@/components/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -35,12 +36,14 @@ interface Profile {
   daily_water_goal: number;
   current_streak: number;
   weight: number;
+  goal_type: string;
 }
 
 export function DashboardStats() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
+  const [weekSleepData, setWeekSleepData] = useState<number[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const supabase = createClient();
 
@@ -54,8 +57,9 @@ export function DashboardStats() {
       if (!user) return;
 
       const today = new Date().toISOString().split("T")[0];
+      const startDate = format(subDays(new Date(), 6), "yyyy-MM-dd");
 
-      const [summaryResult, profileResult] = await Promise.all([
+      const [summaryResult, weeklySleepResult, profileResult] = await Promise.all([
         supabase
           .from("daily_summaries")
           .select("*")
@@ -63,15 +67,31 @@ export function DashboardStats() {
           .eq("date", today)
           .single(),
         supabase
+          .from("daily_summaries")
+          .select("date, sleep_hours")
+          .eq("user_id", user.id)
+          .gte("date", startDate)
+          .order("date", { ascending: true }),
+        supabase
           .from("profiles")
           .select(
-            "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, current_streak, weight"
+            "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, current_streak, weight, goal_type"
           )
           .eq("id", user.id)
           .single(),
       ]);
 
       setDailySummary(summaryResult.data);
+
+      // Process weekly sleep data
+      const summaries = weeklySleepResult.data || [];
+      const last7DaysSleep = Array.from({ length: 7 }, (_, i) => {
+        const d = format(subDays(new Date(), 6 - i), "yyyy-MM-dd");
+        const dayData = summaries.find((s: any) => s.date === d);
+        return Number(dayData?.sleep_hours || 0);
+      });
+      setWeekSleepData(last7DaysSleep);
+
       setProfile(profileResult.data);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -127,10 +147,18 @@ export function DashboardStats() {
         <StatCard
           title="Weight"
           value={`${weight} kg`}
-          subtitle="Current Weight"
+          subtitle={
+            profile?.goal_type
+              ? `Goal: ${profile.goal_type.replace("_", " ")}`
+              : "Current Weight"
+          }
           icon={TrendingUp}
           variant="default"
-          progress={{ value: 75, max: 100, color: "bg-orange-500" }}
+          progress={
+            profile?.goal_type === "maintenance"
+              ? { value: 100, max: 100, color: "bg-green-500" }
+              : undefined
+          }
         />
         <StatCard
           title="Steps"
@@ -155,6 +183,7 @@ export function DashboardStats() {
           customBg="bg-lime-100 dark:bg-lime-900/20"
           customText="text-lime-600 dark:text-lime-400"
           barChart={true}
+          chartData={weekSleepData}
         />
         <StatCard
           title="Water Intake"
