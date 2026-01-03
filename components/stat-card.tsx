@@ -21,6 +21,7 @@ interface StatCardProps {
   customBg?: string;
   customText?: string;
   barChart?: boolean;
+  chartData?: number[];
 }
 
 export function StatCard({
@@ -35,6 +36,7 @@ export function StatCard({
   customBg,
   customText,
   barChart,
+  chartData,
 }: StatCardProps) {
   const variantStyles = {
     default: "text-primary",
@@ -125,18 +127,26 @@ export function StatCard({
           )}
 
           {/* Mini Bar Chart for Sleep */}
-          {barChart && (
+          {barChart && chartData && (
             <div className="flex items-end gap-1 h-8 mt-2 justify-between px-1">
-              {[40, 60, 45, 70, 50, 80, 65].map((h, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "w-1 rounded-t-sm bg-lime-200",
-                    i === 5 ? "bg-lime-500 h-full" : "h-1/2"
-                  )}
-                  style={{ height: `${h}%` }}
-                />
-              ))}
+              {chartData.map((h, i) => {
+                // Normalize height based on max value in data, or default to 100 if all 0
+                const max = Math.max(...chartData, 1);
+                const heightPercentage = Math.min((h / max) * 100, 100);
+
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      "w-1 rounded-t-sm bg-lime-200",
+                      // Highlight the last bar (today/most recent)
+                      i === chartData.length - 1 ? "bg-lime-500" : "bg-lime-200/60"
+                    )}
+                    style={{ height: `${heightPercentage}%` }}
+                    title={`${h} hours`}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
