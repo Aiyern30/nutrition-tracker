@@ -43,13 +43,13 @@ CREATE TABLE public.daily_summaries (
   total_carbs integer DEFAULT 0,
   total_fats integer DEFAULT 0,
   water_intake numeric DEFAULT 0,
-  weight numeric,
-  steps integer DEFAULT 0,
-  sleep_hours numeric DEFAULT 0,
   diet_quality_score text DEFAULT 'B'::text,
   diet_quality_explanation text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  weight numeric,
+  steps integer DEFAULT 0,
+  sleep_hours numeric DEFAULT 0,
   CONSTRAINT daily_summaries_pkey PRIMARY KEY (id),
   CONSTRAINT daily_summaries_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
@@ -118,6 +118,8 @@ CREATE TABLE public.profiles (
   theme text DEFAULT 'system'::text,
   language text DEFAULT 'en'::text,
   units text DEFAULT 'metric'::text,
+  target_weight numeric,
+  starting_weight numeric,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );

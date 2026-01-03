@@ -44,7 +44,7 @@ interface PersonalGoalsProps {
     units: string;
   };
   onFormDataChange: (data: Partial<PersonalGoalsProps["formData"]>) => void;
-  onSave: () => void;
+  onSave: (data?: any) => void;
   saving: boolean;
 }
 
@@ -58,26 +58,47 @@ export function PersonalGoals({
 
   // Define validation schema with proper error messages
   const formSchema = z.object({
-    height: z.number().nullable().optional(),
-    weight: z.number().nullable().optional(),
-    target_weight: z.number().nullable().optional(),
-    daily_calorie_goal: z
-      .number()
-      .min(1, { message: t.profile.personalGoals.errors.calorieInvalid }),
-    daily_protein_goal: z
-      .number()
-      .min(1, { message: t.profile.personalGoals.errors.proteinInvalid }),
-    daily_carbs_goal: z
-      .number()
-      .min(1, { message: t.profile.personalGoals.errors.carbsInvalid }),
-    daily_fats_goal: z
-      .number()
-      .min(1, { message: t.profile.personalGoals.errors.fatsInvalid }),
+    height: z.preprocess(
+      (val) => (val === "" ? null : Number(val)),
+      z.number().nullable().optional()
+    ),
+    weight: z.preprocess(
+      (val) => (val === "" ? null : Number(val)),
+      z.number().nullable().optional()
+    ),
+    target_weight: z.preprocess(
+      (val) => (val === "" ? null : Number(val)),
+      z.number().nullable().optional()
+    ),
+    daily_calorie_goal: z.preprocess(
+      (val) => Number(val),
+      z
+        .number()
+        .min(1, { message: t.profile.personalGoals.errors.calorieInvalid })
+    ),
+    daily_protein_goal: z.preprocess(
+      (val) => Number(val),
+      z
+        .number()
+        .min(1, { message: t.profile.personalGoals.errors.proteinInvalid })
+    ),
+    daily_carbs_goal: z.preprocess(
+      (val) => Number(val),
+      z
+        .number()
+        .min(1, { message: t.profile.personalGoals.errors.carbsInvalid })
+    ),
+    daily_fats_goal: z.preprocess(
+      (val) => Number(val),
+      z
+        .number()
+        .min(1, { message: t.profile.personalGoals.errors.fatsInvalid })
+    ),
     activity_level: z.string(),
     goal_type: z.string(),
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<any>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       height: formData.height,
@@ -108,8 +129,9 @@ export function PersonalGoals({
   }, [formData, form]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    onFormDataChange(values);
-    onSave();
+    // Cast values to conform to parent expectation (preprocess returns proper types)
+    onFormDataChange(values as any);
+    onSave(values);
   };
 
   return (
@@ -144,11 +166,7 @@ export function PersonalGoals({
                         placeholder={formData.units === "metric" ? "170" : "67"}
                         value={field.value ?? ""}
                         onChange={(e) => {
-                          const value = e.target.value
-                            ? parseInt(e.target.value)
-                            : null;
-                          field.onChange(value);
-                          onFormDataChange({ height: value });
+                          field.onChange(e.target.value);
                         }}
                       />
                     </FormControl>
@@ -175,11 +193,7 @@ export function PersonalGoals({
                         }
                         value={field.value ?? ""}
                         onChange={(e) => {
-                          const value = e.target.value
-                            ? parseFloat(e.target.value)
-                            : null;
-                          field.onChange(value);
-                          onFormDataChange({ weight: value });
+                          field.onChange(e.target.value);
                         }}
                       />
                     </FormControl>
@@ -206,11 +220,7 @@ export function PersonalGoals({
                         }
                         value={field.value ?? ""}
                         onChange={(e) => {
-                          const value = e.target.value
-                            ? parseFloat(e.target.value)
-                            : null;
-                          field.onChange(value);
-                          onFormDataChange({ target_weight: value });
+                          field.onChange(e.target.value);
                         }}
                       />
                     </FormControl>
@@ -236,11 +246,7 @@ export function PersonalGoals({
                         min="1"
                         value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value
-                            ? parseInt(e.target.value)
-                            : 0;
-                          field.onChange(value);
-                          onFormDataChange({ daily_calorie_goal: value });
+                          field.onChange(e.target.value);
                         }}
                       />
                     </FormControl>
@@ -263,11 +269,7 @@ export function PersonalGoals({
                         min="1"
                         value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value
-                            ? parseInt(e.target.value)
-                            : 0;
-                          field.onChange(value);
-                          onFormDataChange({ daily_protein_goal: value });
+                          field.onChange(e.target.value);
                         }}
                       />
                     </FormControl>
@@ -290,11 +292,7 @@ export function PersonalGoals({
                         min="1"
                         value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value
-                            ? parseInt(e.target.value)
-                            : 0;
-                          field.onChange(value);
-                          onFormDataChange({ daily_carbs_goal: value });
+                          field.onChange(e.target.value);
                         }}
                       />
                     </FormControl>
@@ -317,11 +315,7 @@ export function PersonalGoals({
                         min="1"
                         value={field.value || ""}
                         onChange={(e) => {
-                          const value = e.target.value
-                            ? parseInt(e.target.value)
-                            : 0;
-                          field.onChange(value);
-                          onFormDataChange({ daily_fats_goal: value });
+                          field.onChange(e.target.value);
                         }}
                       />
                     </FormControl>
