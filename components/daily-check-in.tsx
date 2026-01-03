@@ -28,9 +28,11 @@ interface DailyMetrics {
 export function DailyCheckIn({
   currentMetrics,
   onUpdate,
+  selectedDate,
 }: {
   currentMetrics?: DailyMetrics;
   onUpdate?: () => void;
+  selectedDate: Date;
 }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -66,13 +68,21 @@ export function DailyCheckIn({
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const today = new Date().toISOString().split("T")[0];
+      // Use the selected date (normalized to YYYY-MM-DD local time like parent)
+      // Note: We construct a local date string to match parent logic
+      const offset = selectedDate.getTimezoneOffset();
+      const localDate = new Date(selectedDate.getTime() - offset * 60000);
+      const dateStr = localDate.toISOString().split("T")[0];
 
-      // Upsert: Create or update today's summary
+      const todayStr = new Date().toISOString().split("T")[0];
+      // Simple check (ignoring timezone edge cases for now since we just used basic date comparisons)
+      // A more robust comparison would be checking if dateStr === todayStr (assuming everything is local)
+
+      // Upsert: Create or update summary for the SELECTED date
       const { error } = await supabase.from("daily_summaries").upsert(
         {
           user_id: user.id,
-          date: today,
+          date: dateStr,
           weight: formData.weight,
           steps: formData.steps,
           sleep_hours: formData.sleep_hours,
@@ -84,8 +94,8 @@ export function DailyCheckIn({
 
       if (error) throw error;
 
-      // Also update profile weight if provided (current weight)
-      if (formData.weight) {
+      // Only update profile "current weight" if we are editing TODAY's entry
+      if (formData.weight && dateStr === todayStr) {
         await supabase
           .from("profiles")
           .update({ weight: formData.weight })

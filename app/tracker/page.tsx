@@ -400,12 +400,15 @@ export default function TrackerPage() {
                   water_intake: dailySummary.water_intake,
                 }}
                 onUpdate={fetchDailySummary}
+                selectedDate={selectedDate}
               />
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <StatCard
                 title="Weight"
-                value={`${dailySummary.weight || profile?.weight || 0} kg`}
+                value={
+                  dailySummary.weight ? `${dailySummary.weight} kg` : "-- kg"
+                }
                 subtitle={
                   profile?.target_weight
                     ? `Goal: ${profile.target_weight} kg`
@@ -416,9 +419,9 @@ export default function TrackerPage() {
                 icon={Scale}
                 variant="default"
                 progress={
-                  profile?.target_weight
+                  dailySummary.weight && profile?.target_weight
                     ? {
-                      value: dailySummary.weight || profile?.weight || 0,
+                      value: dailySummary.weight,
                       max: profile.target_weight,
                       color: "bg-primary-500",
                     }
