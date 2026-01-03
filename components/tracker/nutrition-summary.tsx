@@ -216,7 +216,7 @@ export function NutritionSummary({
                     : "text-red-600"
                 )}
               >
-                {waterIntake} / {waterGoal}
+                {waterIntake} / {waterGoal} L
               </span>
             </div>
             <div className="h-2 w-full rounded-full bg-muted">
@@ -239,19 +239,19 @@ export function NutritionSummary({
                 variant="outline"
                 size="icon"
                 className="h-7 w-7"
-                onClick={() => onWaterChange(-1)}
-                disabled={waterIntake === 0}
+                onClick={() => onWaterChange(-0.25)}
+                disabled={waterIntake < 0.25}
               >
                 <Minus className="h-3 w-3" />
               </Button>
               <span className="text-xs font-medium min-w-15 text-center">
-                {waterIntake} {t.dashboard.stats.waterIntake.subtitle}
+                {waterIntake} L
               </span>
               <Button
                 variant="outline"
                 size="icon"
                 className="h-7 w-7"
-                onClick={() => onWaterChange(1)}
+                onClick={() => onWaterChange(0.25)}
               >
                 <Plus className="h-3 w-3" />
               </Button>

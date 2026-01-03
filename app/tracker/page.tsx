@@ -308,13 +308,15 @@ export default function TrackerPage() {
 
       const dateStr = selectedDate.toISOString().split("T")[0];
       const newWaterIntake = Math.max(0, dailySummary.water_intake + delta);
+      // Ensure we treat it as float
+      const roundedWater = Math.round(newWaterIntake * 100) / 100;
 
       // Update or insert daily_summaries record
       const { error } = await supabase.from("daily_summaries").upsert(
         {
           user_id: user.id,
           date: dateStr,
-          water_intake: newWaterIntake,
+          water_intake: roundedWater,
           total_calories: dailySummary.total_calories,
           total_protein: dailySummary.total_protein,
           total_carbs: dailySummary.total_carbs,
