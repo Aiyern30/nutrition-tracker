@@ -43,6 +43,7 @@ interface Profile {
   disliked_foods: string[];
   height: number | null;
   weight: number | null;
+  target_weight: number | null;
   meal_reminders: boolean;
   weekly_summary: boolean;
   ai_insights: boolean;
@@ -76,6 +77,7 @@ export default function ProfilePage() {
     disliked_foods: [] as string[],
     height: null as number | null,
     weight: null as number | null,
+    target_weight: null as number | null,
     meal_reminders: true,
     weekly_summary: true,
     ai_insights: true,
@@ -121,6 +123,7 @@ export default function ProfilePage() {
           disliked_foods: data.disliked_foods || [],
           height: data.height,
           weight: data.weight,
+          target_weight: data.target_weight,
           meal_reminders: data.meal_reminders ?? true,
           weekly_summary: data.weekly_summary ?? true,
           ai_insights: data.ai_insights ?? true,
@@ -147,25 +150,28 @@ export default function ProfilePage() {
     }
   }, [userLoading, user, fetchProfile]);
 
-  const handleUpdateGoals = async () => {
+  const handleUpdateGoals = async (updates?: Partial<typeof formData>) => {
     try {
       setSaving(true);
       setError(null);
 
       if (!profile?.id) return;
 
+      const dataToUpdate = { ...formData, ...updates };
+
       const { error } = await supabase
         .from("profiles")
         .update({
-          daily_calorie_goal: formData.daily_calorie_goal,
-          daily_protein_goal: formData.daily_protein_goal,
-          daily_carbs_goal: formData.daily_carbs_goal,
-          daily_fats_goal: formData.daily_fats_goal,
-          daily_water_goal: formData.daily_water_goal,
-          activity_level: formData.activity_level,
-          goal_type: formData.goal_type,
-          height: formData.height,
-          weight: formData.weight,
+          daily_calorie_goal: dataToUpdate.daily_calorie_goal,
+          daily_protein_goal: dataToUpdate.daily_protein_goal,
+          daily_carbs_goal: dataToUpdate.daily_carbs_goal,
+          daily_fats_goal: dataToUpdate.daily_fats_goal,
+          daily_water_goal: dataToUpdate.daily_water_goal,
+          activity_level: dataToUpdate.activity_level,
+          goal_type: dataToUpdate.goal_type,
+          height: dataToUpdate.height,
+          weight: dataToUpdate.weight,
+          target_weight: dataToUpdate.target_weight,
           updated_at: new Date().toISOString(),
         })
         .eq("id", profile.id);
@@ -391,6 +397,7 @@ export default function ProfilePage() {
                     goal_type: formData.goal_type,
                     height: formData.height,
                     weight: formData.weight,
+                    target_weight: formData.target_weight,
                     units: formData.units,
                   }}
                   onFormDataChange={(updates) =>
