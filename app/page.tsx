@@ -27,6 +27,7 @@ import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { DailySummaryCard } from "@/components/daily-summary-card";
 import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
+import { RecommendedMenu } from "@/components/recommended-menu";
 
 export default function DashboardPage() {
   useLocalizedMetadata({ page: "dashboard" });
@@ -128,6 +129,9 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Recommended Menu */}
+          <RecommendedMenu />
         </main>
       </SidebarInset>
     </SidebarProvider>
