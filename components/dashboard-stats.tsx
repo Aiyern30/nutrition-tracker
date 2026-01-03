@@ -37,6 +37,7 @@ interface Profile {
   current_streak: number;
   weight: number;
   goal_type: string;
+  target_weight: number | null;
 }
 
 export function DashboardStats() {
@@ -75,7 +76,7 @@ export function DashboardStats() {
         supabase
           .from("profiles")
           .select(
-            "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, current_streak, weight, goal_type"
+            "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, current_streak, weight, goal_type, target_weight"
           )
           .eq("id", user.id)
           .single(),
@@ -148,9 +149,11 @@ export function DashboardStats() {
           title="Weight"
           value={`${weight} kg`}
           subtitle={
-            profile?.goal_type
-              ? `Goal: ${profile.goal_type.replace("_", " ")}`
-              : "Current Weight"
+            profile?.target_weight
+              ? `Goal: ${profile.target_weight} kg`
+              : profile?.goal_type
+                ? `Goal: ${profile.goal_type.replace("_", " ")}`
+                : "Current Weight"
           }
           icon={TrendingUp}
           variant="default"
