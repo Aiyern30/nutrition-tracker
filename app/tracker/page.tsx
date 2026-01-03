@@ -406,9 +406,15 @@ export default function TrackerPage() {
                 icon={Scale}
                 variant="default"
                 progress={
-                  profile?.goal_type === "maintenance"
-                    ? { value: 100, max: 100, color: "bg-green-500" }
-                    : undefined
+                  profile?.target_weight
+                    ? {
+                      value: dailySummary.weight || profile?.weight || 0,
+                      max: profile.target_weight,
+                      color: "bg-primary-500",
+                    }
+                    : profile?.goal_type === "maintenance"
+                      ? { value: 100, max: 100, color: "bg-green-500" }
+                      : undefined
                 }
               />
               <StatCard
