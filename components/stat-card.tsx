@@ -41,7 +41,7 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        "transition-all duration-300",
+        "transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-primary/20 cursor-pointer",
         isRefreshing && "ring-2 ring-primary/20"
       )}
     >
@@ -91,9 +91,7 @@ export function StatCard({
               isRefreshing && "animate-pulse"
             )}
           >
-            <Icon
-              className={cn("h-6 w-6", variantStyles[variant])}
-            />
+            <Icon className={cn("h-6 w-6", variantStyles[variant])} />
           </div>
         </div>
       </CardContent>
