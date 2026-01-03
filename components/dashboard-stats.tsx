@@ -124,8 +124,11 @@ export function DashboardStats() {
     );
   }
 
-  // Prioritize daily logged weight, fallback to profile weight
-  const weight = dailySummary?.weight || profile?.weight || 0;
+
+  const todayDate = new Date();
+
+  const weight = dailySummary?.weight;
+
   const steps = dailySummary?.steps || 0;
   const sleepHours = dailySummary?.sleep_hours || 0;
   const waterIntake = dailySummary?.water_intake || 0;
@@ -136,18 +139,21 @@ export function DashboardStats() {
       <div className="absolute -top-10 right-0 z-20">
         <DailyCheckIn
           currentMetrics={{
-            weight,
+            // For check-in pre-filling, usage of profile weight as fallback is okay if daily is missing?
+            // User likely wants to see what they logged.
+            weight: weight || profile?.weight || undefined,
             steps,
             sleep_hours: sleepHours,
             water_intake: waterIntake,
           }}
           onUpdate={fetchData}
+          selectedDate={todayDate}
         />
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Weight"
-          value={`${weight} kg`}
+          value={weight ? `${weight} kg` : "-- kg"}
           subtitle={
             profile?.target_weight
               ? `Goal: ${profile.target_weight} kg`
@@ -158,7 +164,7 @@ export function DashboardStats() {
           icon={TrendingUp}
           variant="default"
           progress={
-            profile?.target_weight
+            weight && profile?.target_weight
               ? {
                 value: weight,
                 max: profile.target_weight,
