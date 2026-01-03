@@ -17,6 +17,8 @@ import { MealSection } from "@/components/tracker/meal-section";
 import { DateNavigation } from "@/components/tracker/date-navigation";
 import { NutritionSummary } from "@/components/tracker/nutrition-summary";
 import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
+import { Scale, Footprints, Moon } from "lucide-react";
+import { DailyCheckIn } from "@/components/daily-check-in";
 
 interface FoodEntry {
   id: string;
@@ -55,6 +57,9 @@ interface DailySummary {
   total_fats: number;
   water_intake: number;
   diet_quality_score: string;
+  weight: number;
+  steps: number;
+  sleep_hours: number;
 }
 
 interface Profile {
@@ -80,6 +85,9 @@ export default function TrackerPage() {
     total_fats: 0,
     water_intake: 0,
     diet_quality_score: "B",
+    weight: 0,
+    steps: 0,
+    sleep_hours: 0,
   });
   const supabase = createClient();
 
@@ -133,6 +141,9 @@ export default function TrackerPage() {
             total_fats: 0,
             water_intake: 0,
             diet_quality_score: "B",
+            weight: 0,
+            steps: 0,
+            sleep_hours: 0,
           });
         } else {
           throw error;
@@ -145,6 +156,9 @@ export default function TrackerPage() {
           total_fats: data.total_fats || 0,
           water_intake: data.water_intake || 0,
           diet_quality_score: data.diet_quality_score || "B",
+          weight: data.weight || 0,
+          steps: data.steps || 0,
+          sleep_hours: data.sleep_hours || 0,
         });
       }
     } catch (error) {
@@ -335,18 +349,23 @@ export default function TrackerPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
+        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6 shadow-sm">
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">{t.tracker.title}</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                {t.tracker.title}
+              </h1>
+              <p className="text-base text-muted-foreground mt-1">
                 {t.tracker.subtitle}
               </p>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => setIsAddFoodOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
+              <Button
+                onClick={() => setIsAddFoodOpen(true)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 h-11 px-6 rounded-full font-semibold transition-all hover:scale-105"
+              >
+                <Plus className="mr-2 h-5 w-5" />
                 {t.tracker.addFood}
               </Button>
             </div>
@@ -354,6 +373,74 @@ export default function TrackerPage() {
         </header>
 
         <main className="flex-1 space-y-6 p-6">
+          {/* Vitals Strip */}
+          <div className="bg-card rounded-2xl border p-4 flex items-center justify-between mb-2 shadow-sm relative overflow-hidden">
+            <div className="flex-1 flex items-center justify-around gap-4 z-10 relavtive">
+              {/* Weight */}
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center">
+                  <Scale className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                    Weight
+                  </p>
+                  <p className="text-lg font-bold text-foreground">
+                    {dailySummary.weight > 0
+                      ? `${dailySummary.weight} kg`
+                      : "--"}
+                  </p>
+                </div>
+              </div>
+              <div className="h-8 w-px bg-border" />
+              {/* Steps */}
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-600 flex items-center justify-center">
+                  <Footprints className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                    Steps
+                  </p>
+                  <p className="text-lg font-bold text-foreground">
+                    {dailySummary.steps > 0
+                      ? dailySummary.steps.toLocaleString()
+                      : "--"}
+                  </p>
+                </div>
+              </div>
+              <div className="h-8 w-px bg-border" />
+              {/* Sleep */}
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-lime-100 dark:bg-lime-900/20 text-lime-600 flex items-center justify-center">
+                  <Moon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                    Sleep
+                  </p>
+                  <p className="text-lg font-bold text-foreground">
+                    {dailySummary.sleep_hours > 0
+                      ? `${dailySummary.sleep_hours} hr`
+                      : "--"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="ml-6 border-l pl-6">
+              <DailyCheckIn
+                currentMetrics={{
+                  weight: dailySummary.weight,
+                  steps: dailySummary.steps,
+                  sleep_hours: dailySummary.sleep_hours,
+                  water_intake: dailySummary.water_intake,
+                }}
+                onUpdate={fetchDailySummary}
+              />
+            </div>
+          </div>
+
           <DateNavigation
             selectedDate={selectedDate}
             onDateChange={changeDate}
