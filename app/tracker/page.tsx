@@ -19,6 +19,7 @@ import { NutritionSummary } from "@/components/tracker/nutrition-summary";
 import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 import { Scale, Footprints, Moon } from "lucide-react";
 import { DailyCheckIn } from "@/components/daily-check-in";
+import { StatCard } from "@/components/stat-card";
 
 interface FoodEntry {
   id: string;
@@ -68,6 +69,7 @@ interface Profile {
   daily_carbs_goal: number;
   daily_fats_goal: number;
   daily_water_goal: number;
+  weight: number;
 }
 
 export default function TrackerPage() {
@@ -102,7 +104,7 @@ export default function TrackerPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal"
+          "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, weight"
         )
         .eq("id", user.id)
         .single();
@@ -375,70 +377,57 @@ export default function TrackerPage() {
         </header>
 
         <main className="flex-1 space-y-6 p-6">
-          {/* Vitals Strip */}
-          <div className="bg-card rounded-2xl border p-4 flex items-center justify-between mb-2 shadow-sm relative overflow-hidden">
-            <div className="flex-1 flex items-center justify-around gap-4 z-10 relavtive">
-              {/* Weight */}
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center">
-                  <Scale className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
-                    Weight
-                  </p>
-                  <p className="text-lg font-bold text-foreground">
-                    {dailySummary.weight > 0
-                      ? `${dailySummary.weight} kg`
-                      : "--"}
-                  </p>
-                </div>
-              </div>
-              <div className="h-8 w-px bg-border" />
-              {/* Steps */}
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-600 flex items-center justify-center">
-                  <Footprints className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
-                    Steps
-                  </p>
-                  <p className="text-lg font-bold text-foreground">
-                    {dailySummary.steps > 0
-                      ? dailySummary.steps.toLocaleString()
-                      : "--"}
-                  </p>
-                </div>
-              </div>
-              <div className="h-8 w-px bg-border" />
-              {/* Sleep */}
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-lime-100 dark:bg-lime-900/20 text-lime-600 flex items-center justify-center">
-                  <Moon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
-                    Sleep
-                  </p>
-                  <p className="text-lg font-bold text-foreground">
-                    {dailySummary.sleep_hours > 0
-                      ? `${dailySummary.sleep_hours} hr`
-                      : "--"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="ml-6 border-l pl-6">
+          {/* Vitals Stats Grid */}
+          <div className="relative mb-6">
+            <div className="absolute -top-10 right-0 z-20">
               <DailyCheckIn
                 currentMetrics={{
-                  weight: dailySummary.weight,
+                  weight: dailySummary.weight || profile?.weight || 0,
                   steps: dailySummary.steps,
                   sleep_hours: dailySummary.sleep_hours,
                   water_intake: dailySummary.water_intake,
                 }}
                 onUpdate={fetchDailySummary}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <StatCard
+                title="Weight"
+                value={`${dailySummary.weight || profile?.weight || 0} kg`}
+                subtitle="Current Weight"
+                icon={Scale}
+                variant="default"
+                progress={{ value: 75, max: 100, color: "bg-orange-500" }}
+              />
+              <StatCard
+                title="Steps"
+                value={`${
+                  dailySummary.steps > 0
+                    ? dailySummary.steps.toLocaleString()
+                    : "0"
+                }`}
+                subtitle="steps"
+                icon={Footprints}
+                variant="warning"
+                customBg="bg-blue-100 dark:bg-blue-900/20"
+                customText="text-blue-600 dark:text-blue-400"
+                progress={{
+                  value: Math.min((dailySummary.steps / 10000) * 100, 100),
+                  max: 100,
+                  color: "bg-blue-500",
+                }}
+              />
+              <StatCard
+                title="Sleep"
+                value={`${
+                  dailySummary.sleep_hours > 0 ? dailySummary.sleep_hours : "0"
+                }`}
+                subtitle="hours"
+                icon={Moon}
+                variant="success"
+                customBg="bg-lime-100 dark:bg-lime-900/20"
+                customText="text-lime-600 dark:text-lime-400"
+                barChart={true}
               />
             </div>
           </div>
