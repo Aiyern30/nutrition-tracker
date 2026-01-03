@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   Dialog,
@@ -43,6 +43,18 @@ export function DailyCheckIn({
     sleep_hours: currentMetrics?.sleep_hours || undefined,
     water_intake: currentMetrics?.water_intake || undefined,
   });
+
+  // Sync state with props when dialog opens or metrics change
+  useEffect(() => {
+    if (open && currentMetrics) {
+      setFormData({
+        weight: currentMetrics.weight,
+        steps: currentMetrics.steps,
+        sleep_hours: currentMetrics.sleep_hours,
+        water_intake: currentMetrics.water_intake,
+      });
+    }
+  }, [open, currentMetrics]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
