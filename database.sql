@@ -42,7 +42,7 @@ CREATE TABLE public.daily_summaries (
   total_protein integer DEFAULT 0,
   total_carbs integer DEFAULT 0,
   total_fats integer DEFAULT 0,
-  water_intake integer DEFAULT 0,
+  water_intake numeric DEFAULT 0,
   weight numeric,
   steps integer DEFAULT 0,
   sleep_hours numeric DEFAULT 0,
