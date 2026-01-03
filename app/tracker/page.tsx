@@ -70,6 +70,8 @@ interface Profile {
   daily_fats_goal: number;
   daily_water_goal: number;
   weight: number;
+  target_weight: number | null;
+  goal_type: string;
 }
 
 export default function TrackerPage() {
@@ -104,7 +106,7 @@ export default function TrackerPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, weight"
+          "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, weight, target_weight, goal_type"
         )
         .eq("id", user.id)
         .single();
@@ -394,18 +396,27 @@ export default function TrackerPage() {
               <StatCard
                 title="Weight"
                 value={`${dailySummary.weight || profile?.weight || 0} kg`}
-                subtitle="Current Weight"
+                subtitle={
+                  profile?.target_weight
+                    ? `Goal: ${profile.target_weight} kg`
+                    : profile?.goal_type
+                      ? `Goal: ${profile.goal_type.replace("_", " ")}`
+                      : "Current Weight"
+                }
                 icon={Scale}
                 variant="default"
-                progress={{ value: 75, max: 100, color: "bg-orange-500" }}
+                progress={
+                  profile?.goal_type === "maintenance"
+                    ? { value: 100, max: 100, color: "bg-green-500" }
+                    : undefined
+                }
               />
               <StatCard
                 title="Steps"
-                value={`${
-                  dailySummary.steps > 0
-                    ? dailySummary.steps.toLocaleString()
-                    : "0"
-                }`}
+                value={`${dailySummary.steps > 0
+                  ? dailySummary.steps.toLocaleString()
+                  : "0"
+                  }`}
                 subtitle="steps"
                 icon={Footprints}
                 variant="warning"
@@ -419,9 +430,8 @@ export default function TrackerPage() {
               />
               <StatCard
                 title="Sleep"
-                value={`${
-                  dailySummary.sleep_hours > 0 ? dailySummary.sleep_hours : "0"
-                }`}
+                value={`${dailySummary.sleep_hours > 0 ? dailySummary.sleep_hours : "0"
+                  }`}
                 subtitle="hours"
                 icon={Moon}
                 variant="success"

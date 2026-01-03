@@ -40,6 +40,7 @@ interface PersonalGoalsProps {
     goal_type: string;
     height: number | null;
     weight: number | null;
+    target_weight: number | null;
     units: string;
   };
   onFormDataChange: (data: Partial<PersonalGoalsProps["formData"]>) => void;
@@ -59,6 +60,7 @@ export function PersonalGoals({
   const formSchema = z.object({
     height: z.number().nullable().optional(),
     weight: z.number().nullable().optional(),
+    target_weight: z.number().nullable().optional(),
     daily_calorie_goal: z
       .number()
       .min(1, { message: t.profile.personalGoals.errors.calorieInvalid }),
@@ -80,6 +82,7 @@ export function PersonalGoals({
     defaultValues: {
       height: formData.height,
       weight: formData.weight,
+      target_weight: formData.target_weight,
       daily_calorie_goal: formData.daily_calorie_goal,
       daily_protein_goal: formData.daily_protein_goal,
       daily_carbs_goal: formData.daily_carbs_goal,
@@ -94,6 +97,7 @@ export function PersonalGoals({
     form.reset({
       height: formData.height,
       weight: formData.weight,
+      target_weight: formData.target_weight,
       daily_calorie_goal: formData.daily_calorie_goal,
       daily_protein_goal: formData.daily_protein_goal,
       daily_carbs_goal: formData.daily_carbs_goal,
@@ -124,7 +128,7 @@ export function PersonalGoals({
             className="space-y-6"
           >
             {/* Height and Weight */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-3">
               <FormField
                 control={form.control}
                 name="height"
@@ -176,6 +180,37 @@ export function PersonalGoals({
                             : null;
                           field.onChange(value);
                           onFormDataChange({ weight: value });
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="target_weight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Goal Weight (
+                      {formData.units === "metric" ? "kg" : "lbs"})
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder={
+                          formData.units === "metric" ? "65.0" : "143.3"
+                        }
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                            ? parseFloat(e.target.value)
+                            : null;
+                          field.onChange(value);
+                          onFormDataChange({ target_weight: value });
                         }}
                       />
                     </FormControl>
@@ -384,7 +419,7 @@ export function PersonalGoals({
             </Button>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </CardContent >
+    </Card >
   );
 }
