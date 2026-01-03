@@ -13,6 +13,14 @@ interface StatCardProps {
   };
   variant?: "default" | "success" | "destructive" | "warning";
   isRefreshing?: boolean;
+  progress?: {
+    value: number;
+    max: number;
+    color: string;
+  };
+  customBg?: string;
+  customText?: string;
+  barChart?: boolean;
 }
 
 export function StatCard({
@@ -23,6 +31,10 @@ export function StatCard({
   trend,
   variant = "default",
   isRefreshing = false,
+  progress,
+  customBg,
+  customText,
+  barChart,
 }: StatCardProps) {
   const variantStyles = {
     default: "text-primary",
@@ -41,58 +53,92 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        "transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-primary/20 cursor-pointer",
+        "transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-primary/20 cursor-pointer overflow-hidden relative",
         isRefreshing && "ring-2 ring-primary/20"
       )}
     >
-      <CardContent className="pt-6">
-        <div className="flex items-center justify-between">
+      <CardContent className="pt-6 relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          {/* Header with Value and Icon */}
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p
-              className={cn(
-                "text-2xl font-bold transition-all duration-300",
-                variant === "destructive" && "text-red-500",
-                variant === "success" && "text-green-500",
-                variant === "warning" && "text-yellow-500",
-                isRefreshing && "opacity-70"
-              )}
-            >
-              {value}
-            </p>
+            <div className="flex items-center gap-2">
+              <Icon
+                className={cn("h-5 w-5", customText || variantStyles[variant])}
+              />
+              <span className="text-2xl font-bold">{value}</span>
+            </div>
+          </div>
+
+          {/* Simple Icon Badge if no custom bg */}
+          {!customBg && (
+            <div className={cn("rounded-full p-2", iconBgStyles[variant])}>
+              <Icon className={cn("h-5 w-5", variantStyles[variant])} />
+            </div>
+          )}
+
+          {/* Custom BG Icon Badge */}
+          {customBg && (
+            <div className={cn("rounded-full p-2", customBg, customText)}>
+              <Icon className="h-5 w-5" />
+            </div>
+          )}
+        </div>
+
+        {/* Content Body */}
+        <div className="space-y-3">
+          {/* Subtitle / Trend */}
+          <div className="flex items-center justify-between">
             {subtitle && (
-              <p
-                className={cn(
-                  "text-xs text-muted-foreground transition-all duration-300",
-                  variant === "destructive" && "text-red-500/70 font-medium",
-                  variant === "success" && "text-green-500/70 font-medium",
-                  isRefreshing && "opacity-70"
-                )}
-              >
+              <p className="text-xs text-muted-foreground font-medium">
                 {subtitle}
               </p>
             )}
             {trend && (
               <p
                 className={cn(
-                  "text-xs font-medium transition-all duration-300",
-                  trend.isPositive ? "text-green-500" : "text-red-500",
-                  isRefreshing && "opacity-70"
+                  "text-xs font-medium",
+                  trend.isPositive ? "text-green-500" : "text-red-500"
                 )}
               >
                 {trend.isPositive ? "↑" : "↓"} {trend.value}%
               </p>
             )}
           </div>
-          <div
-            className={cn(
-              "rounded-full p-3 transition-all duration-300",
-              iconBgStyles[variant],
-              isRefreshing && "animate-pulse"
-            )}
-          >
-            <Icon className={cn("h-6 w-6", variantStyles[variant])} />
-          </div>
+
+          {/* Progress Bar */}
+          {progress && (
+            <div className="h-2 w-full bg-secondary/20 rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-500",
+                  progress.color
+                )}
+                style={{
+                  width: `${Math.min(
+                    (progress.value / progress.max) * 100,
+                    100
+                  )}%`,
+                }}
+              />
+            </div>
+          )}
+
+          {/* Mini Bar Chart for Sleep */}
+          {barChart && (
+            <div className="flex items-end gap-1 h-8 mt-2 justify-between px-1">
+              {[40, 60, 45, 70, 50, 80, 65].map((h, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-1 rounded-t-sm bg-lime-200",
+                    i === 5 ? "bg-lime-500 h-full" : "h-1/2"
+                  )}
+                  style={{ height: `${h}%` }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

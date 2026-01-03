@@ -31,6 +31,7 @@ interface Profile {
   daily_fats_goal: number;
   daily_water_goal: number;
   current_streak: number;
+  weight: number;
 }
 
 export function DashboardStats() {
@@ -99,109 +100,59 @@ export function DashboardStats() {
     );
   }
 
-  const consumedCalories = dailySummary?.total_calories || 0;
-  const calorieGoal = profile?.daily_calorie_goal || 2000;
-  const caloriesExceeded = consumedCalories > calorieGoal;
-
-  const consumedProtein = dailySummary?.total_protein || 0;
-  const proteinGoal = profile?.daily_protein_goal || 150;
-
-  const consumedCarbs = dailySummary?.total_carbs || 0;
-  const carbsGoal = profile?.daily_carbs_goal || 200;
-
-  const consumedFats = dailySummary?.total_fats || 0;
-  const fatsGoal = profile?.daily_fats_goal || 65;
-
+  const weight = profile?.weight || 0;
+  const steps = 8050; // Mock data as column doesn't exist
+  const sleepHours = 6.5; // Mock data as column doesn't exist
   const waterIntake = dailySummary?.water_intake || 0;
   const waterGoal = profile?.daily_water_goal || 8;
-  const waterComplete = waterIntake >= waterGoal;
-
-  // Calculate diet score dynamically
-  const dietScore = calculateDietScore(
-    consumedCalories,
-    consumedProtein,
-    consumedCarbs,
-    consumedFats,
-    calorieGoal,
-    proteinGoal,
-    carbsGoal,
-    fatsGoal
-  );
-
-  const streak = profile?.current_streak || 0;
-
-  const calorieTrend =
-    calorieGoal > 0
-      ? Math.round((consumedCalories / calorieGoal) * 100) - 100
-      : 0;
-
-  // Translation object for status messages
-  const statusTranslations = {
-    overGoal: t.dashboard.todaysSummary.overGoal,
-    remaining: t.dashboard.todaysSummary.remaining,
-    optimal: t.dashboard.todaysSummary.almostThere,
-    aboveRecommended: t.dashboard.todaysSummary.overGoal,
-    belowTarget: t.dashboard.todaysSummary.remaining,
-    toGo: t.dashboard.todaysSummary.remaining,
-    goalReached: t.dashboard.stats.dietScore.subtitle,
-    goalAchieved: t.dashboard.stats.dietScore.subtitle,
-    noGoalSet: "",
-  };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        title={t.dashboard.stats.dailyCalories.title}
-        value={consumedCalories.toLocaleString()}
-        subtitle={getStatusMessage(
-          consumedCalories,
-          calorieGoal,
-          "calories",
-          statusTranslations
-        )}
-        icon={caloriesExceeded ? AlertTriangle : Flame}
-        trend={
-          calorieTrend !== 0
-            ? {
-                value: Math.abs(calorieTrend),
-                isPositive: calorieTrend < 0,
-              }
-            : undefined
-        }
-        variant={caloriesExceeded ? "destructive" : "default"}
-      />
-      <StatCard
-        title={t.dashboard.stats.waterIntake.title}
-        value={`${waterIntake} / ${waterGoal}`}
-        subtitle={getStatusMessage(
-          waterIntake,
-          waterGoal,
-          "water",
-          statusTranslations
-        )}
-        icon={Droplets}
-        variant={waterComplete ? "success" : "default"}
-      />
-      <StatCard
-        title={t.dashboard.stats.dietScore.title}
-        value={dietScore}
-        subtitle={t.dashboard.stats.dietScore.subtitle}
-        icon={Award}
-        variant={
-          getDietScoreColor(dietScore) as
-            | "success"
-            | "destructive"
-            | "warning"
-            | "default"
-        }
-      />
-      <StatCard
-        title={t.dashboard.stats.streak.title}
-        value={`${streak} ${t.dashboard.stats.streak.days}`}
-        subtitle={t.dashboard.stats.streak.subtitle}
+        title="Weight"
+        value={`${weight} kg`}
+        subtitle="Current Weight"
         icon={TrendingUp}
-        variant={streak > 0 ? "success" : "default"}
+        variant="default" // Image uses white/clean look, let's keep default
+        progress={{ value: 75, max: 100, color: "bg-orange-500" }} // Mock progress for visual
+      />
+      <StatCard
+        title="Steps"
+        value={`${steps}`}
+        subtitle="steps"
+        icon={Flame}
+        variant="warning"
+        customBg="bg-orange-100 dark:bg-orange-900/20"
+        customText="text-orange-600 dark:text-orange-400"
+        progress={{ value: 76, max: 100, color: "bg-orange-500" }}
+      />
+      <StatCard
+        title="Sleep"
+        value={`${sleepHours}`}
+        subtitle="hours"
+        icon={Clock}
+        variant="success"
+        customBg="bg-lime-100 dark:bg-lime-900/20"
+        customText="text-lime-600 dark:text-lime-400"
+        barChart={true} // Add a mini bar chart visual if possible or just standard
+      />
+      <StatCard
+        title="Water Intake"
+        value={`${waterIntake} L`}
+        subtitle={`${waterGoal} litre goal`}
+        icon={Droplets}
+        variant="default"
+        customBg="bg-blue-100 dark:bg-blue-900/20"
+        customText="text-blue-600 dark:text-blue-400"
+        progress={{
+          value: (waterIntake / waterGoal) * 100,
+          max: 100,
+          color: "bg-blue-500",
+        }}
       />
     </div>
   );
 }
+
+// Helper icons needed additionally
+import { Clock } from "lucide-react";
