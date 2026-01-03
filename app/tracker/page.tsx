@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/contexts/language-context";
 import {
@@ -126,7 +127,7 @@ export default function TrackerPage() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const dateStr = selectedDate.toISOString().split("T")[0];
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
 
       const { data, error } = await supabase
         .from("daily_summaries")
@@ -177,7 +178,7 @@ export default function TrackerPage() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const dateStr = selectedDate.toISOString().split("T")[0];
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
 
       const { data, error } = await supabase
         .from("food_logs")
@@ -249,7 +250,7 @@ export default function TrackerPage() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const dateStr = selectedDate.toISOString().split("T")[0];
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
 
       const insertData = {
         user_id: user.id,
@@ -310,7 +311,7 @@ export default function TrackerPage() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const dateStr = selectedDate.toISOString().split("T")[0];
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
       const newWaterIntake = Math.max(0, dailySummary.water_intake + delta);
       // Ensure we treat it as float
       const roundedWater = Math.round(newWaterIntake * 100) / 100;
@@ -351,6 +352,10 @@ export default function TrackerPage() {
     setSelectedDate(newDate);
   };
 
+  const setDate = (date: Date) => {
+    setSelectedDate(date);
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -380,7 +385,12 @@ export default function TrackerPage() {
 
         <main className="flex-1 space-y-6 p-6">
           {/* Vitals Stats Grid */}
-          <div className="relative mb-6">
+          <div className="relative space-y-6">
+            <DateNavigation
+              selectedDate={selectedDate}
+              onDateChange={changeDate}
+              onDateSelect={setDate}
+            />
             <div className="absolute -top-10 right-0 z-20">
               <DailyCheckIn
                 currentMetrics={{
@@ -448,10 +458,7 @@ export default function TrackerPage() {
             </div>
           </div>
 
-          <DateNavigation
-            selectedDate={selectedDate}
-            onDateChange={changeDate}
-          />
+
 
           <NutritionSummary
             totalCalories={dailySummary.total_calories}
