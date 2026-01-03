@@ -41,8 +41,10 @@ export default function DashboardPage() {
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">{t.dashboard.title}</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                {t.dashboard.title}
+              </h1>
+              <p className="text-base text-muted-foreground mt-1">
                 {t.dashboard.greeting}
               </p>
             </div>
@@ -67,51 +69,59 @@ export default function DashboardPage() {
             <DailySummaryCard />
 
             {/* Quick Actions */}
-            <Card>
+            <Card className="transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-primary/20 h-full">
               <CardHeader>
                 <CardTitle>{t.dashboard.quickActions.title}</CardTitle>
                 <CardDescription>
                   {t.dashboard.quickActions.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 <Button
                   asChild
-                  className="w-full justify-start bg-transparent"
+                  className="w-full justify-start h-14 text-base font-medium transition-all hover:bg-primary/5 hover:text-primary hover:border-primary/20"
                   variant="outline"
                 >
                   <Link href="/chat">
-                    <MessageSquare className="mr-2 h-4 w-4" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100/50 text-blue-600 mr-3">
+                      <MessageSquare className="h-4 w-4" />
+                    </div>
                     {t.dashboard.quickActions.askAI}
                   </Link>
                 </Button>
                 <Button
                   asChild
-                  className="w-full justify-start bg-transparent"
+                  className="w-full justify-start h-14 text-base font-medium transition-all hover:bg-primary/5 hover:text-primary hover:border-primary/20"
                   variant="outline"
                 >
                   <Link href="/tracker">
-                    <PlusCircle className="mr-2 h-4 w-4" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100/50 text-green-600 mr-3">
+                      <PlusCircle className="h-4 w-4" />
+                    </div>
                     {t.dashboard.quickActions.logMeal}
                   </Link>
                 </Button>
                 <Button
                   asChild
-                  className="w-full justify-start bg-transparent"
+                  className="w-full justify-start h-14 text-base font-medium transition-all hover:bg-primary/5 hover:text-primary hover:border-primary/20"
                   variant="outline"
                 >
                   <Link href="/analyzer">
-                    <ScanSearch className="mr-2 h-4 w-4" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100/50 text-purple-600 mr-3">
+                      <ScanSearch className="h-4 w-4" />
+                    </div>
                     {t.dashboard.quickActions.analyzeFood}
                   </Link>
                 </Button>
                 <Button
                   asChild
-                  className="w-full justify-start bg-transparent"
+                  className="w-full justify-start h-14 text-base font-medium transition-all hover:bg-primary/5 hover:text-primary hover:border-primary/20"
                   variant="outline"
                 >
                   <Link href="/meal-planner">
-                    <Utensils className="mr-2 h-4 w-4" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100/50 text-orange-600 mr-3">
+                      <Utensils className="h-4 w-4" />
+                    </div>
                     {t.dashboard.quickActions.getMealPlan}
                   </Link>
                 </Button>

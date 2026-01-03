@@ -105,7 +105,7 @@ export function DailySummaryCard() {
   };
 
   return (
-    <Card className="lg:col-span-2">
+    <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-primary/20">
       <CardHeader>
         <CardTitle>{t.dashboard.todaysSummary.title}</CardTitle>
         <CardDescription>

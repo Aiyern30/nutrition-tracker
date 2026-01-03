@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import {
-  Home,
+  LayoutDashboard,
   MessageSquare,
   Utensils,
   ScanSearch,
@@ -11,6 +11,7 @@ import {
   LogOut,
   ChevronDown,
   Globe,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -52,7 +53,7 @@ export function AppSidebar() {
   const navItems = [
     {
       title: t.sidebar.dashboard,
-      icon: Home,
+      icon: LayoutDashboard,
       href: "/",
     },
     {
@@ -108,9 +109,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-4 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary overflow-hidden">
+      <SidebarHeader className="border-b border-sidebar-border/50 pb-4">
+        <div className="flex items-center gap-3 px-4 py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20 overflow-hidden">
             <Image
               src="/Logo.png"
               alt="Logo"
@@ -121,7 +122,7 @@ export function AppSidebar() {
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-semibold text-sidebar-foreground">
+            <span className="text-xl font-bold text-sidebar-foreground tracking-tight">
               {t.sidebar.appName}
             </span>
             <span className="text-xs text-muted-foreground">
@@ -141,14 +142,20 @@ export function AppSidebar() {
                 asChild
                 isActive={pathname === item.href}
                 className={cn(
-                  "w-full px-4",
-                  pathname === item.href &&
-                    "bg-sidebar-accent text-sidebar-accent-foreground"
+                  "w-full px-4 py-6 h-12 transition-all duration-200 ease-in-out font-medium",
+                  pathname === item.href
+                    ? "bg-primary text-primary-foreground shadow-md font-semibold hover:bg-primary/90 hover:text-primary-foreground"
+                    : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground/80"
                 )}
               >
-                <Link href={item.href}>
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
+                <Link href={item.href} className="flex items-center gap-3">
+                  <item.icon
+                    className={cn(
+                      "h-5 w-5",
+                      pathname === item.href ? "stroke-[2.5px]" : "stroke-[2px]"
+                    )}
+                  />
+                  <span className="text-base">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
