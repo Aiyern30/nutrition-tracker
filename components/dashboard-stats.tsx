@@ -21,6 +21,9 @@ interface DailySummary {
   total_carbs: number;
   total_fats: number;
   water_intake: number;
+  weight: number;
+  steps: number;
+  sleep_hours: number;
   diet_quality_score: string;
 }
 
@@ -62,7 +65,7 @@ export function DashboardStats() {
         supabase
           .from("profiles")
           .select(
-            "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, current_streak"
+            "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, current_streak, weight"
           )
           .eq("id", user.id)
           .single(),
@@ -100,59 +103,77 @@ export function DashboardStats() {
     );
   }
 
-  const weight = profile?.weight || 0;
-  const steps = 8050; // Mock data as column doesn't exist
-  const sleepHours = 6.5; // Mock data as column doesn't exist
+  // Prioritize daily logged weight, fallback to profile weight
+  const weight = dailySummary?.weight || profile?.weight || 0;
+  const steps = dailySummary?.steps || 0;
+  const sleepHours = dailySummary?.sleep_hours || 0;
   const waterIntake = dailySummary?.water_intake || 0;
   const waterGoal = profile?.daily_water_goal || 8;
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        title="Weight"
-        value={`${weight} kg`}
-        subtitle="Current Weight"
-        icon={TrendingUp}
-        variant="default" // Image uses white/clean look, let's keep default
-        progress={{ value: 75, max: 100, color: "bg-orange-500" }} // Mock progress for visual
-      />
-      <StatCard
-        title="Steps"
-        value={`${steps}`}
-        subtitle="steps"
-        icon={Flame}
-        variant="warning"
-        customBg="bg-orange-100 dark:bg-orange-900/20"
-        customText="text-orange-600 dark:text-orange-400"
-        progress={{ value: 76, max: 100, color: "bg-orange-500" }}
-      />
-      <StatCard
-        title="Sleep"
-        value={`${sleepHours}`}
-        subtitle="hours"
-        icon={Clock}
-        variant="success"
-        customBg="bg-lime-100 dark:bg-lime-900/20"
-        customText="text-lime-600 dark:text-lime-400"
-        barChart={true} // Add a mini bar chart visual if possible or just standard
-      />
-      <StatCard
-        title="Water Intake"
-        value={`${waterIntake} L`}
-        subtitle={`${waterGoal} litre goal`}
-        icon={Droplets}
-        variant="default"
-        customBg="bg-blue-100 dark:bg-blue-900/20"
-        customText="text-blue-600 dark:text-blue-400"
-        progress={{
-          value: (waterIntake / waterGoal) * 100,
-          max: 100,
-          color: "bg-blue-500",
-        }}
-      />
+    <div className="relative">
+      <div className="absolute -top-10 right-0 z-20">
+        <DailyCheckIn
+          currentMetrics={{
+            weight,
+            steps,
+            sleep_hours: sleepHours,
+            water_intake: waterIntake,
+          }}
+          onUpdate={fetchData}
+        />
+      </div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Weight"
+          value={`${weight} kg`}
+          subtitle="Current Weight"
+          icon={TrendingUp}
+          variant="default"
+          progress={{ value: 75, max: 100, color: "bg-orange-500" }}
+        />
+        <StatCard
+          title="Steps"
+          value={`${steps}`}
+          subtitle="steps"
+          icon={Flame}
+          variant="warning"
+          customBg="bg-orange-100 dark:bg-orange-900/20"
+          customText="text-orange-600 dark:text-orange-400"
+          progress={{
+            value: Math.min((steps / 10000) * 100, 100),
+            max: 100,
+            color: "bg-orange-500",
+          }}
+        />
+        <StatCard
+          title="Sleep"
+          value={`${sleepHours}`}
+          subtitle="hours"
+          icon={Clock}
+          variant="success"
+          customBg="bg-lime-100 dark:bg-lime-900/20"
+          customText="text-lime-600 dark:text-lime-400"
+          barChart={true}
+        />
+        <StatCard
+          title="Water Intake"
+          value={`${waterIntake} L`}
+          subtitle={`${waterGoal} litre goal`}
+          icon={Droplets}
+          variant="default"
+          customBg="bg-blue-100 dark:bg-blue-900/20"
+          customText="text-blue-600 dark:text-blue-400"
+          progress={{
+            value: (waterIntake / waterGoal) * 100,
+            max: 100,
+            color: "bg-blue-500",
+          }}
+        />
+      </div>
     </div>
   );
 }
 
-// Helper icons needed additionally
 import { Clock } from "lucide-react";
+import { DailyCheckIn } from "@/components/daily-check-in";
