@@ -56,6 +56,7 @@
     "title": "Smart Meal Planner",
     "subtitle": "AI-Powered Personalized Nutrition",
     "today": "Today",
+    "pickDate": "Pick a date",
     "noPlan": "No plan for",
     "generatePlanInfo": "Generate a personalized meal plan based on your health goals and dietary preferences using Ernie AI.",
     "setupProfile": "Set up Profile",

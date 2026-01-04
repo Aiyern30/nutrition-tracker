@@ -45,6 +45,13 @@ import {
   Tooltip as RechartsTooltip,
 } from "recharts";
 import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 // Types matched to Backend response
 interface Nutrition {
@@ -309,7 +316,7 @@ export default function MealPlannerPage() {
       <button
         key={date.toISOString()}
         onClick={() => setSelectedDate(date)}
-        className={`flex flex-col items-center justify-center min-w-[4.5rem] p-3 rounded-2xl transition-all border ${
+        className={`flex flex-col items-center justify-center min-w-18 p-3 rounded-2xl transition-all border ${
           isSelected
             ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
             : "bg-card hover:bg-accent/50 border-transparent"
@@ -365,16 +372,49 @@ export default function MealPlannerPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground hidden md:inline-block">
-                {format(selectedDate, "MMMM yyyy", { locale: dateLocale })}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedDate(new Date())}
-              >
-                {t.mealPlanner.today}
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <span className="hidden md:inline-block">
+                      {selectedDate
+                        ? format(selectedDate, "PPP", { locale: dateLocale })
+                        : t.mealPlanner.pickDate}
+                    </span>
+                    <span className="md:hidden">
+                      {selectedDate
+                        ? format(selectedDate, "MM/dd", { locale: dateLocale })
+                        : t.mealPlanner.pickDate}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    initialFocus
+                    locale={dateLocale}
+                    modifiers={{
+                      hasPlan: (date) => {
+                        const dateStr = format(date, "yyyy-MM-dd");
+                        return dateStr in mealPlans;
+                      },
+                    }}
+                    modifiersClassNames={{
+                      hasPlan:
+                        "relative after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:bg-primary after:rounded-full after:opacity-70 data-[selected=true]:after:bg-primary-foreground",
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </header>
@@ -477,7 +517,7 @@ export default function MealPlannerPage() {
 
               {/* Daily Summary */}
               <div className="grid lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2 border-none shadow-md bg-gradient-to-br from-primary/5 to-transparent">
+                <Card className="lg:col-span-2 border-none shadow-md bg-linear-to-br from-primary/5 to-transparent">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-primary" />
