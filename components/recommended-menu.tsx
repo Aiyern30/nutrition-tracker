@@ -85,16 +85,13 @@ export function RecommendedMenu() {
           {t.dashboard.recommendedMenu.title}
         </h2>
       </div>
-      <ScrollArea className="w-full whitespace-nowrap pb-4">
-        <div className="flex w-max space-x-4">
-          {meals.map((meal) => (
-            <div key={meal.id} className="w-[300px]">
-              <MealCard meal={meal} />
-            </div>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+        {meals.map((meal) => (
+          <div key={meal.id} className="h-full">
+            <MealCard meal={meal} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -117,7 +114,7 @@ function MealCard({ meal }: { meal: MealPlan }) {
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/20">
+    <div className="group relative flex flex-col h-full overflow-hidden rounded-2xl border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/20">
       <div className="mb-4 flex items-center justify-between">
         <span
           className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getMealColor(
@@ -139,7 +136,7 @@ function MealCard({ meal }: { meal: MealPlan }) {
       </div>
 
       <h3
-        className="mb-2 text-lg font-bold leading-tight truncate"
+        className="mb-2 text-lg font-bold leading-tight"
         title={meal.description || t.dashboard.recommendedMenu.healthyChoice}
       >
         {meal.description || t.dashboard.recommendedMenu.healthyOption}
