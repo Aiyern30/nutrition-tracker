@@ -132,10 +132,12 @@ export function DailySummaryCard() {
     <Card className="lg:col-span-2 shadow-sm border border-border/50 rounded-[2rem] overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-bold">Calories Intake</CardTitle>
+          <CardTitle className="text-lg font-bold">
+            {t.dashboard.todaysSummary.title}
+          </CardTitle>
           <div className="flex bg-muted/50 rounded-full px-2 py-0.5">
             <span className="text-xs text-muted-foreground font-medium">
-              Today
+              {t.dashboard.todaysSummary.today}
             </span>
           </div>
         </div>
@@ -194,7 +196,7 @@ export function DailySummaryCard() {
                     {caloriesLeft}
                   </span>
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    kcal left
+                    {t.dashboard.todaysSummary.kcalLeft}
                   </span>
                 </div>
               </div>
@@ -212,11 +214,11 @@ export function DailySummaryCard() {
                     <span className="text-xl font-bold leading-none">
                       {consumedCalories}{" "}
                       <span className="text-xs font-medium text-muted-foreground">
-                        kcal
+                        {t.dashboard.units.kcal}
                       </span>
                     </span>
                     <span className="text-xs text-muted-foreground font-medium">
-                      Eaten calories
+                      {t.dashboard.todaysSummary.eatenCalories}
                     </span>
                   </div>
                 </div>
@@ -228,11 +230,11 @@ export function DailySummaryCard() {
                     <span className="text-xl font-bold leading-none">
                       {burnedCalories}{" "}
                       <span className="text-xs font-medium text-muted-foreground">
-                        kcal
+                        {t.dashboard.units.kcal}
                       </span>
                     </span>
                     <span className="text-xs text-muted-foreground font-medium">
-                      Burned calories
+                      {t.dashboard.todaysSummary.burnedCalories}
                     </span>
                   </div>
                 </div>
@@ -248,7 +250,8 @@ export function DailySummaryCard() {
                           {macro.current}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          / {macro.target}g
+                          / {macro.target}
+                          {t.dashboard.units.g}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

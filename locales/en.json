@@ -524,7 +524,8 @@
       }
     },
     "todaysSummary": {
-      "title": "Today's Summary",
+      "title": "Calories Intake",
+      "today": "Today",
       "description": "Track your nutrition progress throughout the day",
       "protein": "Protein",
       "carbs": "Carbs",
@@ -536,8 +537,20 @@
       "aboveRecommended": "Above recommended",
       "belowTarget": "Below target",
       "goalReached": "Goal reached!",
-      "noGoalSet": "No goal set"
+      "noGoalSet": "No goal set",
+      "kcalLeft": "kcal left",
+      "eatenCalories": "Eaten calories",
+      "burnedCalories": "Burned calories"
     },
+    "units": {
+      "kg": "kg",
+      "g": "g",
+      "kcal": "kcal",
+      "stepsLeft": "left",
+      "litreLeft": "litre left",
+      "litre": "litre"
+    },
+    "todayOverview": "Today's Overview",
     "recommendedMenu": {
       "title": "Recommended Menu",
       "noPlan": "No meal plan generated for today.",
