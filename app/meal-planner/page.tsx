@@ -34,6 +34,8 @@ import {
   RefreshCw,
   Sparkles,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -308,6 +310,10 @@ export default function MealPlannerPage() {
     }
   };
 
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(
+    startOfWeek(new Date(), { weekStartsOn: 1 })
+  );
+
   const isPending =
     pendingPlan && isSameDay(new Date(pendingPlan.date), selectedDate);
   const currentPlan = isPending
@@ -316,27 +322,60 @@ export default function MealPlannerPage() {
 
   const getDayButton = (date: Date) => {
     const isSelected = isSameDay(date, selectedDate);
+    const isToday = isSameDay(date, new Date());
+    const hasPlan = mealPlans[format(date, "yyyy-MM-dd")];
+
     return (
       <button
         key={date.toISOString()}
         onClick={() => setSelectedDate(date)}
-        className={`flex flex-col items-center justify-center min-w-18 p-3 rounded-2xl transition-all border ${
+        className={`relative flex flex-col items-center justify-center min-w-[60px] sm:min-w-[68px] lg:min-w-[76px] p-2.5 sm:p-3 lg:p-4 rounded-xl sm:rounded-2xl transition-all border-2 snap-center shrink-0 ${
           isSelected
             ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105"
-            : "bg-card hover:bg-accent/50 border-transparent"
+            : isToday
+            ? "bg-primary/10 text-primary border-primary/30"
+            : "bg-card hover:bg-accent/50 border-transparent hover:border-border"
         }`}
       >
-        <span className="text-xs font-medium opacity-80">
+        <span
+          className={`text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1 ${
+            isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+          }`}
+        >
           {format(date, "EEE", { locale: dateLocale })}
         </span>
-        <span className="text-xl font-bold">{format(date, "d")}</span>
+        <span className="text-lg sm:text-xl font-bold">
+          {format(date, "d")}
+        </span>
+        {hasPlan && !isSelected && (
+          <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary" />
+        )}
       </button>
     );
   };
 
+  // Generate week dates based on current week start
   const weekDates = Array.from({ length: 7 }, (_, i) =>
-    addDays(startOfWeek(selectedDate, { weekStartsOn: 1 }), i)
+    addDays(currentWeekStart, i)
   );
+
+  // Generate 3-day view for mobile (yesterday, today, tomorrow)
+  const today = new Date();
+  const mobileDates = [addDays(today, -1), today, addDays(today, 1)];
+
+  const goToPreviousWeek = () => {
+    setCurrentWeekStart(addDays(currentWeekStart, -7));
+  };
+
+  const goToNextWeek = () => {
+    setCurrentWeekStart(addDays(currentWeekStart, 7));
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
+    setSelectedDate(today);
+  };
 
   // Pie chart data
   const macroData = currentPlan
@@ -424,9 +463,52 @@ export default function MealPlannerPage() {
         </header>
 
         <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
-          {/* Calendar Strip */}
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2 md:justify-center">
-            {weekDates.map(getDayButton)}
+          {/* Calendar Navigation */}
+          <div className="space-y-3">
+            {/* Desktop: Full week with navigation */}
+            <div className="hidden md:flex items-center gap-2 lg:gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToPreviousWeek}
+                className="shrink-0 h-9 w-9"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+
+              <div className="flex gap-2 lg:gap-3 flex-1 justify-center overflow-hidden">
+                {weekDates.map(getDayButton)}
+              </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToNextWeek}
+                className="shrink-0 h-9 w-9"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Mobile: 3-day view */}
+            <div className="md:hidden">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground">
+                  {format(selectedDate, "MMMM yyyy", { locale: dateLocale })}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToToday}
+                  className="h-7 text-xs px-3"
+                >
+                  {t.mealPlanner.today || "Today"}
+                </Button>
+              </div>
+              <div className="flex gap-2 sm:gap-3 justify-center">
+                {mobileDates.map(getDayButton)}
+              </div>
+            </div>
           </div>
 
           {!currentPlan ? (
