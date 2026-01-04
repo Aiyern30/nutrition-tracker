@@ -38,15 +38,20 @@ export default function DashboardPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
+        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-6">
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            <div className="flex flex-col">
+              <h1 className="text-xl font-semibold leading-tight tracking-tight">
                 {t.dashboard.title}
               </h1>
-              <p className="text-base text-muted-foreground mt-1">
-                {t.dashboard.greeting}
+              <p className="text-xs text-muted-foreground">
+                {new Date().toLocaleDateString(undefined, {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </p>
             </div>
           </div>

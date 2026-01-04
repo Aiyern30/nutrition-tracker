@@ -136,20 +136,23 @@ export function DashboardStats() {
   const waterGoal = profile?.daily_water_goal || 8;
 
   return (
-    <div className="relative">
-      <div className="absolute -top-10 right-0 z-20">
-        <DailyCheckIn
-          currentMetrics={{
-            // For check-in pre-filling, usage of profile weight as fallback is okay if daily is missing?
-            // User likely wants to see what they logged.
-            weight: weight || profile?.weight || undefined,
-            steps,
-            sleep_hours: sleepHours,
-            water_intake: waterIntake,
-          }}
-          onUpdate={fetchData}
-          selectedDate={todayDate}
-        />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold tracking-tight">
+          Today's Overview
+        </h2>
+        <div className="z-20">
+          <DailyCheckIn
+            currentMetrics={{
+              weight: weight || profile?.weight || undefined,
+              steps,
+              sleep_hours: sleepHours,
+              water_intake: waterIntake,
+            }}
+            onUpdate={fetchData}
+            selectedDate={todayDate}
+          />
+        </div>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
