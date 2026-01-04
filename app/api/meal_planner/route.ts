@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { createClient } from "@/lib/supabase/server";
 
 const ERNIE_API_KEY = process.env.ERNIE_API_KEY;
+const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY; // Add this to your .env
 
 // Initialize OpenAI client for Baidu Ernie
 const client = new OpenAI({
@@ -17,6 +19,46 @@ interface UserProfile {
   dietary_restrictions?: string[];
   disliked_foods?: string[];
   goal_type?: string;
+}
+
+// Function to get food image from Unsplash
+async function getUnsplashFoodImage(
+  mealName: string,
+  items: string[]
+): Promise<string | null> {
+  try {
+    // Create a search query from meal name and items
+    const searchQuery = `${mealName} ${items.slice(0, 2).join(" ")} food`;
+
+    const response = await fetch(
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
+        searchQuery
+      )}&per_page=1&orientation=landscape`,
+      {
+        headers: {
+          Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Unsplash API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.results[0]?.urls?.regular || null;
+  } catch (error) {
+    console.error("Unsplash image fetch error:", error);
+    return null;
+  }
+}
+
+// Alternative: Use placeholder images with custom text
+function getPlaceholderImage(mealName: string): string {
+  return `https://placehold.co/1024x576/2563eb/ffffff/png?text=${encodeURIComponent(
+    mealName
+  )}&font=roboto`;
 }
 
 export async function POST(request: NextRequest) {
@@ -140,7 +182,7 @@ export async function POST(request: NextRequest) {
     const messages = [{ role: "user" as const, content: prompt }];
 
     const response = await client.chat.completions.create({
-      model: "ernie-4.0-8k-latest",
+      model: "ernie-4.0-turbo-8k",
       messages: messages,
       temperature: 0.85,
       max_completion_tokens: 2048,
@@ -158,6 +200,52 @@ export async function POST(request: NextRequest) {
         const jsonStr = resultText.substring(startIdx, endIdx);
         try {
           const mealPlan = JSON.parse(jsonStr);
+
+          // ---------------------------------------------------------
+          // Image Generation Logic - Using Unsplash
+          // ---------------------------------------------------------
+          try {
+            // Add images to each meal
+            await Promise.all(
+              mealPlan.meals.map(async (meal: any, index: number) => {
+                try {
+                  let imageUrl = null;
+
+                  // Try to get image from Unsplash if API key is available
+                  if (UNSPLASH_ACCESS_KEY) {
+                    imageUrl = await getUnsplashFoodImage(
+                      meal.name,
+                      meal.items
+                    );
+                  }
+
+                  // Fallback to placeholder if Unsplash fails or no API key
+                  if (!imageUrl) {
+                    imageUrl = getPlaceholderImage(meal.name);
+                  }
+
+                  meal.image_url = imageUrl;
+                } catch (innerErr) {
+                  console.error(
+                    `Failed to get image for meal ${index}:`,
+                    innerErr
+                  );
+                  // Use placeholder as final fallback
+                  meal.image_url = getPlaceholderImage(meal.name);
+                }
+              })
+            );
+          } catch (imgError) {
+            console.error(
+              "Image generation process failed (non-critical):",
+              imgError
+            );
+            // Add placeholder images for all meals
+            mealPlan.meals.forEach((meal: any) => {
+              meal.image_url = getPlaceholderImage(meal.name);
+            });
+          }
+
           return NextResponse.json({
             success: true,
             plan: mealPlan,
