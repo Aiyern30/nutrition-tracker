@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/contexts/language-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -20,6 +21,7 @@ interface MealPlan {
 }
 
 export function RecommendedMenu() {
+  const { t } = useLanguage();
   const [meals, setMeals] = useState<MealPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
@@ -66,11 +68,11 @@ export function RecommendedMenu() {
     return (
       <Card className="col-span-full">
         <CardHeader>
-          <CardTitle>Recommended Menu</CardTitle>
+          <CardTitle>{t.dashboard.recommendedMenu.title}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
           <Utensils className="h-12 w-12 opacity-20 mb-4" />
-          <p>No meal plan generated for today.</p>
+          <p>{t.dashboard.recommendedMenu.noPlan}</p>
         </CardContent>
       </Card>
     );
@@ -79,7 +81,9 @@ export function RecommendedMenu() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold tracking-tight">Recommended Menu</h2>
+        <h2 className="text-xl font-bold tracking-tight">
+          {t.dashboard.recommendedMenu.title}
+        </h2>
       </div>
       <ScrollArea className="w-full whitespace-nowrap pb-4">
         <div className="flex w-max space-x-4">
@@ -96,6 +100,7 @@ export function RecommendedMenu() {
 }
 
 function MealCard({ meal }: { meal: MealPlan }) {
+  const { t } = useLanguage();
   const getMealColor = (type: string) => {
     switch (type.toLowerCase()) {
       case "breakfast":
@@ -119,7 +124,13 @@ function MealCard({ meal }: { meal: MealPlan }) {
             meal.meal_type
           )}`}
         >
-          {meal.meal_type}
+          {
+            (t.tracker.meals as any)[
+              meal.meal_type.toLowerCase() === "snack"
+                ? "snacks"
+                : meal.meal_type.toLowerCase()
+            ]
+          }
         </span>
         <div className="flex items-center text-xs font-medium text-muted-foreground">
           <Flame className="mr-1 h-3.5 w-3.5" />
@@ -129,9 +140,9 @@ function MealCard({ meal }: { meal: MealPlan }) {
 
       <h3
         className="mb-2 text-lg font-bold leading-tight truncate"
-        title={meal.description || "Healthy Choice"}
+        title={meal.description || t.dashboard.recommendedMenu.healthyChoice}
       >
-        {meal.description || "Healthy Meal Option"}
+        {meal.description || t.dashboard.recommendedMenu.healthyOption}
       </h3>
 
       <div className="mb-4 flex flex-wrap gap-2">

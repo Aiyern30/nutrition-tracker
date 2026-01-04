@@ -474,7 +474,8 @@
       },
       "waterIntake": {
         "title": "Water Intake",
-        "subtitle": "glasses today"
+        "subtitle": "glasses today",
+        "goal": "{{target}} litre goal"
       },
       "dietScore": {
         "title": "Diet Score",
@@ -484,6 +485,20 @@
         "title": "Streak",
         "subtitle": "Keep it up!",
         "days": "days"
+      },
+      "weight": {
+        "title": "Weight",
+        "goal": "Goal: {{target}} kg",
+        "current": "Current Weight",
+        "maintenance": "Maintenance"
+      },
+      "steps": {
+        "title": "Steps",
+        "subtitle": "steps"
+      },
+      "sleep": {
+        "title": "Sleep",
+        "subtitle": "hours"
       }
     },
     "todaysSummary": {
@@ -500,6 +515,12 @@
       "belowTarget": "Below target",
       "goalReached": "Goal reached!",
       "noGoalSet": "No goal set"
+    },
+    "recommendedMenu": {
+      "title": "Recommended Menu",
+      "noPlan": "No meal plan generated for today.",
+      "healthyChoice": "Healthy Choice",
+      "healthyOption": "Healthy Meal Option"
     },
     "quickActions": {
       "title": "Quick Actions",

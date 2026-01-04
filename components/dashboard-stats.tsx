@@ -153,14 +153,20 @@ export function DashboardStats() {
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Weight"
+          title={t.dashboard.stats.weight.title}
           value={weight ? `${weight} kg` : "-- kg"}
           subtitle={
             profile?.target_weight
-              ? `Goal: ${profile.target_weight} kg`
+              ? t.dashboard.stats.weight.goal.replace(
+                  "{{target}}",
+                  String(profile.target_weight)
+                )
               : profile?.goal_type
-              ? `Goal: ${profile.goal_type.replace("_", " ")}`
-              : "Current Weight"
+              ? t.dashboard.stats.weight.goal.replace(
+                  "{{target}}",
+                  profile.goal_type.replace("_", " ")
+                )
+              : t.dashboard.stats.weight.current
           }
           icon={TrendingUp}
           variant="default"
@@ -177,9 +183,9 @@ export function DashboardStats() {
           }
         />
         <StatCard
-          title="Steps"
+          title={t.dashboard.stats.steps.title}
           value={`${steps}`}
-          subtitle="steps"
+          subtitle={t.dashboard.stats.steps.subtitle}
           icon={Flame}
           variant="warning"
           customBg="bg-orange-100 dark:bg-orange-900/20"
@@ -191,9 +197,9 @@ export function DashboardStats() {
           }}
         />
         <StatCard
-          title="Sleep"
+          title={t.dashboard.stats.sleep.title}
           value={`${sleepHours}`}
-          subtitle="hours"
+          subtitle={t.dashboard.stats.sleep.subtitle}
           icon={Clock}
           variant="success"
           customBg="bg-lime-100 dark:bg-lime-900/20"
@@ -202,9 +208,12 @@ export function DashboardStats() {
           chartData={weekSleepData}
         />
         <StatCard
-          title="Water Intake"
+          title={t.dashboard.stats.waterIntake.title}
           value={`${waterIntake} L`}
-          subtitle={`${waterGoal} litre goal`}
+          subtitle={t.dashboard.stats.waterIntake.goal.replace(
+            "{{target}}",
+            String(waterGoal)
+          )}
           icon={Droplets}
           variant="default"
           customBg="bg-blue-100 dark:bg-blue-900/20"
