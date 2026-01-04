@@ -83,11 +83,18 @@ export default function ChatPage() {
       if (user) {
         setUserId(user.id);
         await fetchConversations(user.id);
-        fetchSuggestions(user.id);
       }
     };
     initUser();
   }, [supabase]);
+
+  // Re-fetch suggestions when user logs in or language changes
+  useEffect(() => {
+    if (userId) {
+      fetchSuggestions(userId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, language]);
 
   const fetchSuggestions = async (uid: string) => {
     try {
