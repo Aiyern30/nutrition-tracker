@@ -474,7 +474,8 @@
       },
       "waterIntake": {
         "title": "饮水量",
-        "subtitle": "杯今天"
+        "subtitle": "杯今天",
+        "goal": "目标: {{target}} 升"
       },
       "dietScore": {
         "title": "饮食评分",
@@ -484,6 +485,20 @@
         "title": "连续天数",
         "subtitle": "保持下去！",
         "days": "天"
+      },
+      "weight": {
+        "title": "体重",
+        "goal": "目标: {{target}} kg",
+        "current": "当前体重",
+        "maintenance": "维持"
+      },
+      "steps": {
+        "title": "步数",
+        "subtitle": "步"
+      },
+      "sleep": {
+        "title": "睡眠",
+        "subtitle": "小时"
       }
     },
     "todaysSummary": {
@@ -500,6 +515,12 @@
       "belowTarget": "低于目标",
       "goalReached": "达成目标！",
       "noGoalSet": "未设置目标"
+    },
+    "recommendedMenu": {
+      "title": "推荐菜单",
+      "noPlan": "今日未生成膳食计划。",
+      "healthyChoice": "健康选择",
+      "healthyOption": "健康膳食选项"
     },
     "quickActions": {
       "title": "快速操作",
