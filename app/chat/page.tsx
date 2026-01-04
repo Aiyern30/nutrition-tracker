@@ -63,12 +63,17 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<string[]>([]);
   const router = useRouter();
   const supabase = createClient();
   const { language, t } = useLanguage();
 
-  // Use prompts from translation, ensuring it defaults to an empty array if undefined
+  // Use prompts from translation as fallback
   const suggestedPrompts = Array.isArray(t.chat?.prompts) ? t.chat.prompts : [];
+
+  // Effective suggestions: dynamic if available, otherwise static
+  const displayPrompts =
+    dynamicSuggestions.length > 0 ? dynamicSuggestions : suggestedPrompts;
 
   useEffect(() => {
     const initUser = async () => {
@@ -77,11 +82,59 @@ export default function ChatPage() {
       } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-        fetchConversations(user.id);
+        await fetchConversations(user.id);
+        fetchSuggestions(user.id);
       }
     };
     initUser();
   }, [supabase]);
+
+  const fetchSuggestions = async (uid: string) => {
+    try {
+      // Get the most recent conversation's messages
+      const { data, error } = await supabase
+        .from("conversations")
+        .select("messages")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !data || !data.messages || !Array.isArray(data.messages)) {
+        return;
+      }
+
+      // Take the last 6 messages for context
+      const lastMessages = data.messages.slice(-6).map((m: any) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      if (lastMessages.length === 0) return;
+
+      const response = await fetch("/api/chat/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: lastMessages,
+          language: language,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (
+          result.suggestions &&
+          Array.isArray(result.suggestions) &&
+          result.suggestions.length > 0
+        ) {
+          setDynamicSuggestions(result.suggestions);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch suggestions:", err);
+    }
+  };
 
   const fetchConversations = async (uid: string) => {
     // Select only metadata, not the heavy messages array
@@ -361,7 +414,7 @@ export default function ChatPage() {
                     {t.chat.suggestedQuestions}
                   </p>
                   <div className="grid gap-3 md:grid-cols-2">
-                    {suggestedPrompts.map((prompt, i) => (
+                    {displayPrompts.map((prompt, i) => (
                       <Card
                         key={i}
                         className="cursor-pointer transition-colors hover:bg-accent/5"
