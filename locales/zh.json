@@ -404,6 +404,27 @@
     "of": "共",
     "progress": "进度"
   },
+  "dailyCheckIn": {
+    "title": "每日打卡",
+    "description": "记录您的每日健康指标以追踪您的进度。",
+    "srLogStats": "记录每日统计",
+    "weight": "体重",
+    "steps": "步数",
+    "sleep": "睡眠",
+    "water": "饮水",
+    "units": {
+      "kg": "千克",
+      "steps": "步",
+      "hours": "小时",
+      "hrs": "小时",
+      "liters": "升",
+      "l": "升"
+    },
+    "save": "保存指标",
+    "saving": "保存中...",
+    "success": "每日统计更新成功！",
+    "error": "更新每日统计失败。"
+  },
   "tracker": {
     "title": "饮食追踪器",
     "subtitle": "记录和追踪您的每日膳食",

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/contexts/language-context";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ export function DailyCheckIn({
   onUpdate?: () => void;
   selectedDate: Date;
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -102,13 +104,13 @@ export function DailyCheckIn({
           .eq("id", user.id);
       }
 
-      toast.success("Daily stats updated successfully!");
+      toast.success(t.dailyCheckIn.success);
       setOpen(false);
       onUpdate?.();
       router.refresh();
     } catch (error) {
       console.error("Error updating stats:", error);
-      toast.error("Failed to update daily stats.");
+      toast.error(t.dailyCheckIn.error);
     } finally {
       setLoading(false);
     }
@@ -123,15 +125,13 @@ export function DailyCheckIn({
           className="h-8 w-8 p-0 rounded-full hover:bg-muted"
         >
           <PenLine className="h-4 w-4" />
-          <span className="sr-only">Log Daily Stats</span>
+          <span className="sr-only">{t.dailyCheckIn.srLogStats}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Daily Check-in</DialogTitle>
-          <DialogDescription>
-            Log your daily health metrics to track your progress.
-          </DialogDescription>
+          <DialogTitle>{t.dailyCheckIn.title}</DialogTitle>
+          <DialogDescription>{t.dailyCheckIn.description}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -139,14 +139,15 @@ export function DailyCheckIn({
               htmlFor="weight"
               className="text-right flex items-center justify-end gap-2"
             >
-              <Scale className="h-4 w-4 text-orange-500" /> Weight
+              <Scale className="h-4 w-4 text-orange-500" />{" "}
+              {t.dailyCheckIn.weight}
             </Label>
             <div className="col-span-3 flex items-center gap-2">
               <Input
                 id="weight"
                 type="number"
                 step="0.1"
-                placeholder="kg"
+                placeholder={t.dailyCheckIn.units.kg}
                 value={formData.weight || ""}
                 onChange={(e) =>
                   setFormData({
@@ -155,7 +156,9 @@ export function DailyCheckIn({
                   })
                 }
               />
-              <span className="text-sm text-muted-foreground w-8">kg</span>
+              <span className="text-sm text-muted-foreground w-8">
+                {t.dailyCheckIn.units.kg}
+              </span>
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -163,13 +166,14 @@ export function DailyCheckIn({
               htmlFor="steps"
               className="text-right flex items-center justify-end gap-2"
             >
-              <Footprints className="h-4 w-4 text-orange-500" /> Steps
+              <Footprints className="h-4 w-4 text-orange-500" />{" "}
+              {t.dailyCheckIn.steps}
             </Label>
             <div className="col-span-3">
               <Input
                 id="steps"
                 type="number"
-                placeholder="steps"
+                placeholder={t.dailyCheckIn.units.steps}
                 value={formData.steps || ""}
                 onChange={(e) =>
                   setFormData({
@@ -185,14 +189,14 @@ export function DailyCheckIn({
               htmlFor="sleep"
               className="text-right flex items-center justify-end gap-2"
             >
-              <Moon className="h-4 w-4 text-lime-500" /> Sleep
+              <Moon className="h-4 w-4 text-lime-500" /> {t.dailyCheckIn.sleep}
             </Label>
             <div className="col-span-3 flex items-center gap-2">
               <Input
                 id="sleep"
                 type="number"
                 step="0.5"
-                placeholder="hours"
+                placeholder={t.dailyCheckIn.units.hours}
                 value={formData.sleep_hours || ""}
                 onChange={(e) =>
                   setFormData({
@@ -201,7 +205,9 @@ export function DailyCheckIn({
                   })
                 }
               />
-              <span className="text-sm text-muted-foreground w-8">hrs</span>
+              <span className="text-sm text-muted-foreground w-8">
+                {t.dailyCheckIn.units.hrs}
+              </span>
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -209,14 +215,15 @@ export function DailyCheckIn({
               htmlFor="water"
               className="text-right flex items-center justify-end gap-2"
             >
-              <Droplets className="h-4 w-4 text-blue-500" /> Water
+              <Droplets className="h-4 w-4 text-blue-500" />{" "}
+              {t.dailyCheckIn.water}
             </Label>
             <div className="col-span-3 flex items-center gap-2">
               <Input
                 id="water"
                 type="number"
                 step="0.25"
-                placeholder="Liters"
+                placeholder={t.dailyCheckIn.units.liters}
                 value={formData.water_intake || ""}
                 onChange={(e) =>
                   setFormData({
@@ -225,13 +232,15 @@ export function DailyCheckIn({
                   })
                 }
               />
-              <span className="text-sm text-muted-foreground w-8">L</span>
+              <span className="text-sm text-muted-foreground w-8">
+                {t.dailyCheckIn.units.l}
+              </span>
             </div>
           </div>
 
           <DialogFooter>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save Metrics"}
+              {loading ? t.dailyCheckIn.saving : t.dailyCheckIn.save}
             </Button>
           </DialogFooter>
         </form>

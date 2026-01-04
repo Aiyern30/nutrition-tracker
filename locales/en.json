@@ -404,6 +404,27 @@
     "of": "of",
     "progress": "Progress"
   },
+  "dailyCheckIn": {
+    "title": "Daily Check-in",
+    "description": "Log your daily health metrics to track your progress.",
+    "srLogStats": "Log Daily Stats",
+    "weight": "Weight",
+    "steps": "Steps",
+    "sleep": "Sleep",
+    "water": "Water",
+    "units": {
+      "kg": "kg",
+      "steps": "steps",
+      "hours": "hours",
+      "hrs": "hrs",
+      "liters": "Liters",
+      "l": "L"
+    },
+    "save": "Save Metrics",
+    "saving": "Saving...",
+    "success": "Daily stats updated successfully!",
+    "error": "Failed to update daily stats."
+  },
   "tracker": {
     "title": "Diet Tracker",
     "subtitle": "Log and track your daily meals",
