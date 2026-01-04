@@ -68,6 +68,7 @@ interface Meal {
   items: string[];
   nutrition: Nutrition;
   tips: string;
+  image_url?: string;
 }
 
 interface MealPlan {
@@ -75,6 +76,7 @@ interface MealPlan {
   summary: string;
   total_nutrition: Nutrition;
   meals: Meal[];
+  image_url?: string;
 }
 
 export default function MealPlannerPage() {
@@ -152,6 +154,7 @@ export default function MealPlannerPage() {
               plansMap[date] = {
                 date: date,
                 summary: meals[0]?.daily_summary || "",
+                image_url: meals[0]?.image_url || undefined,
                 total_nutrition: totalNutrition,
                 meals: meals.map((m) => ({
                   type: m.meal_type,
@@ -266,6 +269,7 @@ export default function MealPlannerPage() {
         user_id: userId,
         date: pendingPlan.date,
         daily_summary: pendingPlan.summary,
+        image_url: meal.image_url,
         meal_type: meal.type,
         name: meal.name,
         description: meal.description,
@@ -517,15 +521,26 @@ export default function MealPlannerPage() {
 
               {/* Daily Summary */}
               <div className="grid lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2 border-none shadow-md bg-linear-to-br from-primary/5 to-transparent">
-                  <CardHeader>
+                <Card className="lg:col-span-2 border-none shadow-md bg-linear-to-br from-primary/5 to-transparent relative overflow-hidden">
+                  {currentPlan.image_url && (
+                    <div className="absolute inset-0 z-0">
+                      <img
+                        src={currentPlan.image_url}
+                        alt="Meal Plan"
+                        className="w-full h-full object-cover opacity-20"
+                      />
+                      <div className="absolute inset-0 bg-linear-to-r from-background via-background/90 to-background/40" />
+                    </div>
+                  )}
+
+                  <CardHeader className="relative z-10">
                     <CardTitle className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-primary" />
                       {t.mealPlanner.dailyOverview}
                     </CardTitle>
                     <CardDescription>{currentPlan.summary}</CardDescription>
                   </CardHeader>
-                  <CardContent className="grid sm:grid-cols-4 gap-4">
+                  <CardContent className="grid sm:grid-cols-4 gap-4 relative z-10">
                     <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
                       <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">
                         {t.mealPlanner.calories}
@@ -615,14 +630,34 @@ export default function MealPlannerPage() {
                     key={index}
                     className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow group flex flex-col"
                   >
-                    <div className="h-2 bg-primary/20 w-full relative">
-                      <div
-                        className="absolute top-0 left-0 h-full bg-primary"
-                        style={{
-                          width: `${(meal.nutrition.calories / 800) * 100}%`,
-                        }}
-                      />
-                    </div>
+                    {meal.image_url ? (
+                      <div className="relative w-full h-48">
+                        <img
+                          src={meal.image_url}
+                          alt={meal.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute bottom-0 w-full h-1 bg-primary/20">
+                          <div
+                            className="h-full bg-primary"
+                            style={{
+                              width: `${
+                                (meal.nutrition.calories / 800) * 100
+                              }%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-2 bg-primary/20 w-full relative">
+                        <div
+                          className="absolute top-0 left-0 h-full bg-primary"
+                          style={{
+                            width: `${(meal.nutrition.calories / 800) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    )}
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
                         <div>

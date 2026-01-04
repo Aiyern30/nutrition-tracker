@@ -89,6 +89,7 @@ CREATE TABLE public.meal_plans (
   fats integer,
   tips text,
   daily_summary text,
+  image_url text,
   created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
   CONSTRAINT meal_plans_pkey PRIMARY KEY (id),
