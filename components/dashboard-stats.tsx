@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/contexts/language-context";
 import { format, subDays } from "date-fns";
-import { StatCard } from "@/components/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Flame,
@@ -12,7 +11,9 @@ import {
   TrendingUp,
   Award,
   AlertTriangle,
+  Clock,
 } from "lucide-react";
+import { DailyCheckIn } from "@/components/daily-check-in";
 import { getStatusMessage } from "@/lib/utils/nutrition-colors";
 import { calculateDietScore, getDietScoreColor } from "@/lib/utils/diet-score";
 
@@ -128,12 +129,20 @@ export function DashboardStats() {
 
   const todayDate = new Date();
 
-  const weight = dailySummary?.weight || profile?.weight;
+  // Calculate percentages and values
+  const weight = dailySummary?.weight || profile?.weight || 0;
+  const weightGoal = profile?.target_weight || 70;
 
   const steps = dailySummary?.steps || 0;
+  const stepsGoal = 10000;
+  const stepsPercent = Math.min(100, Math.round((steps / stepsGoal) * 100));
+
   const sleepHours = dailySummary?.sleep_hours || 0;
+
   const waterIntake = dailySummary?.water_intake || 0;
-  const waterGoal = profile?.daily_water_goal || 8;
+  const waterGoal = profile?.daily_water_goal || 2; // Default 2L
+  const waterRemaining = Math.max(0, waterGoal - waterIntake);
+  const waterPercent = Math.min(100, (waterIntake / waterGoal) * 100);
 
   return (
     <div className="space-y-6">
@@ -154,83 +163,186 @@ export function DashboardStats() {
           />
         </div>
       </div>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title={t.dashboard.stats.weight.title}
-          value={weight ? `${weight} kg` : "-- kg"}
-          subtitle={
-            profile?.target_weight
-              ? t.dashboard.stats.weight.goal.replace(
-                  "{{target}}",
-                  String(profile.target_weight)
-                )
-              : profile?.goal_type
-              ? t.dashboard.stats.weight.goal.replace(
-                  "{{target}}",
-                  profile.goal_type.replace("_", " ")
-                )
-              : t.dashboard.stats.weight.current
-          }
-          icon={TrendingUp}
-          variant="default"
-          progress={
-            weight && profile?.target_weight
-              ? {
-                  value: weight,
-                  max: profile.target_weight,
-                  color: "bg-primary",
-                }
-              : profile?.goal_type === "maintenance"
-              ? { value: 100, max: 100, color: "bg-green-500" }
-              : undefined
-          }
-        />
-        <StatCard
-          title={t.dashboard.stats.steps.title}
-          value={`${steps}`}
-          subtitle={t.dashboard.stats.steps.subtitle}
-          icon={Flame}
-          variant="warning"
-          customBg="bg-orange-100 dark:bg-orange-900/20"
-          customText="text-orange-600 dark:text-orange-400"
-          progress={{
-            value: Math.min((steps / 10000) * 100, 100),
-            max: 100,
-            color: "bg-orange-500",
-          }}
-        />
-        <StatCard
-          title={t.dashboard.stats.sleep.title}
-          value={`${sleepHours}`}
-          subtitle={t.dashboard.stats.sleep.subtitle}
-          icon={Clock}
-          variant="success"
-          customBg="bg-lime-100 dark:bg-lime-900/20"
-          customText="text-lime-600 dark:text-lime-400"
-          barChart={true}
-          chartData={weekSleepData}
-        />
-        <StatCard
-          title={t.dashboard.stats.waterIntake.title}
-          value={`${waterIntake} L`}
-          subtitle={t.dashboard.stats.waterIntake.goal.replace(
-            "{{target}}",
-            String(waterGoal)
-          )}
-          icon={Droplets}
-          variant="default"
-          customBg="bg-blue-100 dark:bg-blue-900/20"
-          customText="text-blue-600 dark:text-blue-400"
-          progress={{
-            value: (waterIntake / waterGoal) * 100,
-            max: 100,
-            color: "bg-blue-500",
-          }}
-        />
+        {/* Weight Card */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border/50 transition-all hover:shadow-md">
+          <div className="flex items-start justify-between mb-4">
+            <span className="text-base font-medium text-muted-foreground">
+              {t.dashboard.stats.weight.title}
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-1 mb-6">
+            <span className="text-4xl font-bold text-foreground">
+              {weight || "--"}
+            </span>
+            <span className="text-sm font-medium text-muted-foreground">
+              kg
+            </span>
+          </div>
+
+          {/* Ruler Visualization */}
+          <div className="relative h-12 w-full mt-2">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 bg-muted rounded-full"></div>
+            {/* Ruler Ticks */}
+            <div className="flex justify-between px-2 text-[10px] text-muted-foreground font-medium mt-6">
+              <span>{Math.max(0, Math.round(weight - 5))}</span>
+              <span>{Math.round(weight)}</span>
+              <span>{Math.round(weight + 5)}</span>
+            </div>
+            {/* Slider Thumb */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+8px)] flex flex-col items-center">
+              <div className="h-4 w-4 rounded-full bg-primary shadow-lg ring-4 ring-background"></div>
+              <div className="h-4 w-0.5 bg-primary mt-1"></div>
+            </div>
+            {/* Decorative ticks background */}
+            <div className="absolute inset-0 flex justify-between items-center px-2 pointer-events-none opacity-20">
+              {[...Array(21)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-px bg-foreground ${
+                    i % 5 === 0 ? "h-4" : "h-2"
+                  }`}
+                ></div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Steps Card */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border/50 transition-all hover:shadow-md">
+          <div className="flex items-start justify-between mb-4">
+            <span className="text-base font-medium text-muted-foreground">
+              {t.dashboard.stats.steps.title}
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+              <Flame className="h-4 w-4" />
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-1 mb-6">
+            <span className="text-4xl font-bold text-foreground">{steps}</span>
+            <span className="text-sm font-medium text-muted-foreground">
+              {t.dashboard.stats.steps.subtitle}
+            </span>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="flex h-5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full bg-primary transition-all duration-500 ease-out"
+              style={{ width: `${stepsPercent}%` }}
+            />
+            <div
+              className="h-full flex-1 bg-primary/20"
+              style={{
+                backgroundImage:
+                  "linear-gradient(45deg, rgba(255,255,255,.3) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.3) 50%, rgba(255,255,255,.3) 75%, transparent 75%, transparent)",
+                backgroundSize: "1rem 1rem",
+              }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-xs font-medium">
+            <span className="text-foreground">{stepsPercent}%</span>
+            <span className="text-muted-foreground">
+              {Math.max(0, stepsGoal - steps)} left
+            </span>
+          </div>
+        </div>
+
+        {/* Sleep Card */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border/50 transition-all hover:shadow-md">
+          <div className="flex items-start justify-between mb-4">
+            <span className="text-base font-medium text-muted-foreground">
+              {t.dashboard.stats.sleep.title}
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+              <Clock className="h-4 w-4" />
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-1 mb-6">
+            <span className="text-4xl font-bold text-foreground">
+              {sleepHours}
+            </span>
+            <span className="text-sm font-medium text-muted-foreground">
+              {t.dashboard.stats.sleep.subtitle}
+            </span>
+          </div>
+
+          {/* Bar Chart */}
+          <div className="flex items-end justify-between h-12 gap-1 mt-auto">
+            {weekSleepData.length > 0
+              ? weekSleepData.map((val, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col items-center gap-1 flex-1"
+                  >
+                    <div
+                      className={`w-full rounded-t-sm transition-all duration-500 ${
+                        i === weekSleepData.length - 1
+                          ? "bg-primary"
+                          : "bg-muted-foreground/20"
+                      }`}
+                      style={{
+                        height: `${Math.min(
+                          100,
+                          Math.max(10, (val / 8) * 100)
+                        )}%`,
+                      }}
+                    ></div>
+                  </div>
+                ))
+              : [...Array(7)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-full bg-muted-foreground/10 rounded-t-sm h-full flex-1 mx-0.5"
+                  />
+                ))}
+          </div>
+        </div>
+
+        {/* Water Card */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border/50 transition-all hover:shadow-md">
+          <div className="flex items-start justify-between mb-4">
+            <span className="text-base font-medium text-muted-foreground">
+              {t.dashboard.stats.waterIntake.title}
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+              <Droplets className="h-4 w-4" />
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-1 mb-6 relative z-10">
+            <span className="text-4xl font-bold text-foreground">
+              {waterRemaining.toFixed(1)}
+            </span>
+            <span className="text-sm font-medium text-muted-foreground">
+              litre left
+            </span>
+          </div>
+
+          {/* Liquid Fill Visualization */}
+          <div className="relative h-16 w-full rounded-xl bg-muted/30 overflow-hidden border border-border/50">
+            <div
+              className="absolute bottom-0 left-0 right-0 bg-yellow-400/80 dark:bg-yellow-500/80 transition-all duration-700 ease-in-out"
+              style={{ height: `${waterPercent}%` }}
+            >
+              {/* Wave effect overlay could go here */}
+              <div className="absolute top-0 w-full h-1 bg-white/30"></div>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-end px-4 z-10">
+              <span className="text-xs font-bold text-foreground/70 mix-blend-multiply dark:mix-blend-normal">
+                {waterIntake}/{waterGoal} litre
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
-import { Clock } from "lucide-react";
-import { DailyCheckIn } from "@/components/daily-check-in";
