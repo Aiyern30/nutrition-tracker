@@ -58,29 +58,31 @@ export function DashboardStats() {
       if (!user) return;
 
       const today = new Date().toISOString().split("T")[0];
+
       const startDate = format(subDays(new Date(), 6), "yyyy-MM-dd");
 
-      const [summaryResult, weeklySleepResult, profileResult] = await Promise.all([
-        supabase
-          .from("daily_summaries")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("date", today)
-          .single(),
-        supabase
-          .from("daily_summaries")
-          .select("date, sleep_hours")
-          .eq("user_id", user.id)
-          .gte("date", startDate)
-          .order("date", { ascending: true }),
-        supabase
-          .from("profiles")
-          .select(
-            "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, current_streak, weight, goal_type, target_weight"
-          )
-          .eq("id", user.id)
-          .single(),
-      ]);
+      const [summaryResult, weeklySleepResult, profileResult] =
+        await Promise.all([
+          supabase
+            .from("daily_summaries")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("date", today)
+            .single(),
+          supabase
+            .from("daily_summaries")
+            .select("date, sleep_hours")
+            .eq("user_id", user.id)
+            .gte("date", startDate)
+            .order("date", { ascending: true }),
+          supabase
+            .from("profiles")
+            .select(
+              "daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fats_goal, daily_water_goal, current_streak, weight, goal_type, target_weight"
+            )
+            .eq("id", user.id)
+            .single(),
+        ]);
 
       setDailySummary(summaryResult.data);
 
@@ -124,10 +126,9 @@ export function DashboardStats() {
     );
   }
 
-
   const todayDate = new Date();
 
-  const weight = dailySummary?.weight;
+  const weight = dailySummary?.weight || profile?.weight;
 
   const steps = dailySummary?.steps || 0;
   const sleepHours = dailySummary?.sleep_hours || 0;
@@ -158,21 +159,21 @@ export function DashboardStats() {
             profile?.target_weight
               ? `Goal: ${profile.target_weight} kg`
               : profile?.goal_type
-                ? `Goal: ${profile.goal_type.replace("_", " ")}`
-                : "Current Weight"
+              ? `Goal: ${profile.goal_type.replace("_", " ")}`
+              : "Current Weight"
           }
           icon={TrendingUp}
           variant="default"
           progress={
             weight && profile?.target_weight
               ? {
-                value: weight,
-                max: profile.target_weight,
-                color: "bg-primary-500",
-              }
+                  value: weight,
+                  max: profile.target_weight,
+                  color: "bg-primary",
+                }
               : profile?.goal_type === "maintenance"
-                ? { value: 100, max: 100, color: "bg-green-500" }
-                : undefined
+              ? { value: 100, max: 100, color: "bg-green-500" }
+              : undefined
           }
         />
         <StatCard
