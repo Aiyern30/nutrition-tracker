@@ -24,16 +24,18 @@ interface UserProfile {
 // Function to get food image from Unsplash
 async function getUnsplashFoodImage(
   mealName: string,
-  items: string[]
+  items: string[],
+  mealType: string
 ): Promise<string | null> {
   try {
-    // Create a search query from meal name and items
-    const searchQuery = `${mealName} ${items.slice(0, 2).join(" ")} food`;
+    // Try specific search first with main ingredients
+    const mainIngredients = items.slice(0, 3).join(" ");
+    let searchQuery = `${mainIngredients} ${mealType} food dish meal`;
 
-    const response = await fetch(
+    let response = await fetch(
       `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
         searchQuery
-      )}&per_page=1&orientation=landscape`,
+      )}&per_page=5&orientation=landscape&content_filter=high`,
       {
         headers: {
           Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
@@ -46,19 +48,51 @@ async function getUnsplashFoodImage(
       return null;
     }
 
-    const data = await response.json();
-    return data.results[0]?.urls?.regular || null;
+    let data = await response.json();
+
+    // If no results, try generic meal type search
+    if (!data.results || data.results.length === 0) {
+      searchQuery = `${mealType} food healthy meal`;
+      response = await fetch(
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
+          searchQuery
+        )}&per_page=5&orientation=landscape&content_filter=high`,
+        {
+          headers: {
+            Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+          },
+        }
+      );
+      data = await response.json();
+    }
+
+    // Return a random image from top 5 results for variety
+    if (data.results && data.results.length > 0) {
+      const randomIndex = Math.floor(
+        Math.random() * Math.min(data.results.length, 5)
+      );
+      return data.results[randomIndex]?.urls?.regular || null;
+    }
+
+    return null;
   } catch (error) {
     console.error("Unsplash image fetch error:", error);
     return null;
   }
 }
 
-// Alternative: Use placeholder images with custom text
-function getPlaceholderImage(mealName: string): string {
-  return `https://placehold.co/1024x576/2563eb/ffffff/png?text=${encodeURIComponent(
-    mealName
-  )}&font=roboto`;
+// Improved placeholder with food emoji and better styling
+function getPlaceholderImage(mealName: string, mealType: string): string {
+  const emoji =
+    mealType.includes("早餐") || mealType.toLowerCase().includes("breakfast")
+      ? "🍳"
+      : mealType.includes("午餐") || mealType.toLowerCase().includes("lunch")
+      ? "🍱"
+      : mealType.includes("晚餐") || mealType.toLowerCase().includes("dinner")
+      ? "🍽️"
+      : "🥗";
+
+  return `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1024&h=576&fit=crop&q=80`;
 }
 
 export async function POST(request: NextRequest) {
@@ -215,13 +249,14 @@ export async function POST(request: NextRequest) {
                   if (UNSPLASH_ACCESS_KEY) {
                     imageUrl = await getUnsplashFoodImage(
                       meal.name,
-                      meal.items
+                      meal.items,
+                      meal.type
                     );
                   }
 
                   // Fallback to placeholder if Unsplash fails or no API key
                   if (!imageUrl) {
-                    imageUrl = getPlaceholderImage(meal.name);
+                    imageUrl = getPlaceholderImage(meal.name, meal.type);
                   }
 
                   meal.image_url = imageUrl;
@@ -231,7 +266,7 @@ export async function POST(request: NextRequest) {
                     innerErr
                   );
                   // Use placeholder as final fallback
-                  meal.image_url = getPlaceholderImage(meal.name);
+                  meal.image_url = getPlaceholderImage(meal.name, meal.type);
                 }
               })
             );
@@ -242,7 +277,7 @@ export async function POST(request: NextRequest) {
             );
             // Add placeholder images for all meals
             mealPlan.meals.forEach((meal: any) => {
-              meal.image_url = getPlaceholderImage(meal.name);
+              meal.image_url = getPlaceholderImage(meal.name, meal.type);
             });
           }
 
