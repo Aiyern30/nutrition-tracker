@@ -631,19 +631,23 @@ export default function MealPlannerPage() {
                     className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow group flex flex-col"
                   >
                     {meal.image_url ? (
-                      <div className="relative w-full h-48">
+                      <div className="relative w-full h-64 bg-muted">
                         <img
                           src={meal.image_url}
                           alt={meal.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover object-center"
                         />
-                        <div className="absolute bottom-0 w-full h-1 bg-primary/20">
+                        {/* Gradient overlay for better readability */}
+                        <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
+                        {/* Calorie progress bar */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/20 backdrop-blur-sm">
                           <div
-                            className="h-full bg-primary"
+                            className="h-full bg-primary shadow-lg"
                             style={{
-                              width: `${
+                              width: `${Math.min(
+                                100,
                                 (meal.nutrition.calories / 800) * 100
-                              }%`,
+                              )}%`,
                             }}
                           />
                         </div>
