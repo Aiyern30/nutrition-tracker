@@ -524,7 +524,8 @@
       }
     },
     "todaysSummary": {
-      "title": "今日总结",
+      "title": "卡路里摄入",
+      "today": "今天",
       "description": "追踪您全天的营养进度",
       "protein": "蛋白质",
       "carbs": "碳水化合物",
@@ -536,8 +537,20 @@
       "aboveRecommended": "高于推荐",
       "belowTarget": "低于目标",
       "goalReached": "达成目标！",
-      "noGoalSet": "未设置目标"
+      "noGoalSet": "未设置目标",
+      "kcalLeft": "千卡剩余",
+      "eatenCalories": "已摄入",
+      "burnedCalories": "已消耗"
     },
+    "units": {
+      "kg": "kg",
+      "g": "克",
+      "kcal": "千卡",
+      "stepsLeft": "剩余",
+      "litreLeft": "剩余升",
+      "litre": "升"
+    },
+    "todayOverview": "今日概览",
     "recommendedMenu": {
       "title": "推荐菜单",
       "noPlan": "今日未生成膳食计划。",

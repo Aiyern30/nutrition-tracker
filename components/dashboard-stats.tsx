@@ -150,7 +150,7 @@ export function DashboardStats() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold tracking-tight">
-          Today's Overview
+          {t.dashboard.todayOverview}
         </h2>
         <div className="z-20">
           <DailyCheckIn
@@ -183,7 +183,7 @@ export function DashboardStats() {
               {weight || "--"}
             </span>
             <span className="text-sm font-medium text-muted-foreground">
-              kg
+              {t.dashboard.units.kg}
             </span>
           </div>
 
@@ -251,7 +251,7 @@ export function DashboardStats() {
           <div className="flex justify-between mt-2 text-xs font-medium">
             <span className="text-foreground">{stepsPercent}%</span>
             <span className="text-muted-foreground">
-              {Math.max(0, stepsGoal - steps)} left
+              {Math.max(0, stepsGoal - steps)} {t.dashboard.units.stepsLeft}
             </span>
           </div>
         </div>
@@ -317,7 +317,7 @@ export function DashboardStats() {
               {waterRemaining.toFixed(1)}
             </span>
             <span className="text-sm font-medium text-muted-foreground">
-              litre left
+              {t.dashboard.units.litreLeft}
             </span>
           </div>
 
@@ -332,7 +332,7 @@ export function DashboardStats() {
             </div>
             <div className="absolute inset-0 flex items-center justify-end px-4 z-10">
               <span className="text-xs font-bold text-foreground/70 mix-blend-multiply dark:mix-blend-normal">
-                {waterIntake}/{waterGoal} litre
+                {waterIntake}/{waterGoal} {t.dashboard.units.litre}
               </span>
             </div>
           </div>
