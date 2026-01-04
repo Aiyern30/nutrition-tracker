@@ -99,6 +99,8 @@ export function DashboardStats() {
       setProfile(profileResult.data);
     } catch (error) {
       console.error("Error fetching stats:", error);
+      // Fallback for sleep data on error
+      setWeekSleepData(new Array(7).fill(0));
     } finally {
       setLoading(false);
     }
@@ -276,33 +278,26 @@ export function DashboardStats() {
 
           {/* Bar Chart */}
           <div className="flex items-end justify-between h-12 gap-1 mt-auto">
-            {weekSleepData.length > 0
-              ? weekSleepData.map((val, i) => (
+            {(weekSleepData.length > 0 ? weekSleepData : Array(7).fill(0)).map(
+              (val, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col items-center gap-1 flex-1"
+                >
                   <div
-                    key={i}
-                    className="flex flex-col items-center gap-1 flex-1"
-                  >
-                    <div
-                      className={`w-full rounded-t-sm transition-all duration-500 ${
-                        i === weekSleepData.length - 1
-                          ? "bg-primary"
-                          : "bg-muted-foreground/20"
-                      }`}
-                      style={{
-                        height: `${Math.min(
-                          100,
-                          Math.max(10, (val / 8) * 100)
-                        )}%`,
-                      }}
-                    ></div>
-                  </div>
-                ))
-              : [...Array(7)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-full bg-muted-foreground/10 rounded-t-sm h-full flex-1 mx-0.5"
-                  />
-                ))}
+                    className={`w-full rounded-t-sm transition-all duration-500 ${
+                      i === 6 ? "bg-primary" : "bg-muted-foreground/20"
+                    }`}
+                    style={{
+                      height: `${Math.min(
+                        100,
+                        Math.max(10, (val / 8) * 100)
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+              )
+            )}
           </div>
         </div>
 

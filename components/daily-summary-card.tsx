@@ -32,10 +32,14 @@ interface Profile {
   daily_fats_goal: number;
 }
 
+import { Zap, Utensils, Flame } from "lucide-react";
+
 export function DailySummaryCard() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
-  const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
+  const [dailySummary, setDailySummary] = useState<
+    (DailySummary & { steps: number }) | null
+  >(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const supabase = createClient();
 
@@ -53,7 +57,9 @@ export function DailySummaryCard() {
       const [summaryResult, profileResult] = await Promise.all([
         supabase
           .from("daily_summaries")
-          .select("total_calories, total_protein, total_carbs, total_fats")
+          .select(
+            "total_calories, total_protein, total_carbs, total_fats, steps"
+          )
           .eq("user_id", user.id)
           .eq("date", today)
           .single(),
@@ -81,113 +87,188 @@ export function DailySummaryCard() {
 
   const consumedCalories = dailySummary?.total_calories || 0;
   const calorieGoal = profile?.daily_calorie_goal || 2000;
+  const caloriesLeft = Math.max(0, calorieGoal - consumedCalories);
+  const percentCalories = Math.min(100, (consumedCalories / calorieGoal) * 100);
 
-  const consumedProtein = dailySummary?.total_protein || 0;
-  const proteinGoal = profile?.daily_protein_goal || 150;
+  // Estimate burned calories from steps (approx 0.04 kcal per step)
+  const burnedCalories = Math.round((dailySummary?.steps || 0) * 0.04);
 
-  const consumedCarbs = dailySummary?.total_carbs || 0;
-  const carbsGoal = profile?.daily_carbs_goal || 200;
-
-  const consumedFats = dailySummary?.total_fats || 0;
-  const fatsGoal = profile?.daily_fats_goal || 65;
-
-  // Translation object for status messages
-  const statusTranslations = {
-    overGoal: t.dashboard.todaysSummary.overGoal,
-    remaining: t.dashboard.todaysSummary.remaining,
-    optimal: t.dashboard.todaysSummary.optimal,
-    aboveRecommended: t.dashboard.todaysSummary.aboveRecommended,
-    belowTarget: t.dashboard.todaysSummary.belowTarget,
-    toGo: t.dashboard.todaysSummary.remaining,
-    goalReached: t.dashboard.todaysSummary.goalReached,
-    goalAchieved: t.dashboard.todaysSummary.goalReached,
-    noGoalSet: t.dashboard.todaysSummary.noGoalSet,
-  };
+  const macros = [
+    {
+      label: t.dashboard.todaysSummary.carbs,
+      current: dailySummary?.total_carbs || 0,
+      target: profile?.daily_carbs_goal || 300,
+      color: "bg-[#a3e635]", // Lime
+      percent: Math.round(
+        ((dailySummary?.total_carbs || 0) /
+          (profile?.daily_carbs_goal || 300)) *
+          100
+      ),
+    },
+    {
+      label: t.dashboard.todaysSummary.protein,
+      current: dailySummary?.total_protein || 0,
+      target: profile?.daily_protein_goal || 75,
+      color: "bg-[#84cc16]", // Green
+      percent: Math.round(
+        ((dailySummary?.total_protein || 0) /
+          (profile?.daily_protein_goal || 75)) *
+          100
+      ),
+    },
+    {
+      label: t.dashboard.todaysSummary.fats,
+      current: dailySummary?.total_fats || 0,
+      target: profile?.daily_fats_goal || 60,
+      color: "bg-[#bef264]", // Light Lime
+      percent: Math.round(
+        ((dailySummary?.total_fats || 0) / (profile?.daily_fats_goal || 60)) *
+          100
+      ),
+    },
+  ];
 
   return (
-    <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-primary/20">
-      <CardHeader>
-        <CardTitle>{t.dashboard.todaysSummary.title}</CardTitle>
-        <CardDescription>
-          {t.dashboard.todaysSummary.description}
-        </CardDescription>
+    <Card className="lg:col-span-2 shadow-sm border border-border/50 rounded-[2rem] overflow-hidden">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-bold">Calories Intake</CardTitle>
+          <div className="flex bg-muted/50 rounded-full px-2 py-0.5">
+            <span className="text-xs text-muted-foreground font-medium">
+              Today
+            </span>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {loading ? (
-          <div className="flex flex-col items-center gap-6 md:flex-row md:justify-around py-6">
-            {/* Calorie Ring Skeleton */}
-            <div className="flex flex-col items-center gap-4">
-              <Skeleton className="h-48 w-48 rounded-full" />
-              <Skeleton className="h-8 w-32 rounded-full" />
-            </div>
 
-            {/* Macro Bars Skeleton */}
-            <div className="w-full max-w-md space-y-6">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                  <Skeleton className="h-2 w-full rounded-full" />
-                </div>
-              ))}
+      <CardContent className="p-6 pt-0">
+        {loading ? (
+          <div className="flex flex-col md:flex-row gap-8 items-center justify-center p-8">
+            <Skeleton className="h-48 w-48 rounded-full" />
+            <div className="space-y-4 w-full max-w-sm">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-6 md:flex-row md:justify-around">
-            <CalorieRing
-              consumed={consumedCalories}
-              goal={calorieGoal}
-              translations={{
-                of: t.common.of,
-                overGoal: t.dashboard.todaysSummary.overGoal,
-                remaining: t.dashboard.todaysSummary.remaining,
-                onTrack: t.dashboard.stats.dietScore.subtitle,
-                progress: t.common.progress,
-              }}
-            />
-            <div className="w-full max-w-md space-y-4">
-              <MacroBar
-                label={t.dashboard.todaysSummary.protein}
-                current={consumedProtein}
-                goal={proteinGoal}
-                color={getProgressColor(
-                  consumedProtein,
-                  proteinGoal,
-                  "protein"
-                )}
-                statusMessage={getStatusMessage(
-                  consumedProtein,
-                  proteinGoal,
-                  "protein",
-                  statusTranslations
-                )}
-              />
-              <MacroBar
-                label={t.dashboard.todaysSummary.carbs}
-                current={consumedCarbs}
-                goal={carbsGoal}
-                color={getProgressColor(consumedCarbs, carbsGoal, "carbs")}
-                statusMessage={getStatusMessage(
-                  consumedCarbs,
-                  carbsGoal,
-                  "carbs",
-                  statusTranslations
-                )}
-              />
-              <MacroBar
-                label={t.dashboard.todaysSummary.fats}
-                current={consumedFats}
-                goal={fatsGoal}
-                color={getProgressColor(consumedFats, fatsGoal, "fats")}
-                statusMessage={getStatusMessage(
-                  consumedFats,
-                  fatsGoal,
-                  "fats",
-                  statusTranslations
-                )}
-              />
+          <div className="flex flex-col md:flex-row gap-8 items-center">
+            {/* Left: Calorie Ring */}
+            <div className="relative shrink-0">
+              <div className="relative h-48 w-48">
+                {/* Background Circle */}
+                <svg
+                  className="h-full w-full -rotate-90 transform"
+                  viewBox="0 0 100 100"
+                >
+                  <circle
+                    className="text-muted/30"
+                    strokeWidth="8"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="42"
+                    cx="50"
+                    cy="50"
+                  />
+                  {/* Progress Circle */}
+                  <circle
+                    className="transition-all duration-1000 ease-out text-orange-400"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    strokeDasharray={263.89} // 2 * pi * 42
+                    strokeDashoffset={263.89 - (percentCalories / 100) * 263.89}
+                    r="42"
+                    cx="50"
+                    cy="50"
+                    style={{
+                      filter: "drop-shadow(0 0 2px rgba(251, 146, 60, 0.5))",
+                    }}
+                  />
+                </svg>
+                {/* Center Text */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <Zap className="h-6 w-6 text-muted-foreground mb-1" />
+                  <span className="text-3xl font-extrabold tracking-tighter text-foreground">
+                    {caloriesLeft}
+                  </span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    kcal left
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Stats & Macros */}
+            <div className="flex-1 w-full space-y-8">
+              {/* Top Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-[#d9f99d] flex items-center justify-center text-[#4d7c0f]">
+                    <Utensils className="h-5 w-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xl font-bold leading-none">
+                      {consumedCalories}{" "}
+                      <span className="text-xs font-medium text-muted-foreground">
+                        kcal
+                      </span>
+                    </span>
+                    <span className="text-xs text-muted-foreground font-medium">
+                      Eaten calories
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-[#fef08a] flex items-center justify-center text-[#a16207]">
+                    <Flame className="h-5 w-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xl font-bold leading-none">
+                      {burnedCalories}{" "}
+                      <span className="text-xs font-medium text-muted-foreground">
+                        kcal
+                      </span>
+                    </span>
+                    <span className="text-xs text-muted-foreground font-medium">
+                      Burned calories
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Macros List */}
+              <div className="space-y-5">
+                {macros.map((macro, i) => (
+                  <div key={i} className="bg-muted/30 rounded-xl p-3 px-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-bold text-foreground">
+                          {macro.current}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          / {macro.target}g
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {macro.label}
+                        </span>
+                        <span className="text-xs font-bold text-foreground">
+                          {macro.percent}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-2 w-full bg-background rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${macro.color} transition-all duration-500`}
+                        style={{ width: `${Math.min(100, macro.percent)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
