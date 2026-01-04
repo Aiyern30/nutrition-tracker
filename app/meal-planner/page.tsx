@@ -331,7 +331,7 @@ export default function MealPlannerPage() {
   };
 
   const weekDates = Array.from({ length: 7 }, (_, i) =>
-    addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), i)
+    addDays(startOfWeek(selectedDate, { weekStartsOn: 1 }), i)
   );
 
   // Pie chart data
