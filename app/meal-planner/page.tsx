@@ -170,6 +170,7 @@ export default function MealPlannerPage() {
                     fats: m.fats || 0,
                   },
                   tips: m.tips || "",
+                  image_url: m.image_url || undefined,
                 })),
               };
             });
