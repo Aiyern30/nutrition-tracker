@@ -317,9 +317,10 @@
       "title": "上传食物图片",
       "clickToUpload": "点击上传图片",
       "fileTypes": "PNG、JPG，最大 10MB",
+      "ctrlVPaste": "Ctrl+V 粘贴图片",
       "additionalDesc": "附加描述（可选）",
       "additionalDescPlaceholder": "例如：份量、烹饪方法...",
-      "detectedText": "识别的文字 (OCR)"
+      "detectedText": "分析详情 (标签/食材)"
     },
     "descriptionInput": {
       "title": "描述您的食物",

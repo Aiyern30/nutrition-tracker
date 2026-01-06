@@ -39,62 +39,53 @@ async function analyzeImageWithErnie(
     let prompt: string;
 
     if (lang === "zh") {
-      basePrompt = `你是一位专业的营养分析专家，擅长解读中国食品包装标签。请仔细分析这张食品图片，从营养成分表中提取准确的营养数据。`;
+      basePrompt = `你是一位顶尖的营养分析专家。请仔细分析这张图片中的食物。它可以是带包装的食品（有营养成分表），也可以是餐厅或家中准备好的菜肴（如海南鸡饭、拉面等）。`;
 
       if (additionalContext) {
-        basePrompt += `\n\n用户补充说明：${additionalContext}`;
+        basePrompt += `\n\n用户提供的额外信息：${additionalContext}`;
       }
 
       prompt =
         basePrompt +
         `
 
-📋 分析步骤：
-1. 在包装上找到"营养成分表"区域
-2. 定位"每100克"或"每份"的标注
-3. 精确提取以下营养成分的数值：
-   • 能量（千焦kJ）→ 需换算为千卡kcal（除以4.184）
-   • 蛋白质（克）
-   • 脂肪（克）
-   • 碳水化合物（克）
-   • 钠（毫克）
-   • 膳食纤维（克，如有标注）
-   • 糖（克，如有标注）
-
-4. 识别产品信息：
-   • 产品中文名称
-   • 食品类别（调味料/零食/饮料/主食等）
-   • 包装上的所有可见文字
+📋 分析指南：
+1. **识别类型**：判断图片是带包装的食品还是准备好的菜肴。
+2. **带包装食品**：
+   • 优先从"营养成分表"中提取精确数据。
+   • 如果数值是每100g，请根据图片显示的包装大小估算总能量。
+   • 能量(kJ)需换算为千卡(kcal)：kcal = kJ / 4.184。
+3. **准备好的菜肴**（如：鸡肉饭、披萨、炒面）：
+   • 识别菜肴名称及其主要组成部分。
+   • 根据标准的份量大小（Serving Size）估算各项营养数值。
+   • 在"explanation"中说明你是基于何种菜肴和份量进行估算的。
 
 📤 输出要求：
 请严格按照以下JSON格式返回，所有字段必须用中文填写：
 
 {
-  "name": "产品完整中文名称",
-  "category": "食品类别",
-  "calories": 整数（千卡，从能量字段换算），
-  "protein": 整数（克），
-  "carbs": 整数（克），
-  "fats": 整数（克），
-  "fiber": 整数（克，无标注则填0），
-  "sugar": 整数（克，无标注则填0），
-  "sodium": 整数（毫克），
-  "serving_size": "每100克 或 实际标注的份量",
-  "confidence": "高/中/低",
+  "name": "食物名称",
+  "category": "食品类别（如：主食/调味品/零食/饮料等）",
+  "calories": 整数（单位：千卡kcal）,
+  "protein": 整数（单位：克g）,
+  "carbs": 整数（单位：克g）,
+  "fats": 整数（单位：克g）,
+  "fiber": 整数（单位：克g，未知填0）,
+  "sugar": 整数（单位：克g，未知填0）,
+  "sodium": 整数（单位：毫克mg）,
+  "serving_size": "估算的份量描述（如：1份、250克等）",
+  "confidence": "high/medium/low（根据图片清晰度和识别难度判定）",
   "benefits": ["健康益处1", "健康益处2", "健康益处3"],
   "considerations": ["注意事项1", "注意事项2"],
-  "explanation": "你的分析依据和计算说明",
-  "detected_text": "包装上所有可见的中文文字"
+  "explanation": "你的分析依据：如果是标签，说明提取的数据；如果是菜肴，说明识别出的成分和份量参考",
+  "detected_text": "如果是包装，列出可见的文字；如果是餐食，列出识别出的主要食材"
 }
 
 ⚠️ 重要规则：
-• 必须从营养成分表中读取数值，不可估算
-• 能量单位如为千焦（kJ），必须换算为千卡（kcal = kJ ÷ 4.184）
-• 所有数值四舍五入为整数
-• 如果营养成分表中没有膳食纤维或糖的数据，填写0
-• 只输出JSON格式，不要添加任何其他文字或符号`;
+• 数值必须为整数。
+• 只输出JSON格式，不要添加任何其他文字或符号。`;
     } else {
-      basePrompt = `You are a professional nutrition analysis expert specializing in reading Chinese food packaging labels. Carefully analyze this food image and extract accurate nutritional data from the nutrition facts table.`;
+      basePrompt = `You are a world-class nutrition analysis expert. Please analyze the food in this image. It could be packaged food (with a nutrition facts table) or a prepared meal (like Chicken Rice, Ramen, Tacos, etc.).`;
 
       if (additionalContext) {
         basePrompt += `\n\nUser Context: ${additionalContext}`;
@@ -104,50 +95,41 @@ async function analyzeImageWithErnie(
         basePrompt +
         `
 
-📋 Analysis Steps:
-1. Locate the "营养成分表" (Nutrition Facts Table) on the package
-2. Find the section marked "每100克" (per 100g) or "每份" (per serving)
-3. Extract exact values for these nutritional components:
-   • 能量 (Energy in kJ) → Convert to kcal by dividing by 4.184
-   • 蛋白质 (Protein in grams)
-   • 脂肪 (Fat in grams)
-   • 碳水化合物 (Carbohydrates in grams)
-   • 钠 (Sodium in mg)
-   • 膳食纤维 (Dietary Fiber in grams, if listed)
-   • 糖 (Sugar in grams, if listed)
-
-4. Identify product information:
-   • Product name (translate to English)
-   • Food category
-   • All visible text on the packaging
+📋 Analysis Guidelines:
+1. **Identify Type**: Determine if the image shows a packaged product or a prepared dish.
+2. **Packaged Food**:
+   • Prioritize extracting exact data from the "Nutrition Facts" table if visible.
+   • If values are per 100g, estimate the total based on the package size shown.
+   • Convert Energy (kJ) to kcal: kcal = kJ / 4.184.
+3. **Prepared Dishes** (e.g., Chicken Rice, Burger, Stir-fry):
+   • Identify the dish name and its main ingredients.
+   • Estimate nutritional values based on standard portion sizes.
+   • In the "explanation" field, describe the dish and the portion size you used for the estimate.
 
 📤 Output Format:
 Provide your response in this exact JSON structure:
 
 {
-  "name": "Product name in English",
-  "category": "Food category (Seasoning/Snack/Beverage/Meal/etc.)",
-  "calories": integer (kcal - converted from 能量/kJ),
-  "protein": integer (grams from 蛋白质),
-  "carbs": integer (grams from 碳水化合物),
-  "fats": integer (grams from 脂肪),
-  "fiber": integer (grams from 膳食纤维, use 0 if not listed),
-  "sugar": integer (grams from 糖, use 0 if not listed),
-  "sodium": integer (mg from 钠),
-  "serving_size": "per 100g or the actual serving size stated",
+  "name": "Food name in English",
+  "category": "Food category (Meal/Snack/Beverage/etc.)",
+  "calories": integer (kcal),
+  "protein": integer (grams),
+  "carbs": integer (grams),
+  "fats": integer (grams),
+  "fiber": integer (grams, use 0 if unknown),
+  "sugar": integer (grams, use 0 if unknown),
+  "sodium": integer (mg),
+  "serving_size": "Estimated serving size description (e.g., 1 plate, 300g)",
   "confidence": "high/medium/low",
   "benefits": ["health benefit 1", "health benefit 2", "health benefit 3"],
   "considerations": ["dietary consideration 1", "consideration 2"],
-  "explanation": "Your analysis rationale and calculation details",
-  "detected_text": "All Chinese text visible on the packaging"
+  "explanation": "Your analysis rationale: If a label was found, what data was extracted. If a dish, what ingredients were identified and the portion reference used.",
+  "detected_text": "If a package, list visible text. If a meal, list identified main ingredients."
 }
 
 ⚠️ Critical Rules:
-• Extract values ONLY from the nutrition facts table, do not estimate
-• If energy is in kJ (千焦), convert to kcal by dividing by 4.184
-• Round all numerical values to the nearest integer
-• If fiber or sugar is not listed in the table, use 0
-• Output ONLY valid JSON with no additional text or formatting`;
+• All nutritional values must be integers.
+• Output ONLY valid JSON with no additional text or formatting.`;
     }
 
     const messages = [
