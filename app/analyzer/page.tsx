@@ -31,7 +31,9 @@ import {
   X,
   FileImage,
   Loader2,
+  Image as ImageIcon,
 } from "lucide-react";
+import { useEffect } from "react";
 import { AnalyzedFoodsHistory } from "@/components/analyzer/analyzed-foods-history";
 import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 
@@ -77,17 +79,82 @@ export default function AnalyzerPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
+  // Process and convert image to supported format (JPEG)
+  const processImage = (file: File) => {
+    // Check if it's an image
+    if (!file.type.startsWith("image/")) {
+      setError("Please provide a valid image file");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new (window as any).Image();
+      img.onload = () => {
+        // Create canvas to convert to JPEG
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        // Optional: Resize if too large (e.g., max 1600px)
+        const MAX_SIZE = 1600;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          // Convert to JPEG (supported by ERNIE base64)
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+          setSelectedImage(dataUrl);
+          setError(null);
+        }
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-        setError(null);
-      };
-      reader.readAsDataURL(file);
+      processImage(file);
     }
   };
+
+  const handlePaste = (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            processImage(file);
+            setActiveTab("image"); // Switch to image tab if something is pasted
+          }
+        }
+      }
+    }
+  };
+
+  // Listen for paste events globally
+  useEffect(() => {
+    window.addEventListener("paste", handlePaste);
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+    };
+  }, []);
 
   const handleRemoveImage = () => {
     setSelectedImage(null);
@@ -349,13 +416,20 @@ export default function AnalyzerPage() {
                           onClick={() => fileInputRef.current?.click()}
                           className="flex h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:border-muted-foreground/50 hover:bg-muted"
                         >
-                          <Upload className="mb-4 h-10 w-10 text-muted-foreground" />
-                          <p className="text-sm font-medium">
-                            {t.analyzer.imageUpload.clickToUpload}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t.analyzer.imageUpload.fileTypes}
-                          </p>
+                          <div className="flex flex-col items-center justify-center p-4">
+                            <div className="flex items-center gap-2 mb-4">
+                              <Upload className="h-8 w-8 text-muted-foreground" />
+                              <span className="text-muted-foreground">or</span>
+                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <p className="text-sm font-medium">
+                              {t.analyzer.imageUpload.clickToUpload}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {t.analyzer.imageUpload.fileTypes} •{" "}
+                              {t.analyzer.imageUpload.ctrlVPaste}
+                            </p>
+                          </div>
                         </div>
                       ) : (
                         <div className="relative h-48 w-full rounded-lg overflow-hidden border">

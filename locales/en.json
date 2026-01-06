@@ -317,9 +317,10 @@
       "title": "Upload Food Image",
       "clickToUpload": "Click to upload image",
       "fileTypes": "PNG, JPG up to 10MB",
+      "ctrlVPaste": "Ctrl+V to paste",
       "additionalDesc": "Additional Description (Optional)",
       "additionalDescPlaceholder": "e.g., serving size, preparation method...",
-      "detectedText": "Detected Text (OCR)"
+      "detectedText": "Analysis Details (Label/Ingredients)"
     },
     "descriptionInput": {
       "title": "Describe your food",
