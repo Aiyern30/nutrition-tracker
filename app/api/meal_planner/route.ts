@@ -81,18 +81,39 @@ async function getUnsplashFoodImage(
   }
 }
 
-// Improved placeholder with food emoji and better styling
+// Improved placeholder with varied high-quality food images based on meal type
 function getPlaceholderImage(mealName: string, mealType: string): string {
-  const emoji =
-    mealType.includes("早餐") || mealType.toLowerCase().includes("breakfast")
-      ? "🍳"
-      : mealType.includes("午餐") || mealType.toLowerCase().includes("lunch")
-      ? "🍱"
-      : mealType.includes("晚餐") || mealType.toLowerCase().includes("dinner")
-      ? "🍽️"
-      : "🥗";
+  const typeLower = mealType.toLowerCase();
 
-  return `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1024&h=576&fit=crop&q=80`;
+  // High-quality static fallback images from Unsplash
+  const images = {
+    breakfast:
+      "https://images.unsplash.com/photo-1533089860892-a7c09db4888b?w=1024&h=576&fit=crop&q=80",
+    lunch:
+      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1024&h=576&fit=crop&q=80",
+    dinner:
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1024&h=576&fit=crop&q=80",
+    snack:
+      "https://images.unsplash.com/photo-1567620905732-2d1ec7bb7445?w=1024&h=576&fit=crop&q=80",
+    generic:
+      "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=1024&h=576&fit=crop&q=80",
+  };
+
+  if (typeLower.includes("breakfast") || typeLower.includes("早餐")) {
+    return images.breakfast;
+  } else if (typeLower.includes("lunch") || typeLower.includes("午餐")) {
+    return images.lunch;
+  } else if (typeLower.includes("dinner") || typeLower.includes("晚餐")) {
+    return images.dinner;
+  } else if (
+    typeLower.includes("snack") ||
+    typeLower.includes("加餐") ||
+    typeLower.includes("零食")
+  ) {
+    return images.snack;
+  }
+
+  return images.generic;
 }
 
 export async function POST(request: NextRequest) {

@@ -71,6 +71,10 @@
     "ingredients": "食材",
     "proTip": "专业提示：",
     "regeneratePlan": "重新生成计划",
+    "planGeneratedTitle": "新计划已生成",
+    "planGeneratedDesc": "此计划尚未保存。您想保留它吗？",
+    "confirmSave": "确认并保存",
+    "regenerate": "重新生成",
     "kcal": "千卡"
   },
   "profile": {
