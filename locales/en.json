@@ -71,6 +71,10 @@
     "ingredients": "Ingredients",
     "proTip": "Pro-Tip:",
     "regeneratePlan": "Regenerate Plan",
+    "planGeneratedTitle": "New Plan Generated",
+    "planGeneratedDesc": "This plan is not saved yet. Would you like to keep it?",
+    "confirmSave": "Confirm & Save",
+    "regenerate": "Regenerate",
     "kcal": "kcal"
   },
   "profile": {

@@ -658,12 +658,10 @@ export default function MealPlannerPage() {
                 <Alert className="bg-primary/10 border-primary/20 shadow-sm animate-pulse">
                   <Sparkles className="h-4 w-4 text-primary" />
                   <AlertTitle className="text-primary font-bold">
-                    New Plan Generated
+                    {t.mealPlanner.planGeneratedTitle}
                   </AlertTitle>
                   <AlertDescription className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mt-2">
-                    <span>
-                      This plan is not saved yet. Would you like to keep it?
-                    </span>
+                    <span>{t.mealPlanner.planGeneratedDesc}</span>
                     <div className="flex gap-2 w-full sm:w-auto">
                       <Button
                         size="sm"
@@ -677,7 +675,7 @@ export default function MealPlannerPage() {
                             loading ? "animate-spin" : ""
                           }`}
                         />
-                        Regenerate
+                        {t.mealPlanner.regenerate}
                       </Button>
                       <Button
                         size="sm"
@@ -685,7 +683,7 @@ export default function MealPlannerPage() {
                         disabled={loading}
                         className="flex-1 sm:flex-none"
                       >
-                        Confirm & Save
+                        {t.mealPlanner.confirmSave}
                       </Button>
                     </div>
                   </AlertDescription>
