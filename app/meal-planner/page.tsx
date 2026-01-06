@@ -313,6 +313,12 @@ export default function MealPlannerPage() {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
+  const [currentMobileCenter, setCurrentMobileCenter] = useState<Date>(
+    new Date()
+  );
+  const [currentTabletCenter, setCurrentTabletCenter] = useState<Date>(
+    new Date()
+  );
 
   const isPending =
     pendingPlan && isSameDay(new Date(pendingPlan.date), selectedDate);
@@ -359,9 +365,15 @@ export default function MealPlannerPage() {
     addDays(currentWeekStart, i)
   );
 
-  // Generate 3-day view for mobile (yesterday, today, tomorrow)
-  const today = new Date();
-  const mobileDates = [addDays(today, -1), today, addDays(today, 1)];
+  // Generate 5-day view for tablet (2 days before center, center, 2 days after)
+  const tabletDates = Array.from({ length: 5 }, (_, i) =>
+    addDays(currentTabletCenter, i - 2)
+  );
+
+  // Generate 3-day view for mobile (1 day before center, center, 1 day after)
+  const mobileDates = Array.from({ length: 3 }, (_, i) =>
+    addDays(currentMobileCenter, i - 1)
+  );
 
   const goToPreviousWeek = () => {
     setCurrentWeekStart(addDays(currentWeekStart, -7));
@@ -371,9 +383,27 @@ export default function MealPlannerPage() {
     setCurrentWeekStart(addDays(currentWeekStart, 7));
   };
 
+  const goToPreviousTablet = () => {
+    setCurrentTabletCenter(addDays(currentTabletCenter, -5));
+  };
+
+  const goToNextTablet = () => {
+    setCurrentTabletCenter(addDays(currentTabletCenter, 5));
+  };
+
+  const goToPreviousMobile = () => {
+    setCurrentMobileCenter(addDays(currentMobileCenter, -3));
+  };
+
+  const goToNextMobile = () => {
+    setCurrentMobileCenter(addDays(currentMobileCenter, 3));
+  };
+
   const goToToday = () => {
     const today = new Date();
     setCurrentWeekStart(startOfWeek(today, { weekStartsOn: 1 }));
+    setCurrentTabletCenter(today);
+    setCurrentMobileCenter(today);
     setSelectedDate(today);
   };
 
@@ -465,8 +495,8 @@ export default function MealPlannerPage() {
         <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
           {/* Calendar Navigation */}
           <div className="space-y-3">
-            {/* Desktop: Full week with navigation */}
-            <div className="hidden md:flex items-center gap-2 lg:gap-4">
+            {/* Desktop: Full week with navigation (lg and above) */}
+            <div className="hidden lg:flex items-center gap-2 lg:gap-4">
               <Button
                 variant="outline"
                 size="icon"
@@ -490,7 +520,47 @@ export default function MealPlannerPage() {
               </Button>
             </div>
 
-            {/* Mobile: 3-day view */}
+            {/* Tablet: 5-day view (md to lg) */}
+            <div className="hidden md:block lg:hidden">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground">
+                  {format(selectedDate, "MMMM yyyy", { locale: dateLocale })}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToToday}
+                  className="h-7 text-xs px-3"
+                >
+                  {t.mealPlanner.today || "Today"}
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={goToPreviousTablet}
+                  className="shrink-0 h-9 w-9"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <div className="flex gap-2 sm:gap-3 flex-1 justify-center overflow-hidden">
+                  {tabletDates.map(getDayButton)}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={goToNextTablet}
+                  className="shrink-0 h-9 w-9"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Mobile: 3-day view (below md) */}
             <div className="md:hidden">
               <div className="flex items-center justify-between mb-3 px-1">
                 <h3 className="text-xs sm:text-sm font-semibold text-muted-foreground">
@@ -505,8 +575,28 @@ export default function MealPlannerPage() {
                   {t.mealPlanner.today || "Today"}
                 </Button>
               </div>
-              <div className="flex gap-2 sm:gap-3 justify-center">
-                {mobileDates.map(getDayButton)}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={goToPreviousMobile}
+                  className="shrink-0 h-8 w-8"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <div className="flex gap-2 sm:gap-3 flex-1 justify-center overflow-hidden">
+                  {mobileDates.map(getDayButton)}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={goToNextMobile}
+                  className="shrink-0 h-8 w-8"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
