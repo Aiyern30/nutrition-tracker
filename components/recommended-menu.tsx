@@ -66,12 +66,16 @@ export function RecommendedMenu() {
 
   if (meals.length === 0) {
     return (
-      <Card className="col-span-full">
+      <Card className="col-span-full shadow-sm border border-border/50 rounded-[2rem] bg-white dark:bg-card">
         <CardHeader>
-          <CardTitle>{t.dashboard.recommendedMenu.title}</CardTitle>
+          <CardTitle className="text-lg font-bold">
+            {t.dashboard.recommendedMenu.title}
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-          <Utensils className="h-12 w-12 opacity-20 mb-4" />
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground min-h-[200px]">
+          <div className="bg-muted/50 p-4 rounded-full mb-4">
+            <Utensils className="h-8 w-8 opacity-20" />
+          </div>
           <p>{t.dashboard.recommendedMenu.noPlan}</p>
         </CardContent>
       </Card>
