@@ -2,7 +2,15 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Search, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Settings2,
+  Check,
+  Filter,
+} from "lucide-react";
 import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 import {
   SidebarProvider,
@@ -10,6 +18,14 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface DailySummary {
   id: string;
@@ -28,6 +44,17 @@ interface DailySummary {
   created_at: string;
   updated_at: string;
 }
+
+const ALL_COLUMNS = [
+  { id: "calories", label: "Calories" },
+  { id: "protein", label: "Protein" },
+  { id: "carbs", label: "Carbs" },
+  { id: "fats", label: "Fats" },
+  { id: "water", label: "Water" },
+  { id: "steps", label: "Steps" },
+  { id: "sleep", label: "Sleep" },
+  { id: "weight", label: "Weight" },
+];
 
 interface PaginationInfo {
   page: number;
@@ -51,6 +78,9 @@ const DailySummariesDashboard = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
   const [currentPage, setCurrentPage] = useState(1);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(
+    ALL_COLUMNS.map((c) => c.id)
+  );
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 10,
@@ -139,6 +169,7 @@ const DailySummariesDashboard = () => {
       filter: DateFilter,
       page: number,
       search: string,
+      metrics: string[],
       showLoader = true
     ) => {
       if (showLoader) {
@@ -169,6 +200,7 @@ const DailySummariesDashboard = () => {
           filter: filter,
           page: page.toString(),
           limit: ITEMS_PER_PAGE.toString(),
+          metrics: metrics.join(","),
         });
 
         if (search && search.trim()) {
@@ -238,7 +270,7 @@ const DailySummariesDashboard = () => {
         // Fetch both in parallel
         await Promise.all([
           fetchAllSummaries(dateFilter),
-          fetchPaginatedSummaries(dateFilter, 1, "", false),
+          fetchPaginatedSummaries(dateFilter, 1, "", visibleColumns, false),
         ]);
         console.log("Initial load completed successfully");
       } catch (err) {
@@ -265,9 +297,15 @@ const DailySummariesDashboard = () => {
       currentPage,
       debouncedSearch,
     });
-    fetchPaginatedSummaries(dateFilter, currentPage, debouncedSearch, true);
+    fetchPaginatedSummaries(
+      dateFilter,
+      currentPage,
+      debouncedSearch,
+      visibleColumns,
+      true
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFilter, currentPage, debouncedSearch]);
+  }, [dateFilter, currentPage, debouncedSearch, visibleColumns]);
 
   // Refetch stats when filter changes (skip initial load)
   useEffect(() => {
@@ -291,9 +329,9 @@ const DailySummariesDashboard = () => {
 
       // Fetch both stats and table data
       fetchAllSummaries(newFilter);
-      fetchPaginatedSummaries(newFilter, 1, "", true);
+      fetchPaginatedSummaries(newFilter, 1, "", visibleColumns, true);
     },
-    [fetchAllSummaries, fetchPaginatedSummaries]
+    [fetchAllSummaries, fetchPaginatedSummaries, visibleColumns]
   );
 
   // Handle page change
@@ -351,11 +389,11 @@ const DailySummariesDashboard = () => {
   const getScoreColor = (score: string) => {
     switch (score.toUpperCase()) {
       case "A":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
+        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
       case "B":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
+        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
       case "C":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
       case "D":
         return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300";
       case "F":
@@ -385,9 +423,9 @@ const DailySummariesDashboard = () => {
           <div className="flex items-center justify-between flex-1">
             <h1 className="text-xl font-semibold">Daily Summaries</h1>
             {(statsLoading || tableLoading) && (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin"></div>
-                Loading...
+              <div className="flex items-center gap-2 text-sm text-emerald-600 font-medium">
+                <div className="w-4 h-4 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+                Updating...
               </div>
             )}
           </div>
@@ -397,30 +435,30 @@ const DailySummariesDashboard = () => {
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+              <div className="bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-2xl p-6 border border-emerald-200 dark:border-emerald-800">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-green-700 dark:text-green-300 font-medium mb-1">
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium mb-1">
                       {dateFilter === "all" ? "Total Calories" : "Avg Calories"}
                     </p>
-                    <p className="text-3xl font-bold text-green-900 dark:text-green-100">
+                    <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
                       {statsLoading ? (
-                        <span className="inline-block w-20 h-9 bg-green-200 dark:bg-green-800 animate-pulse rounded"></span>
+                        <span className="inline-block w-20 h-9 bg-emerald-200 dark:bg-emerald-800 animate-pulse rounded"></span>
                       ) : dateFilter === "all" ? (
                         periodTotals.calories.toLocaleString()
                       ) : (
                         averages.calories.toLocaleString()
                       )}
                     </p>
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
                       kcal {dateFilter !== "all" && "per day"}
                     </p>
                   </div>
-                  <div className="bg-green-500 rounded-xl p-3">
+                  <div className="bg-emerald-500 rounded-xl p-3 shadow-lg shadow-emerald-500/20">
                     <span className="text-2xl">🔥</span>
                   </div>
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-400 mt-3">
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-3">
                   {getPeriodLabel()} • {allSummaries.length} days
                 </p>
               </div>
@@ -519,23 +557,54 @@ const DailySummariesDashboard = () => {
                   placeholder="Search by date or quality score..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"
                 />
                 {searchTerm && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-medium">
                     {searchTerm !== debouncedSearch
-                      ? "Typing..."
+                      ? "..."
                       : `${pagination.total} results`}
                   </span>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shrink-0">
+                      <Settings2 className="w-4 h-4" />
+                      <span className="hidden xs:inline">Columns</span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel>Show Columns</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {ALL_COLUMNS.map((col) => (
+                      <DropdownMenuCheckboxItem
+                        key={col.id}
+                        checked={visibleColumns.includes(col.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setVisibleColumns([...visibleColumns, col.id]);
+                          } else {
+                            setVisibleColumns(
+                              visibleColumns.filter((id) => id !== col.id)
+                            );
+                          }
+                        }}
+                      >
+                        {col.label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block mx-1"></div>
                 <button
                   onClick={() => handleDateFilterChange("week")}
                   disabled={statsLoading || tableLoading}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 shrink-0 ${
                     dateFilter === "week"
-                      ? "bg-green-600 text-white"
+                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
                       : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
                 >
@@ -545,9 +614,9 @@ const DailySummariesDashboard = () => {
                 <button
                   onClick={() => handleDateFilterChange("month")}
                   disabled={statsLoading || tableLoading}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 shrink-0 ${
                     dateFilter === "month"
-                      ? "bg-green-600 text-white"
+                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
                       : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
                 >
@@ -557,9 +626,9 @@ const DailySummariesDashboard = () => {
                 <button
                   onClick={() => handleDateFilterChange("all")}
                   disabled={statsLoading || tableLoading}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 shrink-0 ${
                     dateFilter === "all"
-                      ? "bg-green-600 text-white"
+                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
                       : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
                 >
@@ -574,34 +643,50 @@ const DailySummariesDashboard = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-100 dark:border-gray-700 z-10 shadow-[2px_0_5px_rgba(0,0,0,0,05)]">
                         Date
                       </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                        Calories
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                        Protein
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                        Carbs
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                        Fats
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                        Water
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                        Steps
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                        Sleep
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                        Weight
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                      {visibleColumns.includes("calories") && (
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                          Calories
+                        </th>
+                      )}
+                      {visibleColumns.includes("protein") && (
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                          Protein
+                        </th>
+                      )}
+                      {visibleColumns.includes("carbs") && (
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                          Carbs
+                        </th>
+                      )}
+                      {visibleColumns.includes("fats") && (
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                          Fats
+                        </th>
+                      )}
+                      {visibleColumns.includes("water") && (
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                          Water
+                        </th>
+                      )}
+                      {visibleColumns.includes("steps") && (
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                          Steps
+                        </th>
+                      )}
+                      {visibleColumns.includes("sleep") && (
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                          Sleep
+                        </th>
+                      )}
+                      {visibleColumns.includes("weight") && (
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                          Weight
+                        </th>
+                      )}
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                         Quality
                       </th>
                     </tr>
@@ -611,11 +696,13 @@ const DailySummariesDashboard = () => {
                       Array.from({ length: 5 }).map((_, i) => (
                         <tr key={i} className="animate-pulse">
                           <td className="px-6 py-4">
-                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 sm:w-32"></div>
                           </td>
-                          {Array.from({ length: 9 }).map((_, j) => (
+                          {Array.from({
+                            length: visibleColumns.length + 1,
+                          }).map((_, j) => (
                             <td key={j} className="px-6 py-4 text-center">
-                              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mx-auto"></div>
+                              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12 sm:w-16 mx-auto"></div>
                             </td>
                           ))}
                         </tr>
@@ -623,7 +710,7 @@ const DailySummariesDashboard = () => {
                     ) : summaries.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={10}
+                          colSpan={visibleColumns.length + 2}
                           className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                         >
                           <div className="flex flex-col items-center gap-2">
@@ -643,85 +730,101 @@ const DailySummariesDashboard = () => {
                           key={summary.id}
                           className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                         >
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-100 dark:border-gray-700 shadow-[2px_0_5px_rgba(0,0,0,0,05)]">
                             <div className="flex flex-col">
                               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                 {formatDate(summary.date)}
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                              {summary.total_calories}
-                            </span>
-                            <span className="text-xs text-gray-500 ml-1">
-                              kcal
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                              {summary.total_protein}
-                            </span>
-                            <span className="text-xs text-gray-500 ml-1">
-                              g
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                              {summary.total_carbs}
-                            </span>
-                            <span className="text-xs text-gray-500 ml-1">
-                              g
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                              {summary.total_fats}
-                            </span>
-                            <span className="text-xs text-gray-500 ml-1">
-                              g
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                              {summary.water_intake}
-                            </span>
-                            <span className="text-xs text-gray-500 ml-1">
-                              L
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                              {summary.steps.toLocaleString()}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                              {summary.sleep_hours}
-                            </span>
-                            <span className="text-xs text-gray-500 ml-1">
-                              hrs
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            {summary.weight ? (
-                              <>
-                                <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                  {summary.weight}
-                                </span>
-                                <span className="text-xs text-gray-500 ml-1">
-                                  kg
-                                </span>
-                              </>
-                            ) : (
-                              <span className="text-sm text-gray-400 dark:text-gray-600">
-                                -
+                          {visibleColumns.includes("calories") && (
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                {summary.total_calories || 0}
                               </span>
-                            )}
-                          </td>
+                              <span className="text-[10px] text-gray-500 ml-1">
+                                kcal
+                              </span>
+                            </td>
+                          )}
+                          {visibleColumns.includes("protein") && (
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                {summary.total_protein || 0}
+                              </span>
+                              <span className="text-[10px] text-gray-500 ml-1">
+                                g
+                              </span>
+                            </td>
+                          )}
+                          {visibleColumns.includes("carbs") && (
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                {summary.total_carbs || 0}
+                              </span>
+                              <span className="text-[10px] text-gray-500 ml-1">
+                                g
+                              </span>
+                            </td>
+                          )}
+                          {visibleColumns.includes("fats") && (
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                {summary.total_fats || 0}
+                              </span>
+                              <span className="text-[10px] text-gray-500 ml-1">
+                                g
+                              </span>
+                            </td>
+                          )}
+                          {visibleColumns.includes("water") && (
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                {summary.water_intake || 0}
+                              </span>
+                              <span className="text-[10px] text-gray-500 ml-1">
+                                L
+                              </span>
+                            </td>
+                          )}
+                          {visibleColumns.includes("steps") && (
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                {(summary.steps || 0).toLocaleString()}
+                              </span>
+                            </td>
+                          )}
+                          {visibleColumns.includes("sleep") && (
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                {summary.sleep_hours || 0}
+                              </span>
+                              <span className="text-[10px] text-gray-500 ml-1">
+                                hrs
+                              </span>
+                            </td>
+                          )}
+                          {visibleColumns.includes("weight") && (
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              {summary.weight ? (
+                                <>
+                                  <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                    {summary.weight}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500 ml-1">
+                                    kg
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-sm text-gray-400 dark:text-gray-600">
+                                  -
+                                </span>
+                              )}
+                            </td>
+                          )}
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getScoreColor(
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${getScoreColor(
                                 summary.diet_quality_score
                               )}`}
                             >
@@ -779,9 +882,9 @@ const DailySummariesDashboard = () => {
                             key={pageNum}
                             onClick={() => handlePageChange(pageNum)}
                             disabled={tableLoading}
-                            className={`w-10 h-10 rounded-lg text-sm font-medium disabled:opacity-50 ${
+                            className={`w-10 h-10 rounded-lg text-sm font-medium disabled:opacity-50 transition-all ${
                               pagination.page === pageNum
-                                ? "bg-green-600 text-white"
+                                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
                                 : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                             }`}
                           >
