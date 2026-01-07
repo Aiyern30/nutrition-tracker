@@ -168,116 +168,113 @@ export function DashboardStats() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {/* Weight Card */}
-        <div className="relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border/50 transition-all hover:shadow-md">
+        <div className="bg-linear-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-2xl p-6 border border-indigo-200 dark:border-indigo-800 transition-all hover:shadow-md">
           <div className="flex items-start justify-between mb-4">
-            <span className="text-base font-medium text-muted-foreground">
-              {t.dashboard.stats.weight.title}
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-              <TrendingUp className="h-4 w-4" />
+            <div>
+              <p className="text-sm text-indigo-700 dark:text-indigo-300 font-medium mb-1">
+                {t.dashboard.stats.weight.title}
+              </p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-indigo-900 dark:text-indigo-100">
+                  {weight || "--"}
+                </span>
+                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                  {t.dashboard.units.kg}
+                </span>
+              </div>
+            </div>
+            <div className="bg-indigo-500 rounded-xl p-3 shadow-lg shadow-indigo-500/20 text-white">
+              <span className="text-2xl">⚖️</span>
             </div>
           </div>
 
-          <div className="flex items-baseline gap-1 mb-6">
-            <span className="text-4xl font-bold text-foreground">
-              {weight || "--"}
-            </span>
-            <span className="text-sm font-medium text-muted-foreground">
-              {t.dashboard.units.kg}
-            </span>
-          </div>
-
           {/* Ruler Visualization */}
-          <div className="relative h-12 w-full mt-2">
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 bg-muted rounded-full"></div>
+          <div className="relative h-12 w-full mt-2 opacity-80">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 bg-indigo-200 dark:bg-indigo-800 rounded-full"></div>
             {/* Ruler Ticks */}
-            <div className="flex justify-between px-2 text-[10px] text-muted-foreground font-medium mt-6">
+            <div className="flex justify-between px-2 text-[10px] text-indigo-600 dark:text-indigo-300 font-medium mt-6">
               <span>{Math.max(0, Math.round(weight - 5))}</span>
               <span>{Math.round(weight)}</span>
               <span>{Math.round(weight + 5)}</span>
             </div>
             {/* Slider Thumb */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+8px)] flex flex-col items-center">
-              <div className="h-4 w-4 rounded-full bg-primary shadow-lg ring-4 ring-background"></div>
-              <div className="h-4 w-0.5 bg-primary mt-1"></div>
-            </div>
-            {/* Decorative ticks background */}
-            <div className="absolute inset-0 flex justify-between items-center px-2 pointer-events-none opacity-20">
-              {[...Array(21)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-px bg-foreground ${
-                    i % 5 === 0 ? "h-4" : "h-2"
-                  }`}
-                ></div>
-              ))}
+              <div className="h-4 w-4 rounded-full bg-indigo-600 shadow-lg ring-4 ring-indigo-50 dark:ring-indigo-900/50"></div>
+              <div className="h-4 w-0.5 bg-indigo-600 mt-1"></div>
             </div>
           </div>
         </div>
 
         {/* Steps Card */}
-        <div className="relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border/50 transition-all hover:shadow-md">
+        <div className="bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-2xl p-6 border border-emerald-200 dark:border-emerald-800 transition-all hover:shadow-md">
           <div className="flex items-start justify-between mb-4">
-            <span className="text-base font-medium text-muted-foreground">
-              {t.dashboard.stats.steps.title}
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-              <Flame className="h-4 w-4" />
+            <div>
+              <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium mb-1">
+                {t.dashboard.stats.steps.title}
+              </p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
+                  {steps}
+                </span>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                  {t.dashboard.stats.steps.subtitle}
+                </span>
+              </div>
+            </div>
+            <div className="bg-emerald-500 rounded-xl p-3 shadow-lg shadow-emerald-500/20 text-white">
+              <span className="text-2xl">👟</span>
             </div>
           </div>
 
-          <div className="flex items-baseline gap-1 mb-6">
-            <span className="text-4xl font-bold text-foreground">{steps}</span>
-            <span className="text-sm font-medium text-muted-foreground">
-              {t.dashboard.stats.steps.subtitle}
-            </span>
-          </div>
-
           {/* Progress Bar */}
-          <div className="flex h-5 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full bg-primary transition-all duration-500 ease-out"
-              style={{ width: `${stepsPercent}%` }}
-            />
-            <div
-              className="h-full flex-1 bg-primary/20"
-              style={{
-                backgroundImage:
-                  "linear-gradient(45deg, rgba(255,255,255,.3) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.3) 50%, rgba(255,255,255,.3) 75%, transparent 75%, transparent)",
-                backgroundSize: "1rem 1rem",
-              }}
-            />
-          </div>
-          <div className="flex justify-between mt-2 text-xs font-medium">
-            <span className="text-foreground">{stepsPercent}%</span>
-            <span className="text-muted-foreground">
-              {Math.max(0, stepsGoal - steps)} {t.dashboard.units.stepsLeft}
-            </span>
+          <div className="mt-4">
+            <div className="flex h-3 w-full overflow-hidden rounded-full bg-emerald-200 dark:bg-emerald-800/50">
+              <div
+                className="h-full bg-emerald-500 transition-all duration-500 ease-out relative"
+                style={{ width: `${stepsPercent}%` }}
+              >
+                <div
+                  className="absolute inset-0 bg-white/20"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(45deg, rgba(255,255,255,.3) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.3) 50%, rgba(255,255,255,.3) 75%, transparent 75%, transparent)",
+                    backgroundSize: "1rem 1rem",
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex justify-between mt-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+              <span>{stepsPercent}%</span>
+              <span>
+                {Math.max(0, stepsGoal - steps)} {t.dashboard.units.stepsLeft}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Sleep Card */}
-        <div className="relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border/50 transition-all hover:shadow-md">
+        <div className="bg-linear-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 rounded-2xl p-6 border border-violet-200 dark:border-violet-800 transition-all hover:shadow-md">
           <div className="flex items-start justify-between mb-4">
-            <span className="text-base font-medium text-muted-foreground">
-              {t.dashboard.stats.sleep.title}
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-              <Clock className="h-4 w-4" />
+            <div>
+              <p className="text-sm text-violet-700 dark:text-violet-300 font-medium mb-1">
+                {t.dashboard.stats.sleep.title}
+              </p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-violet-900 dark:text-violet-100">
+                  {sleepHours}
+                </span>
+                <span className="text-xs text-violet-600 dark:text-violet-400 font-medium">
+                  {t.dashboard.stats.sleep.subtitle}
+                </span>
+              </div>
+            </div>
+            <div className="bg-violet-500 rounded-xl p-3 shadow-lg shadow-violet-500/20 text-white">
+              <span className="text-2xl">😴</span>
             </div>
           </div>
 
-          <div className="flex items-baseline gap-1 mb-6">
-            <span className="text-4xl font-bold text-foreground">
-              {sleepHours}
-            </span>
-            <span className="text-sm font-medium text-muted-foreground">
-              {t.dashboard.stats.sleep.subtitle}
-            </span>
-          </div>
-
           {/* Bar Chart */}
-          <div className="flex items-end justify-between h-12 gap-1 mt-auto">
+          <div className="flex items-end justify-between h-10 gap-1 mt-6">
             {(weekSleepData.length > 0 ? weekSleepData : Array(7).fill(0)).map(
               (val, i) => (
                 <div
@@ -286,7 +283,9 @@ export function DashboardStats() {
                 >
                   <div
                     className={`w-full rounded-t-sm transition-all duration-500 ${
-                      i === 6 ? "bg-primary" : "bg-muted-foreground/20"
+                      i === 6
+                        ? "bg-violet-600"
+                        : "bg-violet-300 dark:bg-violet-700"
                     }`}
                     style={{
                       height: `${Math.min(
@@ -302,36 +301,36 @@ export function DashboardStats() {
         </div>
 
         {/* Water Card */}
-        <div className="relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-sm border border-border/50 transition-all hover:shadow-md">
+        <div className="bg-linear-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 rounded-2xl p-6 border border-cyan-200 dark:border-cyan-800 transition-all hover:shadow-md">
           <div className="flex items-start justify-between mb-4">
-            <span className="text-base font-medium text-muted-foreground">
-              {t.dashboard.stats.waterIntake.title}
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-              <Droplets className="h-4 w-4" />
+            <div>
+              <p className="text-sm text-cyan-700 dark:text-cyan-300 font-medium mb-1">
+                {t.dashboard.stats.waterIntake.title}
+              </p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-cyan-900 dark:text-cyan-100">
+                  {waterRemaining.toFixed(1)}
+                </span>
+                <span className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+                  {t.dashboard.units.litreLeft}
+                </span>
+              </div>
             </div>
-          </div>
-
-          <div className="flex items-baseline gap-1 mb-6 relative z-10">
-            <span className="text-4xl font-bold text-foreground">
-              {waterRemaining.toFixed(1)}
-            </span>
-            <span className="text-sm font-medium text-muted-foreground">
-              {t.dashboard.units.litreLeft}
-            </span>
+            <div className="bg-cyan-500 rounded-xl p-3 shadow-lg shadow-cyan-500/20 text-white">
+              <span className="text-2xl">💧</span>
+            </div>
           </div>
 
           {/* Liquid Fill Visualization */}
-          <div className="relative h-16 w-full rounded-xl bg-muted/30 overflow-hidden border border-border/50">
+          <div className="relative h-12 w-full rounded-xl bg-white/50 dark:bg-black/10 overflow-hidden border border-cyan-200 dark:border-cyan-700 mt-2">
             <div
-              className="absolute bottom-0 left-0 right-0 bg-yellow-400/80 dark:bg-yellow-500/80 transition-all duration-700 ease-in-out"
+              className="absolute bottom-0 left-0 right-0 bg-cyan-400/80 transition-all duration-700 ease-in-out"
               style={{ height: `${waterPercent}%` }}
             >
-              {/* Wave effect overlay could go here */}
               <div className="absolute top-0 w-full h-1 bg-white/30"></div>
             </div>
-            <div className="absolute inset-0 flex items-center justify-end px-4 z-10">
-              <span className="text-xs font-bold text-foreground/70 mix-blend-multiply dark:mix-blend-normal">
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <span className="text-xs font-bold text-cyan-900 dark:text-cyan-100">
                 {waterIntake}/{waterGoal} {t.dashboard.units.litre}
               </span>
             </div>
