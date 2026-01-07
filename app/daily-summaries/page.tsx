@@ -155,7 +155,13 @@ const DailySummariesDashboard = () => {
           return;
         }
 
-        console.log("Fetching paginated summaries:", { user_id: user.id, filter, page, search, limit: ITEMS_PER_PAGE });
+        console.log("Fetching paginated summaries:", {
+          user_id: user.id,
+          filter,
+          page,
+          search,
+          limit: ITEMS_PER_PAGE,
+        });
 
         // Build API URL with query parameters
         const params = new URLSearchParams({
@@ -175,12 +181,12 @@ const DailySummariesDashboard = () => {
         const response = await fetch(url);
         const result = await response.json();
 
-        console.log("API Response:", { 
-          ok: response.ok, 
+        console.log("API Response:", {
+          ok: response.ok,
           status: response.status,
           dataLength: result.data?.length,
           pagination: result.pagination,
-          error: result.error
+          error: result.error,
         });
 
         if (!response.ok) {
@@ -198,7 +204,11 @@ const DailySummariesDashboard = () => {
           }
         );
 
-        console.log(`Successfully fetched page ${page}: ${result.data?.length || 0} items, total: ${result.pagination?.total || 0}`);
+        console.log(
+          `Successfully fetched page ${page}: ${
+            result.data?.length || 0
+          } items, total: ${result.pagination?.total || 0}`
+        );
       } catch (err) {
         console.error("Error fetching paginated summaries:", err);
         setSummaries([]);
@@ -223,7 +233,7 @@ const DailySummariesDashboard = () => {
     const loadData = async () => {
       console.log("Initial load started");
       setLoading(true);
-      
+
       try {
         // Fetch both in parallel
         await Promise.all([
@@ -250,7 +260,11 @@ const DailySummariesDashboard = () => {
       return;
     }
 
-    console.log("Refetching table data:", { dateFilter, currentPage, debouncedSearch });
+    console.log("Refetching table data:", {
+      dateFilter,
+      currentPage,
+      debouncedSearch,
+    });
     fetchPaginatedSummaries(dateFilter, currentPage, debouncedSearch, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFilter, currentPage, debouncedSearch]);
