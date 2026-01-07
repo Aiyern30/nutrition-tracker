@@ -75,58 +75,60 @@ export default function DashboardPage() {
             <DailySummaryCard />
 
             {/* Quick Actions */}
-            <Card className="transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-primary/20 h-full">
+            <Card className="transition-all duration-300 shadow-sm border border-border/50 rounded-[2rem] bg-white dark:bg-card h-full">
               <CardHeader>
-                <CardTitle>{t.dashboard.quickActions.title}</CardTitle>
+                <CardTitle className="text-lg font-bold">
+                  {t.dashboard.quickActions.title}
+                </CardTitle>
                 <CardDescription>
                   {t.dashboard.quickActions.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <Button
                   asChild
-                  className="w-full justify-start h-14 text-base font-medium transition-all hover:bg-primary/5 hover:text-primary hover:border-primary/20"
-                  variant="outline"
+                  className="w-full justify-start h-16 text-base font-medium transition-all hover:scale-[1.02] bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800 rounded-xl shadow-sm"
+                  variant="ghost"
                 >
                   <Link href="/chat">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100/50 text-blue-600 mr-3">
-                      <MessageSquare className="h-4 w-4" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50 text-xl mr-3 border border-blue-200 dark:border-blue-700">
+                      💬
                     </div>
                     {t.dashboard.quickActions.askAI}
                   </Link>
                 </Button>
                 <Button
                   asChild
-                  className="w-full justify-start h-14 text-base font-medium transition-all hover:bg-primary/5 hover:text-primary hover:border-primary/20"
-                  variant="outline"
+                  className="w-full justify-start h-16 text-base font-medium transition-all hover:scale-[1.02] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800 rounded-xl shadow-sm"
+                  variant="ghost"
                 >
                   <Link href="/tracker">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100/50 text-green-600 mr-3">
-                      <PlusCircle className="h-4 w-4" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-xl mr-3 border border-emerald-200 dark:border-emerald-700">
+                      📝
                     </div>
                     {t.dashboard.quickActions.logMeal}
                   </Link>
                 </Button>
                 <Button
                   asChild
-                  className="w-full justify-start h-14 text-base font-medium transition-all hover:bg-primary/5 hover:text-primary hover:border-primary/20"
-                  variant="outline"
+                  className="w-full justify-start h-16 text-base font-medium transition-all hover:scale-[1.02] bg-violet-50 hover:bg-violet-100 text-violet-700 dark:bg-violet-900/20 dark:hover:bg-violet-900/30 dark:text-violet-300 border border-violet-100 dark:border-violet-800 rounded-xl shadow-sm"
+                  variant="ghost"
                 >
                   <Link href="/analyzer">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100/50 text-purple-600 mr-3">
-                      <ScanSearch className="h-4 w-4" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/50 text-xl mr-3 border border-violet-200 dark:border-violet-700">
+                      🔍
                     </div>
                     {t.dashboard.quickActions.analyzeFood}
                   </Link>
                 </Button>
                 <Button
                   asChild
-                  className="w-full justify-start h-14 text-base font-medium transition-all hover:bg-primary/5 hover:text-primary hover:border-primary/20"
-                  variant="outline"
+                  className="w-full justify-start h-16 text-base font-medium transition-all hover:scale-[1.02] bg-orange-50 hover:bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 dark:text-orange-300 border border-orange-100 dark:border-orange-800 rounded-xl shadow-sm"
+                  variant="ghost"
                 >
                   <Link href="/meal-planner">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100/50 text-orange-600 mr-3">
-                      <Utensils className="h-4 w-4" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/50 text-xl mr-3 border border-orange-200 dark:border-orange-700">
+                      📅
                     </div>
                     {t.dashboard.quickActions.getMealPlan}
                   </Link>

@@ -129,7 +129,7 @@ export function DailySummaryCard() {
   ];
 
   return (
-    <Card className="lg:col-span-2 shadow-sm border border-border/50 rounded-[2rem] overflow-hidden">
+    <Card className="lg:col-span-2 shadow-sm border border-border/50 rounded-[2rem] overflow-hidden bg-white dark:bg-card">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-bold">
@@ -157,15 +157,15 @@ export function DailySummaryCard() {
           <div className="flex flex-col md:flex-row gap-8 items-center">
             {/* Left: Calorie Ring */}
             <div className="relative shrink-0">
-              <div className="relative h-48 w-48">
+              <div className="relative h-56 w-56">
                 {/* Background Circle */}
                 <svg
                   className="h-full w-full -rotate-90 transform"
                   viewBox="0 0 100 100"
                 >
                   <circle
-                    className="text-muted/30"
-                    strokeWidth="8"
+                    className="text-muted/20"
+                    strokeWidth="6"
                     stroke="currentColor"
                     fill="transparent"
                     r="42"
@@ -174,28 +174,28 @@ export function DailySummaryCard() {
                   />
                   {/* Progress Circle */}
                   <circle
-                    className="transition-all duration-1000 ease-out text-orange-400"
-                    strokeWidth="8"
+                    className="transition-all duration-1000 ease-out text-emerald-500"
+                    strokeWidth="6"
                     strokeLinecap="round"
                     stroke="currentColor"
                     fill="transparent"
-                    strokeDasharray={263.89} // 2 * pi * 42
+                    strokeDasharray={263.89}
                     strokeDashoffset={263.89 - (percentCalories / 100) * 263.89}
                     r="42"
                     cx="50"
                     cy="50"
                     style={{
-                      filter: "drop-shadow(0 0 2px rgba(251, 146, 60, 0.5))",
+                      filter: "drop-shadow(0 0 4px rgba(16, 185, 129, 0.4))",
                     }}
                   />
                 </svg>
                 {/* Center Text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <Zap className="h-6 w-6 text-muted-foreground mb-1" />
-                  <span className="text-3xl font-extrabold tracking-tighter text-foreground">
+                  <div className="mb-2 text-2xl">⚡</div>
+                  <span className="text-4xl font-extrabold tracking-tighter text-foreground">
                     {caloriesLeft}
                   </span>
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide mt-1">
                     {t.dashboard.todaysSummary.kcalLeft}
                   </span>
                 </div>
@@ -206,34 +206,28 @@ export function DailySummaryCard() {
             <div className="flex-1 w-full space-y-8">
               {/* Top Stats */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-[#d9f99d] flex items-center justify-center text-[#4d7c0f]">
-                    <Utensils className="h-5 w-5" />
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20">
+                  <div className="h-12 w-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-2xl border border-emerald-200 dark:border-emerald-800">
+                    🍴
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xl font-bold leading-none">
-                      {consumedCalories}{" "}
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {t.dashboard.units.kcal}
-                      </span>
+                    <span className="text-2xl font-bold leading-none text-emerald-950 dark:text-emerald-50">
+                      {consumedCalories}
                     </span>
-                    <span className="text-xs text-muted-foreground font-medium">
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase mt-1">
                       {t.dashboard.todaysSummary.eatenCalories}
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-[#fef08a] flex items-center justify-center text-[#a16207]">
-                    <Flame className="h-5 w-5" />
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20">
+                  <div className="h-12 w-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-2xl border border-orange-200 dark:border-orange-800">
+                    🔥
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xl font-bold leading-none">
-                      {burnedCalories}{" "}
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {t.dashboard.units.kcal}
-                      </span>
+                    <span className="text-2xl font-bold leading-none text-orange-950 dark:text-orange-50">
+                      {burnedCalories}
                     </span>
-                    <span className="text-xs text-muted-foreground font-medium">
+                    <span className="text-xs text-orange-600 dark:text-orange-400 font-semibold uppercase mt-1">
                       {t.dashboard.todaysSummary.burnedCalories}
                     </span>
                   </div>
@@ -241,33 +235,38 @@ export function DailySummaryCard() {
               </div>
 
               {/* Macros List */}
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {macros.map((macro, i) => (
-                  <div key={i} className="bg-muted/30 rounded-xl p-3 px-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-bold text-foreground">
-                          {macro.current}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          / {macro.target}
-                          {t.dashboard.units.g}
+                  <div key={i} className="group">
+                    <div className="flex items-end justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-foreground w-24">
+                          0 / {macro.target} {t.dashboard.units.g}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-muted-foreground">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xs font-semibold uppercase text-muted-foreground group-hover:text-foreground transition-colors">
                           {macro.label}
                         </span>
-                        <span className="text-xs font-bold text-foreground">
+                        <span className="text-sm font-bold text-foreground">
                           {macro.percent}%
                         </span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-background rounded-full overflow-hidden">
+                    <div className="h-3 w-full bg-muted/50 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${macro.color} transition-all duration-500`}
+                        className={`h-full rounded-full ${macro.color} transition-all duration-700 ease-out relative`}
                         style={{ width: `${Math.min(100, macro.percent)}%` }}
-                      />
+                      >
+                        <div
+                          className="absolute inset-0 bg-white/20"
+                          style={{
+                            backgroundImage:
+                              "linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)",
+                            backgroundSize: "1rem 1rem",
+                          }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
                 ))}
