@@ -435,11 +435,11 @@ const DailySummariesDashboard = () => {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="min-w-0 overflow-x-hidden">
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
           <SidebarTrigger />
-          <div className="flex items-center justify-between flex-1">
-            <h1 className="text-xl font-semibold">Daily Summaries</h1>
+          <div className="flex items-center justify-between flex-1 min-w-0">
+            <h1 className="text-xl font-semibold truncate">Daily Summaries</h1>
             {(statsLoading || tableLoading) && (
               <div className="flex items-center gap-2 text-sm text-emerald-600 font-medium">
                 <div className="w-4 h-4 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
@@ -449,8 +449,8 @@ const DailySummariesDashboard = () => {
           </div>
         </header>
 
-        <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex-1 min-w-0 overflow-hidden bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-full mx-auto p-4 sm:p-6 space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-2xl p-6 border border-emerald-200 dark:border-emerald-800">
@@ -625,9 +625,9 @@ const DailySummariesDashboard = () => {
                   }
                   disabled={statsLoading || tableLoading}
                 >
-                  <SelectTrigger className="w-[140px] shrink-0 text-sm font-medium border-gray-300 dark:border-gray-600">
+                  <SelectTrigger className="w-[160px] shrink-0 text-sm font-medium border-gray-300 dark:border-gray-600 bg-white shadow-xs">
                     <Calendar className="w-4 h-4 mr-2 text-emerald-600" />
-                    <SelectValue placeholder="Period" />
+                    <SelectValue placeholder="Select period" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="week">This Week</SelectItem>
@@ -639,9 +639,9 @@ const DailySummariesDashboard = () => {
             </div>
 
             {/* Table Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden min-w-0">
-              <div className="relative overflow-x-auto">
-                <Table>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm min-w-0 overflow-hidden">
+              <div className="relative w-full overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800">
+                <Table className="min-w-[800px] lg:min-w-full">
                   <TableHeader>
                     <TableRow className="bg-gray-50/50 dark:bg-gray-900/50 hover:bg-transparent">
                       <TableHead className="px-6 py-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-100 dark:border-gray-700 z-10 shadow-[2px_0_5px_rgba(0,0,0,0,05)] h-auto">
@@ -923,7 +923,7 @@ const DailySummariesDashboard = () => {
               </div>
             )}
           </div>
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
