@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Search, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { useLanguage } from "@/contexts/language-context";
 import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 import {
   SidebarProvider,
@@ -35,10 +34,9 @@ type DateFilter = "week" | "month" | "all";
 const DailySummariesDashboard = () => {
   useLocalizedMetadata({ page: "dailySummaries" });
 
-  const { t } = useLanguage();
-  console.log("Translations:", t);
   const [summaries, setSummaries] = useState<DailySummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,9 +44,10 @@ const DailySummariesDashboard = () => {
 
   const supabase = createClient();
 
-  const getDateRange = (filter: DateFilter) => {
+  const getDateRange = useCallback((filter: DateFilter) => {
     const today = new Date();
-    const startDate = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(today);
 
     switch (filter) {
       case "week":
@@ -65,42 +64,78 @@ const DailySummariesDashboard = () => {
     }
 
     return startDate.toISOString().split("T")[0];
-  };
+  }, []);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      let query = supabase
-        .from("daily_summaries")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("date", { ascending: false });
-
-      const startDate = getDateRange(dateFilter);
-      if (startDate) {
-        query = query.gte("date", startDate);
+  // Fetch data function that can be called on filter change
+  const fetchDailySummaries = useCallback(
+    async (filter: DateFilter, showLoader = true) => {
+      if (showLoader) {
+        setLoading(true);
+        setStatsLoading(true);
       }
 
-      const { data: summariesData, error } = await query;
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (error) throw error;
+        if (!user) {
+          console.error("No user found");
+          return;
+        }
 
-      setSummaries(summariesData || []);
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, dateFilter]);
+        let query = supabase
+          .from("daily_summaries")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false });
 
+        const startDate = getDateRange(filter);
+        if (startDate) {
+          query = query.gte("date", startDate);
+        }
+
+        const { data: summariesData, error } = await query;
+
+        if (error) {
+          console.error("Error fetching summaries:", error);
+          throw error;
+        }
+
+        console.log(
+          `Fetched ${
+            summariesData?.length || 0
+          } summaries for filter: ${filter}`
+        );
+        setSummaries(summariesData || []);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setSummaries([]);
+      } finally {
+        if (showLoader) {
+          setLoading(false);
+          setStatsLoading(false);
+        }
+      }
+    },
+    [supabase, getDateRange]
+  );
+
+  // Initial load
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchDailySummaries(dateFilter, true);
+  }, [dateFilter, fetchDailySummaries]);
+
+  // Handle date filter change
+  const handleDateFilterChange = useCallback(
+    (newFilter: DateFilter) => {
+      setDateFilter(newFilter);
+      setCurrentPage(1); // Reset to first page
+      setSearchTerm(""); // Clear search
+      fetchDailySummaries(newFilter, true);
+    },
+    [fetchDailySummaries]
+  );
 
   // Calculate totals for the filtered period
   const periodTotals = summaries.reduce(
@@ -109,9 +144,34 @@ const DailySummariesDashboard = () => {
       carbs: acc.carbs + s.total_carbs,
       protein: acc.protein + s.total_protein,
       fats: acc.fats + s.total_fats,
+      water: acc.water + s.water_intake,
+      steps: acc.steps + s.steps,
+      sleep: acc.sleep + s.sleep_hours,
     }),
-    { calories: 0, carbs: 0, protein: 0, fats: 0 }
+    { calories: 0, carbs: 0, protein: 0, fats: 0, water: 0, steps: 0, sleep: 0 }
   );
+
+  // Calculate averages
+  const averages =
+    summaries.length > 0
+      ? {
+          calories: Math.round(periodTotals.calories / summaries.length),
+          carbs: Math.round(periodTotals.carbs / summaries.length),
+          protein: Math.round(periodTotals.protein / summaries.length),
+          fats: Math.round(periodTotals.fats / summaries.length),
+          water: Math.round(periodTotals.water / summaries.length),
+          steps: Math.round(periodTotals.steps / summaries.length),
+          sleep: Math.round(periodTotals.sleep / summaries.length),
+        }
+      : {
+          calories: 0,
+          carbs: 0,
+          protein: 0,
+          fats: 0,
+          water: 0,
+          steps: 0,
+          sleep: 0,
+        };
 
   // Filter by search term
   const filteredSummaries = summaries.filter((s) => {
@@ -131,10 +191,10 @@ const DailySummariesDashboard = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Reset to page 1 when filter changes
+  // Reset to page 1 when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [dateFilter, searchTerm]);
+  }, [searchTerm]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -163,13 +223,32 @@ const DailySummariesDashboard = () => {
     }
   };
 
+  const getPeriodLabel = () => {
+    switch (dateFilter) {
+      case "week":
+        return "This week";
+      case "month":
+        return "This month";
+      case "all":
+        return "All time";
+    }
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
           <SidebarTrigger />
-          <h1 className="text-xl font-semibold">Daily Summaries</h1>
+          <div className="flex items-center justify-between flex-1">
+            <h1 className="text-xl font-semibold">Daily Summaries</h1>
+            {statsLoading && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin"></div>
+                Loading...
+              </div>
+            )}
+          </div>
         </header>
 
         <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
@@ -180,13 +259,19 @@ const DailySummariesDashboard = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm text-green-700 dark:text-green-300 font-medium mb-1">
-                      Total Calories
+                      {dateFilter === "all" ? "Total Calories" : "Avg Calories"}
                     </p>
                     <p className="text-3xl font-bold text-green-900 dark:text-green-100">
-                      {periodTotals.calories.toLocaleString()}
+                      {statsLoading ? (
+                        <span className="inline-block w-20 h-9 bg-green-200 dark:bg-green-800 animate-pulse rounded"></span>
+                      ) : dateFilter === "all" ? (
+                        periodTotals.calories.toLocaleString()
+                      ) : (
+                        averages.calories.toLocaleString()
+                      )}
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                      kcal
+                      kcal {dateFilter !== "all" && "per day"}
                     </p>
                   </div>
                   <div className="bg-green-500 rounded-xl p-3">
@@ -194,11 +279,7 @@ const DailySummariesDashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-3">
-                  {dateFilter === "week"
-                    ? "This week"
-                    : dateFilter === "month"
-                    ? "This month"
-                    : "All time"}
+                  {getPeriodLabel()} • {summaries.length} days
                 </p>
               </div>
 
@@ -206,13 +287,19 @@ const DailySummariesDashboard = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm text-amber-700 dark:text-amber-300 font-medium mb-1">
-                      Total Carbs
+                      {dateFilter === "all" ? "Total Carbs" : "Avg Carbs"}
                     </p>
                     <p className="text-3xl font-bold text-amber-900 dark:text-amber-100">
-                      {periodTotals.carbs.toLocaleString()}
+                      {statsLoading ? (
+                        <span className="inline-block w-20 h-9 bg-amber-200 dark:bg-amber-800 animate-pulse rounded"></span>
+                      ) : dateFilter === "all" ? (
+                        periodTotals.carbs.toLocaleString()
+                      ) : (
+                        averages.carbs.toLocaleString()
+                      )}
                     </p>
                     <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                      gr
+                      gr {dateFilter !== "all" && "per day"}
                     </p>
                   </div>
                   <div className="bg-amber-500 rounded-xl p-3">
@@ -220,11 +307,7 @@ const DailySummariesDashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
-                  {dateFilter === "week"
-                    ? "This week"
-                    : dateFilter === "month"
-                    ? "This month"
-                    : "All time"}
+                  {getPeriodLabel()} • {summaries.length} days
                 </p>
               </div>
 
@@ -232,13 +315,19 @@ const DailySummariesDashboard = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm text-orange-700 dark:text-orange-300 font-medium mb-1">
-                      Total Protein
+                      {dateFilter === "all" ? "Total Protein" : "Avg Protein"}
                     </p>
                     <p className="text-3xl font-bold text-orange-900 dark:text-orange-100">
-                      {periodTotals.protein.toLocaleString()}
+                      {statsLoading ? (
+                        <span className="inline-block w-20 h-9 bg-orange-200 dark:bg-orange-800 animate-pulse rounded"></span>
+                      ) : dateFilter === "all" ? (
+                        periodTotals.protein.toLocaleString()
+                      ) : (
+                        averages.protein.toLocaleString()
+                      )}
                     </p>
                     <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                      gr
+                      gr {dateFilter !== "all" && "per day"}
                     </p>
                   </div>
                   <div className="bg-orange-500 rounded-xl p-3">
@@ -246,11 +335,7 @@ const DailySummariesDashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-3">
-                  {dateFilter === "week"
-                    ? "This week"
-                    : dateFilter === "month"
-                    ? "This month"
-                    : "All time"}
+                  {getPeriodLabel()} • {summaries.length} days
                 </p>
               </div>
 
@@ -258,13 +343,19 @@ const DailySummariesDashboard = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-1">
-                      Total Fats
+                      {dateFilter === "all" ? "Total Fats" : "Avg Fats"}
                     </p>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                      {periodTotals.fats.toLocaleString()}
+                      {statsLoading ? (
+                        <span className="inline-block w-20 h-9 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></span>
+                      ) : dateFilter === "all" ? (
+                        periodTotals.fats.toLocaleString()
+                      ) : (
+                        averages.fats.toLocaleString()
+                      )}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      gr
+                      gr {dateFilter !== "all" && "per day"}
                     </p>
                   </div>
                   <div className="bg-gray-500 rounded-xl p-3">
@@ -272,11 +363,7 @@ const DailySummariesDashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
-                  {dateFilter === "week"
-                    ? "This week"
-                    : dateFilter === "month"
-                    ? "This month"
-                    : "All time"}
+                  {getPeriodLabel()} • {summaries.length} days
                 </p>
               </div>
             </div>
@@ -295,8 +382,9 @@ const DailySummariesDashboard = () => {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setDateFilter("week")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  onClick={() => handleDateFilterChange("week")}
+                  disabled={statsLoading}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
                     dateFilter === "week"
                       ? "bg-green-600 text-white"
                       : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -306,8 +394,9 @@ const DailySummariesDashboard = () => {
                   This Week
                 </button>
                 <button
-                  onClick={() => setDateFilter("month")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  onClick={() => handleDateFilterChange("month")}
+                  disabled={statsLoading}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
                     dateFilter === "month"
                       ? "bg-green-600 text-white"
                       : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -317,8 +406,9 @@ const DailySummariesDashboard = () => {
                   This Month
                 </button>
                 <button
-                  onClick={() => setDateFilter("all")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  onClick={() => handleDateFilterChange("all")}
+                  disabled={statsLoading}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
                     dateFilter === "all"
                       ? "bg-green-600 text-white"
                       : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -391,7 +481,9 @@ const DailySummariesDashboard = () => {
                             <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600" />
                             <p className="text-lg font-medium">No data found</p>
                             <p className="text-sm">
-                              Try adjusting your filters or add new entries
+                              {searchTerm
+                                ? "Try adjusting your search"
+                                : `No entries for ${getPeriodLabel().toLowerCase()}`}
                             </p>
                           </div>
                         </td>
