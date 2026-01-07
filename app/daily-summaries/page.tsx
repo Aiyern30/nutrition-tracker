@@ -26,6 +26,24 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DailySummary {
   id: string;
@@ -599,117 +617,103 @@ const DailySummariesDashboard = () => {
                 </DropdownMenu>
 
                 <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block mx-1"></div>
-                <button
-                  onClick={() => handleDateFilterChange("week")}
+
+                <Select
+                  value={dateFilter}
+                  onValueChange={(value: DateFilter) =>
+                    handleDateFilterChange(value)
+                  }
                   disabled={statsLoading || tableLoading}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 shrink-0 ${
-                    dateFilter === "week"
-                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
-                      : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  }`}
                 >
-                  <Calendar className="w-4 h-4" />
-                  This Week
-                </button>
-                <button
-                  onClick={() => handleDateFilterChange("month")}
-                  disabled={statsLoading || tableLoading}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 shrink-0 ${
-                    dateFilter === "month"
-                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
-                      : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  <Calendar className="w-4 h-4" />
-                  This Month
-                </button>
-                <button
-                  onClick={() => handleDateFilterChange("all")}
-                  disabled={statsLoading || tableLoading}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 shrink-0 ${
-                    dateFilter === "all"
-                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
-                      : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  All Time
-                </button>
+                  <SelectTrigger className="w-[140px] shrink-0 text-sm font-medium border-gray-300 dark:border-gray-600">
+                    <Calendar className="w-4 h-4 mr-2 text-emerald-600" />
+                    <SelectValue placeholder="Period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="all">All Time</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            {/* Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-100 dark:border-gray-700 z-10 shadow-[2px_0_5px_rgba(0,0,0,0,05)]">
+            {/* Table Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden min-w-0">
+              <div className="relative overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50/50 dark:bg-gray-900/50 hover:bg-transparent">
+                      <TableHead className="px-6 py-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-100 dark:border-gray-700 z-10 shadow-[2px_0_5px_rgba(0,0,0,0,05)] h-auto">
                         Date
-                      </th>
+                      </TableHead>
                       {visibleColumns.includes("calories") && (
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                        <TableHead className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap h-auto">
                           Calories
-                        </th>
+                        </TableHead>
                       )}
                       {visibleColumns.includes("protein") && (
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                        <TableHead className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap h-auto">
                           Protein
-                        </th>
+                        </TableHead>
                       )}
                       {visibleColumns.includes("carbs") && (
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                        <TableHead className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap h-auto">
                           Carbs
-                        </th>
+                        </TableHead>
                       )}
                       {visibleColumns.includes("fats") && (
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                        <TableHead className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap h-auto">
                           Fats
-                        </th>
+                        </TableHead>
                       )}
                       {visibleColumns.includes("water") && (
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                        <TableHead className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap h-auto">
                           Water
-                        </th>
+                        </TableHead>
                       )}
                       {visibleColumns.includes("steps") && (
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                        <TableHead className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap h-auto">
                           Steps
-                        </th>
+                        </TableHead>
                       )}
                       {visibleColumns.includes("sleep") && (
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                        <TableHead className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap h-auto">
                           Sleep
-                        </th>
+                        </TableHead>
                       )}
                       {visibleColumns.includes("weight") && (
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                        <TableHead className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap h-auto">
                           Weight
-                        </th>
+                        </TableHead>
                       )}
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                      <TableHead className="px-6 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap h-auto">
                         Quality
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {loading || tableLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
-                        <tr key={i} className="animate-pulse">
-                          <td className="px-6 py-4">
-                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 sm:w-32"></div>
-                          </td>
+                        <TableRow key={i}>
+                          <TableCell className="px-6 py-4 sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-100 dark:border-gray-700">
+                            <Skeleton className="h-4 w-24 sm:w-32" />
+                          </TableCell>
                           {Array.from({
                             length: visibleColumns.length + 1,
                           }).map((_, j) => (
-                            <td key={j} className="px-6 py-4 text-center">
-                              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12 sm:w-16 mx-auto"></div>
-                            </td>
+                            <TableCell
+                              key={j}
+                              className="px-6 py-4 text-center"
+                            >
+                              <Skeleton className="h-4 w-12 sm:w-16 mx-auto" />
+                            </TableCell>
                           ))}
-                        </tr>
+                        </TableRow>
                       ))
                     ) : summaries.length === 0 ? (
-                      <tr>
-                        <td
+                      <TableRow>
+                        <TableCell
                           colSpan={visibleColumns.length + 2}
                           className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                         >
@@ -722,196 +726,202 @@ const DailySummariesDashboard = () => {
                                 : `No entries for ${getPeriodLabel().toLowerCase()}`}
                             </p>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       summaries.map((summary) => (
-                        <tr
+                        <TableRow
                           key={summary.id}
-                          className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                          className="hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors"
                         >
-                          <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-100 dark:border-gray-700 shadow-[2px_0_5px_rgba(0,0,0,0,05)]">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {formatDate(summary.date)}
-                              </span>
-                            </div>
-                          </td>
+                          <TableCell className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-100 dark:border-gray-700 shadow-[2px_0_5px_rgba(0,0,0,0,05)]">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                              {formatDate(summary.date)}
+                            </span>
+                          </TableCell>
                           {visibleColumns.includes("calories") && (
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                {summary.total_calories || 0}
-                              </span>
-                              <span className="text-[10px] text-gray-500 ml-1">
-                                kcal
-                              </span>
-                            </td>
+                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex flex-col items-center">
+                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                  {summary.total_calories || 0}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-medium">
+                                  kcal
+                                </span>
+                              </div>
+                            </TableCell>
                           )}
                           {visibleColumns.includes("protein") && (
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                {summary.total_protein || 0}
-                              </span>
-                              <span className="text-[10px] text-gray-500 ml-1">
-                                g
-                              </span>
-                            </td>
+                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex flex-col items-center">
+                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                  {summary.total_protein || 0}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-medium">
+                                  grams
+                                </span>
+                              </div>
+                            </TableCell>
                           )}
                           {visibleColumns.includes("carbs") && (
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                {summary.total_carbs || 0}
-                              </span>
-                              <span className="text-[10px] text-gray-500 ml-1">
-                                g
-                              </span>
-                            </td>
+                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex flex-col items-center">
+                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                  {summary.total_carbs || 0}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-medium">
+                                  grams
+                                </span>
+                              </div>
+                            </TableCell>
                           )}
                           {visibleColumns.includes("fats") && (
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                {summary.total_fats || 0}
-                              </span>
-                              <span className="text-[10px] text-gray-500 ml-1">
-                                g
-                              </span>
-                            </td>
+                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex flex-col items-center">
+                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                  {summary.total_fats || 0}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-medium">
+                                  grams
+                                </span>
+                              </div>
+                            </TableCell>
                           )}
                           {visibleColumns.includes("water") && (
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                {summary.water_intake || 0}
-                              </span>
-                              <span className="text-[10px] text-gray-500 ml-1">
-                                L
-                              </span>
-                            </td>
+                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex flex-col items-center">
+                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                  {summary.water_intake || 0}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-medium">
+                                  Liters
+                                </span>
+                              </div>
+                            </TableCell>
                           )}
                           {visibleColumns.includes("steps") && (
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
                                 {(summary.steps || 0).toLocaleString()}
                               </span>
-                            </td>
+                            </TableCell>
                           )}
                           {visibleColumns.includes("sleep") && (
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                {summary.sleep_hours || 0}
-                              </span>
-                              <span className="text-[10px] text-gray-500 ml-1">
-                                hrs
-                              </span>
-                            </td>
+                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex flex-col items-center">
+                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                  {summary.sleep_hours || 0}
+                                </span>
+                                <span className="text-[10px] text-gray-500 font-medium">
+                                  hours
+                                </span>
+                              </div>
+                            </TableCell>
                           )}
                           {visibleColumns.includes("weight") && (
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
                               {summary.weight ? (
-                                <>
-                                  <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                <div className="flex flex-col items-center">
+                                  <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
                                     {summary.weight}
                                   </span>
-                                  <span className="text-[10px] text-gray-500 ml-1">
+                                  <span className="text-[10px] text-gray-500 font-medium">
                                     kg
                                   </span>
-                                </>
+                                </div>
                               ) : (
-                                <span className="text-sm text-gray-400 dark:text-gray-600">
+                                <span className="text-sm text-gray-300 dark:text-gray-700 font-bold">
                                   -
                                 </span>
                               )}
-                            </td>
+                            </TableCell>
                           )}
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${getScoreColor(
+                          <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                            <Badge
+                              className={`${getScoreColor(
                                 summary.diet_quality_score
-                              )}`}
+                              )} border-none shadow-none font-bold text-[11px]`}
                             >
                               {summary.diet_quality_score}
-                            </span>
-                          </td>
-                        </tr>
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
                       ))
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
-
-              {/* Pagination */}
-              {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-                    {Math.min(
-                      pagination.page * pagination.limit,
-                      pagination.total
-                    )}{" "}
-                    of {pagination.total} entries
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        handlePageChange(Math.max(1, pagination.page - 1))
-                      }
-                      disabled={pagination.page === 1 || tableLoading}
-                      className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-
-                    {Array.from(
-                      { length: Math.min(5, pagination.totalPages) },
-                      (_, i) => {
-                        let pageNum;
-                        if (pagination.totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (pagination.page <= 3) {
-                          pageNum = i + 1;
-                        } else if (
-                          pagination.page >=
-                          pagination.totalPages - 2
-                        ) {
-                          pageNum = pagination.totalPages - 4 + i;
-                        } else {
-                          pageNum = pagination.page - 2 + i;
-                        }
-
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => handlePageChange(pageNum)}
-                            disabled={tableLoading}
-                            className={`w-10 h-10 rounded-lg text-sm font-medium disabled:opacity-50 transition-all ${
-                              pagination.page === pageNum
-                                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
-                                : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      }
-                    )}
-
-                    <button
-                      onClick={() =>
-                        handlePageChange(
-                          Math.min(pagination.totalPages, pagination.page + 1)
-                        )
-                      }
-                      disabled={
-                        pagination.page === pagination.totalPages ||
-                        tableLoading
-                      }
-                      className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+                  {Math.min(
+                    pagination.page * pagination.limit,
+                    pagination.total
+                  )}{" "}
+                  of {pagination.total} entries
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      handlePageChange(Math.max(1, pagination.page - 1))
+                    }
+                    disabled={pagination.page === 1 || tableLoading}
+                    className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  {Array.from(
+                    { length: Math.min(5, pagination.totalPages) },
+                    (_, i) => {
+                      let pageNum;
+                      if (pagination.totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (pagination.page <= 3) {
+                        pageNum = i + 1;
+                      } else if (pagination.page >= pagination.totalPages - 2) {
+                        pageNum = pagination.totalPages - 4 + i;
+                      } else {
+                        pageNum = pagination.page - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          disabled={tableLoading}
+                          className={`w-10 h-10 rounded-lg text-sm font-medium disabled:opacity-50 transition-all ${
+                            pagination.page === pageNum
+                              ? "bg-emerald-600 text-white shadow-sm shadow-emerald-200"
+                              : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    }
+                  )}
+
+                  <button
+                    onClick={() =>
+                      handlePageChange(
+                        Math.min(pagination.totalPages, pagination.page + 1)
+                      )
+                    }
+                    disabled={
+                      pagination.page === pagination.totalPages || tableLoading
+                    }
+                    className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </SidebarInset>
