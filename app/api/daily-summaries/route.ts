@@ -59,23 +59,34 @@ export async function GET(request: NextRequest) {
     if (filter && filter !== "all") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+
       const startDate = new Date(today);
 
       switch (filter) {
         case "week":
-          startDate.setDate(today.getDate() - today.getDay());
+          // Start of current week (Sunday) - ensure we're using local timezone
+          const dayOfWeek = today.getDay();
+          startDate.setDate(today.getDate() - dayOfWeek);
           break;
         case "month":
+          // Start of current month
           startDate.setDate(1);
           break;
       }
 
-      const fromDateStr = startDate.toISOString().split("T")[0];
+      // Format date as YYYY-MM-DD in local timezone
+      const year = startDate.getFullYear();
+      const month = String(startDate.getMonth() + 1).padStart(2, "0");
+      const day = String(startDate.getDate()).padStart(2, "0");
+      const fromDateStr = `${year}-${month}-${day}`;
+
       countQuery = countQuery.gte("date", fromDateStr);
       dataQuery = dataQuery.gte("date", fromDateStr);
 
       console.log(
-        `[/api/daily-summaries] Date filter: ${filter}, from: ${fromDateStr}`
+        `[/api/daily-summaries] Date filter: ${filter}, from: ${fromDateStr}, today: ${
+          today.toISOString().split("T")[0]
+        }`
       );
     }
 
@@ -118,11 +129,17 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil((count || 0) / limit);
 
     console.log(
-      `[/api/daily-summaries] user_id: ${user_id}, filter: ${filter}, search: "${
-        search || ""
-      }", page: ${page}/${totalPages}, limit: ${limit}, offset: ${offset}, returned: ${
-        data?.length || 0
-      }/${count || 0}`
+      `[/api/daily-summaries] RESPONSE DETAILS:
+       - user_id: ${user_id}
+       - filter: ${filter}
+       - search: "${search || ""}"
+       - page: ${page}/${totalPages}
+       - limit: ${limit}
+       - offset: ${offset}
+       - count from DB: ${count}
+       - data rows returned: ${data?.length || 0}
+       - data sample:`,
+      data?.slice(0, 2)
     );
 
     return NextResponse.json({
