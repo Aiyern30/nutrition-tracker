@@ -366,12 +366,14 @@ export default function AnalyzerPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
+        <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6 transition-all">
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">{t.analyzer.title}</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="text-xl font-bold tracking-tight">
+                {t.analyzer.title}
+              </h1>
+              <p className="text-xs text-muted-foreground">
                 {t.analyzer.subtitle}
               </p>
             </div>
@@ -381,9 +383,12 @@ export default function AnalyzerPage() {
         <main className="flex-1 space-y-6 p-6">
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Input Panel */}
-            <Card className="lg:col-span-1 flex flex-col h-full">
+            <Card className="lg:col-span-1 flex flex-col h-full rounded-[2rem] border-border/50 shadow-sm transition-all hover:shadow-md bg-white dark:bg-card">
               <CardHeader>
-                <CardTitle>{t.analyzer.inputMethod.title}</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="text-xl">📸</span>{" "}
+                  {t.analyzer.inputMethod.title}
+                </CardTitle>
                 <CardDescription>
                   {t.analyzer.inputMethod.subtitle}
                 </CardDescription>
@@ -623,105 +628,185 @@ export default function AnalyzerPage() {
               ) : (
                 <>
                   {/* Header Card */}
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-2xl">
-                            {result.name}
-                          </CardTitle>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary">{result.category}</Badge>
-                            <Badge
-                              variant={
-                                result.confidence === "high"
-                                  ? "default"
+                  <Card className="rounded-[2rem] border-border/50 shadow-sm bg-white dark:bg-card overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                    <CardHeader className="relative z-10 p-6 sm:p-8">
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                        <div className="space-y-4 flex-1">
+                          <div>
+                            <CardTitle className="text-3xl font-bold text-foreground">
+                              {result.name}
+                            </CardTitle>
+                            <div className="flex flex-wrap items-center gap-2 mt-3">
+                              <Badge
+                                variant="secondary"
+                                className="rounded-full px-3 py-1 bg-muted/60 hover:bg-muted text-sm border-0 font-medium text-foreground/80"
+                              >
+                                🍽️ {result.category}
+                              </Badge>
+                              <Badge
+                                className={`rounded-full px-3 py-1 border-0 text-sm font-medium ${
+                                  result.confidence === "high"
+                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                                    : result.confidence === "medium"
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                }`}
+                              >
+                                {result.confidence === "high"
+                                  ? "✅"
                                   : result.confidence === "medium"
-                                  ? "secondary"
-                                  : "outline"
-                              }
-                            >
-                              {t.analyzer.confidenceLevels[result.confidence]}{" "}
-                              {t.analyzer.results.confidence}
-                            </Badge>
+                                  ? "⚠️"
+                                  : "❓"}{" "}
+                                {t.analyzer.confidenceLevels[result.confidence]}{" "}
+                                {t.analyzer.results.confidence}
+                              </Badge>
+                            </div>
                           </div>
+
                           {result.serving_size && (
-                            <p className="text-sm text-muted-foreground">
-                              {t.analyzer.results.serving}:{" "}
-                              {result.serving_size}
-                            </p>
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/30">
+                              <span className="text-lg">⚖️</span>
+                              <span className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                                {t.analyzer.results.serving}:{" "}
+                                {result.serving_size}
+                              </span>
+                            </div>
                           )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-4xl font-bold text-primary">
-                            {result.calories}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {t.analyzer.results.calories}
-                          </p>
+
+                        <div className="flex flex-col items-end">
+                          <div className="flex flex-col items-center justify-center w-[120px] h-[120px] rounded-[1.5rem] bg-linear-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/20 border-2 border-orange-100 dark:border-orange-900/30 shadow-sm relative group hover:scale-105 transition-transform duration-300">
+                            <span className="text-xs font-bold text-orange-900/60 dark:text-orange-100/60 uppercase tracking-widest absolute top-4">
+                              {t.analyzer.results.calories}
+                            </span>
+                            <span className="text-4xl font-extrabold text-orange-600 dark:text-orange-400">
+                              {result.calories}
+                            </span>
+                            <span className="text-[10px] bg-orange-200/50 dark:bg-orange-800/50 px-2 py-0.5 rounded-full text-orange-800 dark:text-orange-200 mt-1 font-medium">
+                              kcal
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </CardHeader>
                   </Card>
 
                   {/* Nutrition Facts */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t.analyzer.results.nutritionFacts}</CardTitle>
-                      <CardDescription>
-                        {t.analyzer.results.nutritionFactsDesc}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                          <div className="rounded-lg border bg-card p-4">
-                            <p className="text-sm text-muted-foreground">
+                  <Card className="rounded-[2rem] border-transparent shadow-none bg-transparent">
+                    <CardContent className="p-0 space-y-6">
+                      {/* Macro Pills */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                        {/* Protein */}
+                        <div className="col-span-1 h-[180px] rounded-[2rem] bg-blue-50/50 dark:bg-blue-900/5 border-2 border-blue-100 dark:border-blue-900/20 p-5 flex flex-col relative hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-card">
+                          <div className="space-y-1">
+                            <span className="text-blue-900/70 dark:text-blue-100/70 text-xs font-bold tracking-wide">
                               {t.analyzer.results.protein}
-                            </p>
-                            <p className="text-2xl font-bold text-primary">
-                              {result.protein}g
-                            </p>
+                            </span>
+                            <div className="text-3xl font-extrabold text-blue-600 dark:text-blue-400">
+                              {result.protein}
+                              <span className="text-base align-baseline ml-0.5">
+                                g
+                              </span>
+                            </div>
                           </div>
-                          <div className="rounded-lg border bg-card p-4">
-                            <p className="text-sm text-muted-foreground">
-                              {t.analyzer.results.carbs}
-                            </p>
-                            <p className="text-2xl font-bold text-orange-500">
-                              {result.carbs}g
-                            </p>
-                          </div>
-                          <div className="rounded-lg border bg-card p-4">
-                            <p className="text-sm text-muted-foreground">
-                              {t.analyzer.results.fats}
-                            </p>
-                            <p className="text-2xl font-bold text-yellow-500">
-                              {result.fats}g
-                            </p>
+                          <div className="mt-auto flex items-center justify-end gap-2">
+                            <div className="h-1.5 w-10 bg-blue-100 dark:bg-blue-900 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 w-3/4 rounded-full"></div>
+                            </div>
+                            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-lg shadow-sm">
+                              🍗
+                            </div>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div className="flex justify-between border-b py-2">
-                            <span className="text-muted-foreground">
+                        {/* Carbs */}
+                        <div className="col-span-1 h-[180px] rounded-[2rem] bg-emerald-50/50 dark:bg-emerald-900/5 border-2 border-emerald-100 dark:border-emerald-900/20 p-5 flex flex-col relative hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-card">
+                          <div className="space-y-1">
+                            <span className="text-emerald-900/70 dark:text-emerald-100/70 text-xs font-bold tracking-wide">
+                              {t.analyzer.results.carbs}
+                            </span>
+                            <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                              {result.carbs}
+                              <span className="text-base align-baseline ml-0.5">
+                                g
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-auto flex items-center justify-end gap-2">
+                            <div className="h-1.5 w-10 bg-emerald-100 dark:bg-emerald-900 rounded-full overflow-hidden">
+                              <div className="h-full bg-emerald-500 w-1/2 rounded-full"></div>
+                            </div>
+                            <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-lg shadow-sm">
+                              🍞
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Fats */}
+                        <div className="col-span-1 h-[180px] rounded-[2rem] bg-amber-50/50 dark:bg-amber-900/5 border-2 border-amber-100 dark:border-amber-900/20 p-5 flex flex-col relative hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-card">
+                          <div className="space-y-1">
+                            <span className="text-amber-900/70 dark:text-amber-100/70 text-xs font-bold tracking-wide">
+                              {t.analyzer.results.fats}
+                            </span>
+                            <div className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">
+                              {result.fats}
+                              <span className="text-base align-baseline ml-0.5">
+                                g
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-auto flex items-center justify-end gap-2">
+                            <div className="h-1.5 w-10 bg-amber-100 dark:bg-amber-900 rounded-full overflow-hidden">
+                              <div className="h-full bg-amber-500 w-1/3 rounded-full"></div>
+                            </div>
+                            <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-lg shadow-sm">
+                              🧀
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Secondary Stats */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-card border border-border/50 shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-xl">
+                              🌾
+                            </div>
+                            <span className="text-sm font-medium text-muted-foreground">
                               {t.analyzer.results.fiber}
                             </span>
-                            <span className="font-medium">{result.fiber}g</span>
                           </div>
-                          <div className="flex justify-between border-b py-2">
-                            <span className="text-muted-foreground">
+                          <span className="text-lg font-bold text-foreground">
+                            {result.fiber}g
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-card border border-border/50 shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-xl">
+                              🍬
+                            </div>
+                            <span className="text-sm font-medium text-muted-foreground">
                               {t.analyzer.results.sugar}
                             </span>
-                            <span className="font-medium">{result.sugar}g</span>
                           </div>
-                          <div className="flex justify-between border-b py-2">
-                            <span className="text-muted-foreground">
+                          <span className="text-lg font-bold text-foreground">
+                            {result.sugar}g
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-card border border-border/50 shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl">
+                              🧂
+                            </div>
+                            <span className="text-sm font-medium text-muted-foreground">
                               {t.analyzer.results.sodium}
                             </span>
-                            <span className="font-medium">
-                              {result.sodium}mg
-                            </span>
                           </div>
+                          <span className="text-lg font-bold text-foreground">
+                            {result.sodium}mg
+                          </span>
                         </div>
                       </div>
                     </CardContent>
@@ -729,51 +814,69 @@ export default function AnalyzerPage() {
 
                   {/* Explanation */}
                   {result.explanation && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>{t.analyzer.results.analysis}</CardTitle>
+                    <Card className="rounded-[2rem] border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-900/10">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+                          <span className="text-xl">💡</span>{" "}
+                          {t.analyzer.results.analysis}
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-blue-800/80 dark:text-blue-200/80 leading-relaxed">
                           {result.explanation}
                         </p>
                       </CardContent>
                     </Card>
                   )}
 
-                  {/* Health Benefits */}
+                  {/* Health Benefits & Considerations */}
                   <div className="grid gap-6 md:grid-cols-2">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Heart className="h-5 w-5 text-primary" />
+                    <Card className="rounded-[2rem] border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/30 dark:bg-emerald-900/5">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-emerald-900 dark:text-emerald-100">
+                          <span className="text-xl">💪</span>
                           {t.analyzer.results.healthBenefits}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ul className="space-y-3">
                           {result.benefits.map((benefit, i) => (
-                            <li key={i} className="flex gap-2 text-sm">
-                              <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                              <span>{benefit}</span>
+                            <li
+                              key={i}
+                              className="flex gap-2.5 text-sm items-start"
+                            >
+                              <span className="mt-0.5 shrink-0 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+                                ✅
+                              </span>
+                              <span className="text-emerald-800/90 dark:text-emerald-200/90 leading-snug">
+                                {benefit}
+                              </span>
                             </li>
                           ))}
                         </ul>
                       </CardContent>
                     </Card>
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>
+                    <Card className="rounded-[2rem] border-amber-100 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-900/5">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
+                          <span className="text-xl">⚠️</span>
                           {t.analyzer.results.considerations}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ul className="space-y-3">
                           {result.considerations.map((consideration, i) => (
-                            <li key={i} className="flex gap-2 text-sm">
-                              <div className="mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 border-muted-foreground" />
-                              <span>{consideration}</span>
+                            <li
+                              key={i}
+                              className="flex gap-2.5 text-sm items-start"
+                            >
+                              <span className="mt-0.5 shrink-0 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+                                🔸
+                              </span>
+                              <span className="text-amber-800/90 dark:text-amber-200/90 leading-snug">
+                                {consideration}
+                              </span>
                             </li>
                           ))}
                         </ul>
