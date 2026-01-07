@@ -433,7 +433,7 @@ export default function MealPlannerPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="bg-muted/5">
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6 transition-all">
+        <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6 transition-all">
           <SidebarTrigger />
           <div className="flex flex-1 items-center justify-between">
             <div>
@@ -690,104 +690,160 @@ export default function MealPlannerPage() {
                 </Alert>
               )}
 
-              {/* Daily Summary */}
-              <div className="grid lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2 border-none shadow-md bg-linear-to-br from-primary/5 to-transparent relative overflow-hidden">
-                  {currentPlan.image_url && (
-                    <div className="absolute inset-0 z-0">
-                      <img
-                        src={currentPlan.image_url}
-                        alt="Meal Plan"
-                        className="w-full h-full object-cover opacity-20"
-                      />
-                      <div className="absolute inset-0 bg-linear-to-r from-background via-background/90 to-background/40" />
-                    </div>
-                  )}
-
-                  <CardHeader className="relative z-10">
-                    <CardTitle className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-primary" />
-                      {t.mealPlanner.dailyOverview}
-                    </CardTitle>
-                    <CardDescription>{currentPlan.summary}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid sm:grid-cols-4 gap-4 relative z-10">
-                    <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">
+              {/* Daily Summary - Replace your existing Daily Summary section with this */}
+              <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+                {/* Nutrition Cards Grid */}
+                <div className="lg:col-span-2 grid grid-cols-2 gap-3 sm:gap-4">
+                  {/* Calories - Tall Pill */}
+                  <div className="col-span-1 h-[160px] sm:h-[180px] lg:h-[200px] rounded-2xl sm:rounded-3xl lg:rounded-[2.5rem] bg-orange-50/50 dark:bg-orange-900/5 border-2 border-orange-100 dark:border-orange-900/20 p-3 sm:p-4 lg:p-5 flex flex-col relative hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <div className="space-y-1">
+                      <span className="text-orange-900/70 dark:text-orange-100/70 text-[10px] sm:text-xs font-bold tracking-wide">
                         {t.mealPlanner.calories}
                       </span>
-                      <div className="text-2xl font-bold text-primary mt-1">
+                      <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-orange-600 dark:text-orange-400">
                         {currentPlan.total_nutrition.calories}
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between">
+                      <span className="text-[10px] sm:text-xs text-orange-600/60 dark:text-orange-400/60 font-medium ml-1">
                         {t.mealPlanner.kcal}
                       </span>
-                    </div>
-                    <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">
-                        {t.mealPlanner.protein}
-                      </span>
-                      <div className="text-2xl font-bold text-blue-500 mt-1">
-                        {currentPlan.total_nutrition.protein}g
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center text-base sm:text-lg shadow-sm">
+                        🔥
                       </div>
                     </div>
-                    <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">
-                        {t.mealPlanner.carbs}
-                      </span>
-                      <div className="text-2xl font-bold text-emerald-500 mt-1">
-                        {currentPlan.total_nutrition.carbs}g
-                      </div>
-                    </div>
-                    <div className="bg-background/80 backdrop-blur p-4 rounded-xl border shadow-sm">
-                      <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">
-                        {t.mealPlanner.fats}
-                      </span>
-                      <div className="text-2xl font-bold text-amber-500 mt-1">
-                        {currentPlan.total_nutrition.fats}g
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
 
-                <Card className="border-none shadow-md">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">
-                      {t.mealPlanner.macroDistribution}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={macroData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={70}
-                          paddingAngle={5}
-                          dataKey="value"
-                          stroke="none"
-                        >
-                          {macroData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex justify-center gap-4 text-xs font-medium">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />{" "}
+                  {/* Protein - Tall Pill */}
+                  <div className="col-span-1 h-[160px] sm:h-[180px] lg:h-[200px] rounded-2xl sm:rounded-3xl lg:rounded-[2.5rem] bg-blue-50/50 dark:bg-blue-900/5 border-2 border-blue-100 dark:border-blue-900/20 p-3 sm:p-4 lg:p-5 flex flex-col relative hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <div className="space-y-1">
+                      <span className="text-blue-900/70 dark:text-blue-100/70 text-[10px] sm:text-xs font-bold tracking-wide">
                         {t.mealPlanner.protein}
+                      </span>
+                      <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-blue-600 dark:text-blue-400">
+                        {currentPlan.total_nutrition.protein}
+                        <span className="text-sm sm:text-base lg:text-xl align-baseline ml-0.5">
+                          g
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />{" "}
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-end gap-2 sm:gap-3">
+                      <div className="h-1 sm:h-1.5 w-8 sm:w-10 lg:w-12 bg-blue-100 dark:bg-blue-900 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 w-3/4 rounded-full"></div>
+                      </div>
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-base sm:text-lg shadow-sm">
+                        🍗
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Carbs - Tall Pill */}
+                  <div className="col-span-1 h-[160px] sm:h-[180px] lg:h-[200px] rounded-2xl sm:rounded-3xl lg:rounded-[2.5rem] bg-emerald-50/50 dark:bg-emerald-900/5 border-2 border-emerald-100 dark:border-emerald-900/20 p-3 sm:p-4 lg:p-5 flex flex-col relative hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <div className="space-y-1">
+                      <span className="text-emerald-900/70 dark:text-emerald-100/70 text-[10px] sm:text-xs font-bold tracking-wide leading-tight block pr-2">
                         {t.mealPlanner.carbs}
+                      </span>
+                      <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                        {currentPlan.total_nutrition.carbs}
+                        <span className="text-sm sm:text-base lg:text-xl align-baseline ml-0.5">
+                          g
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-amber-500" />{" "}
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-end gap-2 sm:gap-3">
+                      <div className="h-1 sm:h-1.5 w-8 sm:w-10 lg:w-12 bg-emerald-100 dark:bg-emerald-900 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 w-1/2 rounded-full"></div>
+                      </div>
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-base sm:text-lg shadow-sm">
+                        🍞
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fats - Tall Pill */}
+                  <div className="col-span-1 h-[160px] sm:h-[180px] lg:h-[200px] rounded-2xl sm:rounded-3xl lg:rounded-[2.5rem] bg-amber-50/50 dark:bg-amber-900/5 border-2 border-amber-100 dark:border-amber-900/20 p-3 sm:p-4 lg:p-5 flex flex-col relative hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <div className="space-y-1">
+                      <span className="text-amber-900/70 dark:text-amber-100/70 text-[10px] sm:text-xs font-bold tracking-wide">
                         {t.mealPlanner.fats}
+                      </span>
+                      <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-amber-600 dark:text-amber-400">
+                        {currentPlan.total_nutrition.fats}
+                        <span className="text-sm sm:text-base lg:text-xl align-baseline ml-0.5">
+                          g
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-end gap-2 sm:gap-3">
+                      <div className="h-1 sm:h-1.5 w-8 sm:w-10 lg:w-12 bg-amber-100 dark:bg-amber-900 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500 w-1/3 rounded-full"></div>
+                      </div>
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-base sm:text-lg shadow-sm">
+                        🧀
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pie Chart Card */}
+                <Card className="h-[200px] sm:h-[240px] lg:h-[280px] border border-border/50 shadow-sm rounded-2xl sm:rounded-3xl lg:rounded-[2.5rem] bg-white dark:bg-card">
+                  <CardContent className="h-full flex flex-col items-center justify-center relative p-0 sm:p-2">
+                    <div className="flex-1 w-full max-h-[140px] sm:max-h-[180px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={macroData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={70}
+                            paddingAngle={5}
+                            dataKey="value"
+                            stroke="none"
+                          >
+                            {macroData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <RechartsTooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      {/* Center Label */}
+                      <div className="absolute inset-0 top-2 flex items-center justify-center pointer-events-none pb-8">
+                        <div className="flex flex-col items-center">
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mb-0.5">
+                            Total
+                          </span>
+                          <span className="text-xl sm:text-2xl font-black text-foreground">
+                            100%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs font-bold w-full pb-2">
+                      <div className="flex items-center gap-1 sm:gap-1.5 text-blue-600 dark:text-blue-400">
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-blue-500" />
+                        <span className="hidden sm:inline">
+                          {t.mealPlanner.protein}
+                        </span>
+                        <span className="sm:hidden">P</span>
+                      </div>
+                      <div className="flex items-center gap-1 sm:gap-1.5 text-emerald-600 dark:text-emerald-400">
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500" />
+                        <span className="hidden sm:inline">
+                          {t.mealPlanner.carbs}
+                        </span>
+                        <span className="sm:hidden">C</span>
+                      </div>
+                      <div className="flex items-center gap-1 sm:gap-1.5 text-amber-600 dark:text-amber-400">
+                        <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-500" />
+                        <span className="hidden sm:inline">
+                          {t.mealPlanner.fats}
+                        </span>
+                        <span className="sm:hidden">F</span>
                       </div>
                     </div>
                   </CardContent>
