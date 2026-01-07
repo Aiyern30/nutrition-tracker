@@ -1,18 +1,6 @@
 "use client";
 import Image from "next/image";
-import {
-  LayoutDashboard,
-  MessageSquare,
-  Utensils,
-  ScanSearch,
-  TrendingUp,
-  BarChart3,
-  User,
-  LogOut,
-  ChevronDown,
-  Globe,
-  Settings,
-} from "lucide-react";
+import { User, LogOut, ChevronDown, Globe, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -53,37 +41,37 @@ export function AppSidebar() {
   const navItems = [
     {
       title: t.sidebar.dashboard,
-      icon: LayoutDashboard,
+      icon: "📊",
       href: "/",
     },
     {
       title: t.sidebar.aiChat,
-      icon: MessageSquare,
+      icon: "💬",
       href: "/chat",
     },
     {
       title: t.sidebar.mealPlanner,
-      icon: Utensils,
+      icon: "📅",
       href: "/meal-planner",
     },
     {
       title: t.sidebar.foodAnalyzer,
-      icon: ScanSearch,
+      icon: "🔍",
       href: "/analyzer",
     },
     {
       title: t.sidebar.dietTracker,
-      icon: TrendingUp,
+      icon: "📝",
       href: "/tracker",
     },
     {
       title: t.sidebar.dailySummaries,
-      icon: BarChart3,
+      icon: "📈",
       href: "/daily-summaries",
     },
     {
       title: t.sidebar.profile,
-      icon: User,
+      icon: "👤",
       href: "/profile",
     },
   ];
@@ -144,18 +132,15 @@ export function AppSidebar() {
                 className={cn(
                   "w-full px-4 py-6 h-12 transition-all duration-200 ease-in-out font-medium",
                   pathname === item.href
-                    ? "bg-primary text-primary-foreground shadow-md font-semibold hover:bg-primary/90 hover:text-primary-foreground"
+                    ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100 shadow-sm border border-emerald-200 dark:border-emerald-800"
                     : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground/80"
                 )}
               >
                 <Link href={item.href} className="flex items-center gap-3">
-                  <item.icon
-                    className={cn(
-                      "h-5 w-5",
-                      pathname === item.href ? "stroke-[2.5px]" : "stroke-[2px]"
-                    )}
-                  />
-                  <span className="text-base">{item.title}</span>
+                  <span className="text-xl leading-none flex items-center justify-center w-6 h-6">
+                    {item.icon}
+                  </span>
+                  <span className="text-base font-medium">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

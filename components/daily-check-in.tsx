@@ -139,7 +139,9 @@ export function DailyCheckIn({
               htmlFor="weight"
               className="text-right flex items-center justify-end gap-2"
             >
-              <Scale className="h-4 w-4 text-orange-500" />{" "}
+              <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-100 text-xs">
+                ⚖️
+              </div>
               {t.dailyCheckIn.weight}
             </Label>
             <div className="col-span-3 flex items-center gap-2">
@@ -166,7 +168,9 @@ export function DailyCheckIn({
               htmlFor="steps"
               className="text-right flex items-center justify-end gap-2"
             >
-              <Footprints className="h-4 w-4 text-orange-500" />{" "}
+              <div className="flex h-6 w-6 items-center justify-center rounded bg-emerald-100 text-xs">
+                👟
+              </div>
               {t.dailyCheckIn.steps}
             </Label>
             <div className="col-span-3">
@@ -189,7 +193,10 @@ export function DailyCheckIn({
               htmlFor="sleep"
               className="text-right flex items-center justify-end gap-2"
             >
-              <Moon className="h-4 w-4 text-lime-500" /> {t.dailyCheckIn.sleep}
+              <div className="flex h-6 w-6 items-center justify-center rounded bg-violet-100 text-xs">
+                😴
+              </div>
+              {t.dailyCheckIn.sleep}
             </Label>
             <div className="col-span-3 flex items-center gap-2">
               <Input
@@ -215,7 +222,9 @@ export function DailyCheckIn({
               htmlFor="water"
               className="text-right flex items-center justify-end gap-2"
             >
-              <Droplets className="h-4 w-4 text-blue-500" />{" "}
+              <div className="flex h-6 w-6 items-center justify-center rounded bg-cyan-100 text-xs">
+                💧
+              </div>
               {t.dailyCheckIn.water}
             </Label>
             <div className="col-span-3 flex items-center gap-2">
