@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Search, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
@@ -29,49 +29,120 @@ interface DailySummary {
   updated_at: string;
 }
 
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
 type DateFilter = "week" | "month" | "all";
 
 const DailySummariesDashboard = () => {
   useLocalizedMetadata({ page: "dailySummaries" });
 
   const [summaries, setSummaries] = useState<DailySummary[]>([]);
+  const [allSummaries, setAllSummaries] = useState<DailySummary[]>([]); // For stats calculation
   const [loading, setLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasMore: false,
+  });
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const ITEMS_PER_PAGE = 10;
 
   const supabase = createClient();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const getDateRange = useCallback((filter: DateFilter) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDate = new Date(today);
-
-    switch (filter) {
-      case "week":
-        // Start of current week (Sunday)
-        startDate.setDate(today.getDate() - today.getDay());
-        break;
-      case "month":
-        // Start of current month
-        startDate.setDate(1);
-        break;
-      case "all":
-        // No filter
-        return null;
+  // Debounce search input
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
 
-    return startDate.toISOString().split("T")[0];
-  }, []);
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset to first page on search
+    }, 500); // 500ms debounce
 
-  // Fetch data function that can be called on filter change
-  const fetchDailySummaries = useCallback(
-    async (filter: DateFilter, showLoader = true) => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm]);
+
+  // Fetch all summaries for stats (without pagination)
+  const fetchAllSummaries = useCallback(
+    async (filter: DateFilter) => {
+      setStatsLoading(true);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) return;
+
+        let query = supabase
+          .from("daily_summaries")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false });
+
+        // Apply date filter
+        if (filter !== "all") {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const startDate = new Date(today);
+
+          switch (filter) {
+            case "week":
+              startDate.setDate(today.getDate() - today.getDay());
+              break;
+            case "month":
+              startDate.setDate(1);
+              break;
+          }
+
+          const fromDateStr = startDate.toISOString().split("T")[0];
+          query = query.gte("date", fromDateStr);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        setAllSummaries(data || []);
+      } catch (err) {
+        console.error("Error fetching all summaries:", err);
+        setAllSummaries([]);
+      } finally {
+        setStatsLoading(false);
+      }
+    },
+    [supabase]
+  );
+
+  // Fetch paginated data with search from API
+  const fetchPaginatedSummaries = useCallback(
+    async (
+      filter: DateFilter,
+      page: number,
+      search: string,
+      showLoader = true
+    ) => {
       if (showLoader) {
-        setLoading(true);
-        setStatsLoading(true);
+        setTableLoading(true);
       }
 
       try {
@@ -80,65 +151,145 @@ const DailySummariesDashboard = () => {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          console.error("No user found");
+          console.error("No user found in fetchPaginatedSummaries");
           return;
         }
 
-        let query = supabase
-          .from("daily_summaries")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("date", { ascending: false });
+        console.log("Fetching paginated summaries:", { user_id: user.id, filter, page, search, limit: ITEMS_PER_PAGE });
 
-        const startDate = getDateRange(filter);
-        if (startDate) {
-          query = query.gte("date", startDate);
+        // Build API URL with query parameters
+        const params = new URLSearchParams({
+          user_id: user.id,
+          filter: filter,
+          page: page.toString(),
+          limit: ITEMS_PER_PAGE.toString(),
+        });
+
+        if (search && search.trim()) {
+          params.append("search", search.trim());
         }
 
-        const { data: summariesData, error } = await query;
+        const url = `/api/daily-summaries?${params.toString()}`;
+        console.log("API URL:", url);
 
-        if (error) {
-          console.error("Error fetching summaries:", error);
-          throw error;
+        const response = await fetch(url);
+        const result = await response.json();
+
+        console.log("API Response:", { 
+          ok: response.ok, 
+          status: response.status,
+          dataLength: result.data?.length,
+          pagination: result.pagination,
+          error: result.error
+        });
+
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to fetch data");
         }
 
-        console.log(
-          `Fetched ${
-            summariesData?.length || 0
-          } summaries for filter: ${filter}`
+        setSummaries(result.data || []);
+        setPagination(
+          result.pagination || {
+            page: 1,
+            limit: ITEMS_PER_PAGE,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          }
         );
-        setSummaries(summariesData || []);
+
+        console.log(`Successfully fetched page ${page}: ${result.data?.length || 0} items, total: ${result.pagination?.total || 0}`);
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error("Error fetching paginated summaries:", err);
         setSummaries([]);
+        setPagination({
+          page: 1,
+          limit: ITEMS_PER_PAGE,
+          total: 0,
+          totalPages: 0,
+          hasMore: false,
+        });
       } finally {
         if (showLoader) {
-          setLoading(false);
-          setStatsLoading(false);
+          setTableLoading(false);
         }
       }
     },
-    [supabase, getDateRange]
+    [supabase]
   );
 
   // Initial load
   useEffect(() => {
-    fetchDailySummaries(dateFilter, true);
-  }, [dateFilter, fetchDailySummaries]);
+    const loadData = async () => {
+      console.log("Initial load started");
+      setLoading(true);
+      
+      try {
+        // Fetch both in parallel
+        await Promise.all([
+          fetchAllSummaries(dateFilter),
+          fetchPaginatedSummaries(dateFilter, 1, "", false),
+        ]);
+        console.log("Initial load completed successfully");
+      } catch (err) {
+        console.error("Initial load error:", err);
+      } finally {
+        setLoading(false);
+        setIsInitialLoad(false);
+      }
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+
+  // Refetch when filter, page, or search changes (skip initial load)
+  useEffect(() => {
+    if (isInitialLoad) {
+      console.log("Skipping refetch - initial load");
+      return;
+    }
+
+    console.log("Refetching table data:", { dateFilter, currentPage, debouncedSearch });
+    fetchPaginatedSummaries(dateFilter, currentPage, debouncedSearch, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFilter, currentPage, debouncedSearch]);
+
+  // Refetch stats when filter changes (skip initial load)
+  useEffect(() => {
+    if (isInitialLoad) {
+      console.log("Skipping stats refetch - initial load");
+      return;
+    }
+
+    console.log("Refetching stats:", dateFilter);
+    fetchAllSummaries(dateFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFilter]);
 
   // Handle date filter change
   const handleDateFilterChange = useCallback(
     (newFilter: DateFilter) => {
       setDateFilter(newFilter);
-      setCurrentPage(1); // Reset to first page
-      setSearchTerm(""); // Clear search
-      fetchDailySummaries(newFilter, true);
+      setCurrentPage(1);
+      setSearchTerm("");
+      setDebouncedSearch("");
+
+      // Fetch both stats and table data
+      fetchAllSummaries(newFilter);
+      fetchPaginatedSummaries(newFilter, 1, "", true);
     },
-    [fetchDailySummaries]
+    [fetchAllSummaries, fetchPaginatedSummaries]
   );
 
-  // Calculate totals for the filtered period
-  const periodTotals = summaries.reduce(
+  // Handle page change
+  const handlePageChange = useCallback((newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // Calculate totals for the filtered period (from all summaries)
+  const periodTotals = allSummaries.reduce(
     (acc, s) => ({
       calories: acc.calories + s.total_calories,
       carbs: acc.carbs + s.total_carbs,
@@ -153,15 +304,15 @@ const DailySummariesDashboard = () => {
 
   // Calculate averages
   const averages =
-    summaries.length > 0
+    allSummaries.length > 0
       ? {
-          calories: Math.round(periodTotals.calories / summaries.length),
-          carbs: Math.round(periodTotals.carbs / summaries.length),
-          protein: Math.round(periodTotals.protein / summaries.length),
-          fats: Math.round(periodTotals.fats / summaries.length),
-          water: Math.round(periodTotals.water / summaries.length),
-          steps: Math.round(periodTotals.steps / summaries.length),
-          sleep: Math.round(periodTotals.sleep / summaries.length),
+          calories: Math.round(periodTotals.calories / allSummaries.length),
+          carbs: Math.round(periodTotals.carbs / allSummaries.length),
+          protein: Math.round(periodTotals.protein / allSummaries.length),
+          fats: Math.round(periodTotals.fats / allSummaries.length),
+          water: Math.round(periodTotals.water / allSummaries.length),
+          steps: Math.round(periodTotals.steps / allSummaries.length),
+          sleep: Math.round(periodTotals.sleep / allSummaries.length),
         }
       : {
           calories: 0,
@@ -172,29 +323,6 @@ const DailySummariesDashboard = () => {
           steps: 0,
           sleep: 0,
         };
-
-  // Filter by search term
-  const filteredSummaries = summaries.filter((s) => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      s.date.toLowerCase().includes(searchLower) ||
-      s.diet_quality_score.toLowerCase().includes(searchLower) ||
-      s.diet_quality_explanation?.toLowerCase().includes(searchLower)
-    );
-  });
-
-  // Paginate
-  const totalPages = Math.ceil(filteredSummaries.length / ITEMS_PER_PAGE);
-  const paginatedSummaries = filteredSummaries.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -242,7 +370,7 @@ const DailySummariesDashboard = () => {
           <SidebarTrigger />
           <div className="flex items-center justify-between flex-1">
             <h1 className="text-xl font-semibold">Daily Summaries</h1>
-            {statsLoading && (
+            {(statsLoading || tableLoading) && (
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin"></div>
                 Loading...
@@ -279,7 +407,7 @@ const DailySummariesDashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-3">
-                  {getPeriodLabel()} • {summaries.length} days
+                  {getPeriodLabel()} • {allSummaries.length} days
                 </p>
               </div>
 
@@ -307,7 +435,7 @@ const DailySummariesDashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
-                  {getPeriodLabel()} • {summaries.length} days
+                  {getPeriodLabel()} • {allSummaries.length} days
                 </p>
               </div>
 
@@ -335,7 +463,7 @@ const DailySummariesDashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-3">
-                  {getPeriodLabel()} • {summaries.length} days
+                  {getPeriodLabel()} • {allSummaries.length} days
                 </p>
               </div>
 
@@ -363,7 +491,7 @@ const DailySummariesDashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
-                  {getPeriodLabel()} • {summaries.length} days
+                  {getPeriodLabel()} • {allSummaries.length} days
                 </p>
               </div>
             </div>
@@ -379,11 +507,18 @@ const DailySummariesDashboard = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+                {searchTerm && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                    {searchTerm !== debouncedSearch
+                      ? "Typing..."
+                      : `${pagination.total} results`}
+                  </span>
+                )}
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleDateFilterChange("week")}
-                  disabled={statsLoading}
+                  disabled={statsLoading || tableLoading}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
                     dateFilter === "week"
                       ? "bg-green-600 text-white"
@@ -395,7 +530,7 @@ const DailySummariesDashboard = () => {
                 </button>
                 <button
                   onClick={() => handleDateFilterChange("month")}
-                  disabled={statsLoading}
+                  disabled={statsLoading || tableLoading}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
                     dateFilter === "month"
                       ? "bg-green-600 text-white"
@@ -407,7 +542,7 @@ const DailySummariesDashboard = () => {
                 </button>
                 <button
                   onClick={() => handleDateFilterChange("all")}
-                  disabled={statsLoading}
+                  disabled={statsLoading || tableLoading}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
                     dateFilter === "all"
                       ? "bg-green-600 text-white"
@@ -458,7 +593,7 @@ const DailySummariesDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {loading ? (
+                    {loading || tableLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <tr key={i} className="animate-pulse">
                           <td className="px-6 py-4">
@@ -471,7 +606,7 @@ const DailySummariesDashboard = () => {
                           ))}
                         </tr>
                       ))
-                    ) : paginatedSummaries.length === 0 ? (
+                    ) : summaries.length === 0 ? (
                       <tr>
                         <td
                           colSpan={10}
@@ -481,15 +616,15 @@ const DailySummariesDashboard = () => {
                             <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600" />
                             <p className="text-lg font-medium">No data found</p>
                             <p className="text-sm">
-                              {searchTerm
-                                ? "Try adjusting your search"
+                              {debouncedSearch
+                                ? `No results for "${debouncedSearch}"`
                                 : `No entries for ${getPeriodLabel().toLowerCase()}`}
                             </p>
                           </div>
                         </td>
                       </tr>
                     ) : (
-                      paginatedSummaries.map((summary) => (
+                      summaries.map((summary) => (
                         <tr
                           key={summary.id}
                           className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
@@ -587,59 +722,71 @@ const DailySummariesDashboard = () => {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
+              {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
                     {Math.min(
-                      currentPage * ITEMS_PER_PAGE,
-                      filteredSummaries.length
+                      pagination.page * pagination.limit,
+                      pagination.total
                     )}{" "}
-                    of {filteredSummaries.length} entries
+                    of {pagination.total} entries
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() =>
-                        setCurrentPage(Math.max(1, currentPage - 1))
+                        handlePageChange(Math.max(1, pagination.page - 1))
                       }
-                      disabled={currentPage === 1}
+                      disabled={pagination.page === 1 || tableLoading}
                       className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
 
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
+                    {Array.from(
+                      { length: Math.min(5, pagination.totalPages) },
+                      (_, i) => {
+                        let pageNum;
+                        if (pagination.totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (pagination.page <= 3) {
+                          pageNum = i + 1;
+                        } else if (
+                          pagination.page >=
+                          pagination.totalPages - 2
+                        ) {
+                          pageNum = pagination.totalPages - 4 + i;
+                        } else {
+                          pageNum = pagination.page - 2 + i;
+                        }
 
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`w-10 h-10 rounded-lg text-sm font-medium ${
-                            currentPage === pageNum
-                              ? "bg-green-600 text-white"
-                              : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            disabled={tableLoading}
+                            className={`w-10 h-10 rounded-lg text-sm font-medium disabled:opacity-50 ${
+                              pagination.page === pageNum
+                                ? "bg-green-600 text-white"
+                                : "border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      }
+                    )}
 
                     <button
                       onClick={() =>
-                        setCurrentPage(Math.min(totalPages, currentPage + 1))
+                        handlePageChange(
+                          Math.min(pagination.totalPages, pagination.page + 1)
+                        )
                       }
-                      disabled={currentPage === totalPages}
+                      disabled={
+                        pagination.page === pagination.totalPages ||
+                        tableLoading
+                      }
                       className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                       <ChevronRight className="w-5 h-5" />
