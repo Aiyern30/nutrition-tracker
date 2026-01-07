@@ -6,8 +6,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const user_id = searchParams.get("user_id");
     const filter = searchParams.get("filter"); // 'week', 'month', or 'all'
+    const search = searchParams.get("search"); // Search term
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
     const metrics = searchParams.get("metrics");
-    
+
     // Create Supabase client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,7 +18,10 @@ export async function GET(request: NextRequest) {
     );
 
     if (!user_id) {
-      return NextResponse.json({ data: [], error: "User ID required" }, { status: 400 });
+      return NextResponse.json(
+        { data: [], error: "User ID required", total: 0 },
+        { status: 400 }
+      );
     }
 
     // Build select query based on metrics filter
@@ -23,8 +29,9 @@ export async function GET(request: NextRequest) {
 
     if (metrics && metrics !== "all") {
       const metricsList = metrics.split(",");
-      selectFields = "id,user_id,date,created_at,updated_at,diet_quality_score,diet_quality_explanation";
-      
+      selectFields =
+        "id,user_id,date,created_at,updated_at,diet_quality_score,diet_quality_explanation";
+
       if (metricsList.includes("calories")) selectFields += ",total_calories";
       if (metricsList.includes("protein")) selectFields += ",total_protein";
       if (metricsList.includes("carbs")) selectFields += ",total_carbs";
@@ -35,13 +42,20 @@ export async function GET(request: NextRequest) {
       if (metricsList.includes("weight")) selectFields += ",weight";
     }
 
-    let query = supabase
+    // Base query for counting
+    let countQuery = supabase
+      .from("daily_summaries")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user_id);
+
+    // Base query for data
+    let dataQuery = supabase
       .from("daily_summaries")
       .select(selectFields)
       .eq("user_id", user_id)
       .order("date", { ascending: false });
 
-    // Apply date filter
+    // Apply date filter to both queries
     if (filter && filter !== "all") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -49,39 +63,78 @@ export async function GET(request: NextRequest) {
 
       switch (filter) {
         case "week":
-          // Start of current week (Sunday)
           startDate.setDate(today.getDate() - today.getDay());
           break;
         case "month":
-          // Start of current month
           startDate.setDate(1);
           break;
       }
 
       const fromDateStr = startDate.toISOString().split("T")[0];
-      query = query.gte("date", fromDateStr);
-      
-      console.log(`[/api/daily-summaries] Filtering from date: ${fromDateStr} (filter: ${filter})`);
-    }
+      countQuery = countQuery.gte("date", fromDateStr);
+      dataQuery = dataQuery.gte("date", fromDateStr);
 
-    const { data, error } = await query;
-
-    console.log(
-      `[/api/daily-summaries] user_id: ${user_id}, filter: ${filter}, metrics: ${metrics}, returned rows: ${data?.length ?? 0}`
-    );
-
-    if (error) {
-      console.error("[/api/daily-summaries] Supabase error:", error);
-      return NextResponse.json(
-        { data: [], error: error.message },
-        { status: 500 }
+      console.log(
+        `[/api/daily-summaries] Date filter: ${filter}, from: ${fromDateStr}`
       );
     }
 
-    return NextResponse.json({ 
+    // Apply search filter to both queries if provided
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+
+      // Search in date (formatted), diet_quality_score, or diet_quality_explanation
+      // For date search, we'll use LIKE with the search term
+      const searchFilter = `date.ilike.%${searchTerm}%,diet_quality_score.ilike.%${searchTerm}%,diet_quality_explanation.ilike.%${searchTerm}%`;
+
+      countQuery = countQuery.or(searchFilter);
+      dataQuery = dataQuery.or(searchFilter);
+
+      console.log(`[/api/daily-summaries] Search term: "${searchTerm}"`);
+    }
+
+    // Get total count
+    const { count, error: countError } = await countQuery;
+
+    if (countError) {
+      console.error("[/api/daily-summaries] Count error:", countError);
+      throw countError;
+    }
+
+    // Calculate offset
+    const offset = (page - 1) * limit;
+
+    // Apply pagination to data query
+    dataQuery = dataQuery.range(offset, offset + limit - 1);
+
+    // Execute data query
+    const { data, error: dataError } = await dataQuery;
+
+    if (dataError) {
+      console.error("[/api/daily-summaries] Data error:", dataError);
+      throw dataError;
+    }
+
+    const totalPages = Math.ceil((count || 0) / limit);
+
+    console.log(
+      `[/api/daily-summaries] user_id: ${user_id}, filter: ${filter}, search: "${
+        search || ""
+      }", page: ${page}/${totalPages}, limit: ${limit}, offset: ${offset}, returned: ${
+        data?.length || 0
+      }/${count || 0}`
+    );
+
+    return NextResponse.json({
       data: Array.isArray(data) ? data : [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages,
+        hasMore: page < totalPages,
+      },
       filter: filter || "all",
-      count: data?.length || 0
     });
   } catch (error) {
     console.error("[/api/daily-summaries] Error:", error);
@@ -89,6 +142,13 @@ export async function GET(request: NextRequest) {
       {
         data: [],
         error: error instanceof Error ? error.message : "Internal Server Error",
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+          hasMore: false,
+        },
       },
       { status: 500 }
     );
