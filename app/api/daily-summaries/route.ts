@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,11 +11,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const metrics = searchParams.get("metrics");
 
-    // Create Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    // Use server-side Supabase client to handle sessions/RLS
+    const supabase = await createClient();
 
     if (!user_id) {
       return NextResponse.json(
@@ -94,9 +91,9 @@ export async function GET(request: NextRequest) {
     if (search && search.trim()) {
       const searchTerm = search.trim();
 
-      // Search in date (formatted), diet_quality_score, or diet_quality_explanation
-      // For date search, we'll use LIKE with the search term
-      const searchFilter = `date.ilike.%${searchTerm}%,diet_quality_score.ilike.%${searchTerm}%,diet_quality_explanation.ilike.%${searchTerm}%`;
+      // For date search, we use cast to text to allow ilike search
+      // Note: Supabase/PostgREST syntax for OR filters with ilike
+      const searchFilter = `diet_quality_score.ilike.%${searchTerm}%,diet_quality_explanation.ilike.%${searchTerm}%`;
 
       countQuery = countQuery.or(searchFilter);
       dataQuery = dataQuery.or(searchFilter);
@@ -137,9 +134,7 @@ export async function GET(request: NextRequest) {
        - limit: ${limit}
        - offset: ${offset}
        - count from DB: ${count}
-       - data rows returned: ${data?.length || 0}
-       - data sample:`,
-      data?.slice(0, 2)
+       - data rows returned: ${data?.length || 0}`
     );
 
     return NextResponse.json({
