@@ -10,6 +10,8 @@ import {
   Settings2,
   Check,
   Filter,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useLocalizedMetadata } from "@/hooks/use-localized-metadata";
 import {
@@ -82,6 +84,17 @@ interface PaginationInfo {
   hasMore: boolean;
 }
 
+interface FoodLog {
+  id: string;
+  food_name: string;
+  meal_type: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  serving_size: string | null;
+}
+
 type DateFilter = "week" | "month" | "all";
 
 const DailySummariesDashboard = () => {
@@ -106,6 +119,9 @@ const DailySummariesDashboard = () => {
     totalPages: 0,
     hasMore: false,
   });
+  const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const [dailyLogs, setDailyLogs] = useState<Record<string, FoodLog[]>>({});
+  const [logsLoading, setLogsLoading] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const ITEMS_PER_PAGE = 10;
 
@@ -355,8 +371,56 @@ const DailySummariesDashboard = () => {
   // Handle page change
   const handlePageChange = useCallback((newPage: number) => {
     setCurrentPage(newPage);
+    setExpandedDate(null); // Collapse when changing page
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  // Fetch food logs for a specific date
+  const fetchDailyLogs = async (dateStr: string) => {
+    // If already loaded, just toggle
+    if (dailyLogs[dateStr]) {
+      return;
+    }
+
+    setLogsLoading(dateStr);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      // Extract just the date part YYYY-MM-DD to be safe
+      const cleanDate = dateStr.split("T")[0];
+
+      const { data, error } = await supabase
+        .from("food_logs")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", cleanDate)
+        .order("meal_type", { ascending: true }); // Default sort, maybe refine later
+
+      if (error) throw error;
+
+      setDailyLogs((prev) => ({
+        ...prev,
+        [dateStr]: data || [],
+      }));
+    } catch (err) {
+      console.error("Error fetching daily logs:", err);
+    } finally {
+      setLogsLoading(null);
+    }
+  };
+
+  const toggleRow = (dateStr: string) => {
+    if (expandedDate === dateStr) {
+      setExpandedDate(null);
+    } else {
+      setExpandedDate(dateStr);
+      fetchDailyLogs(dateStr);
+    }
+  };
 
   // Calculate totals for the filtered period (from all summaries)
   const periodTotals = allSummaries.reduce(
@@ -449,7 +513,7 @@ const DailySummariesDashboard = () => {
           </div>
         </header>
 
-        <div className="flex-1 min-w-0 overflow-hidden bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <div className="max-w-full mx-auto p-4 sm:p-6 space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -730,122 +794,204 @@ const DailySummariesDashboard = () => {
                       </TableRow>
                     ) : (
                       summaries.map((summary) => (
-                        <TableRow
-                          key={summary.id}
-                          className="hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors"
-                        >
-                          <TableCell className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-100 dark:border-gray-700 shadow-[2px_0_5px_rgba(0,0,0,0,05)]">
-                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                              {formatDate(summary.date)}
-                            </span>
-                          </TableCell>
-                          {visibleColumns.includes("calories") && (
-                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
-                              <div className="flex flex-col items-center">
-                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
-                                  {summary.total_calories || 0}
-                                </span>
-                                <span className="text-[10px] text-gray-500 font-medium">
-                                  kcal
-                                </span>
-                              </div>
-                            </TableCell>
-                          )}
-                          {visibleColumns.includes("protein") && (
-                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
-                              <div className="flex flex-col items-center">
-                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
-                                  {summary.total_protein || 0}
-                                </span>
-                                <span className="text-[10px] text-gray-500 font-medium">
-                                  grams
+                        <React.Fragment key={summary.id}>
+                          <TableRow
+                            className={`hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors cursor-pointer ${
+                              expandedDate === summary.date
+                                ? "bg-emerald-50/50 dark:bg-emerald-900/20"
+                                : ""
+                            }`}
+                            onClick={() => toggleRow(summary.date)}
+                          >
+                            <TableCell className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r border-gray-100 dark:border-gray-700 shadow-[2px_0_5px_rgba(0,0,0,0,05)]">
+                              <div className="flex items-center gap-2">
+                                {expandedDate === summary.date ? (
+                                  <ChevronUp className="w-4 h-4 text-emerald-600" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                                )}
+                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                  {formatDate(summary.date)}
                                 </span>
                               </div>
                             </TableCell>
-                          )}
-                          {visibleColumns.includes("carbs") && (
-                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
-                              <div className="flex flex-col items-center">
-                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
-                                  {summary.total_carbs || 0}
-                                </span>
-                                <span className="text-[10px] text-gray-500 font-medium">
-                                  grams
-                                </span>
-                              </div>
-                            </TableCell>
-                          )}
-                          {visibleColumns.includes("fats") && (
-                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
-                              <div className="flex flex-col items-center">
-                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
-                                  {summary.total_fats || 0}
-                                </span>
-                                <span className="text-[10px] text-gray-500 font-medium">
-                                  grams
-                                </span>
-                              </div>
-                            </TableCell>
-                          )}
-                          {visibleColumns.includes("water") && (
-                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
-                              <div className="flex flex-col items-center">
-                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
-                                  {summary.water_intake || 0}
-                                </span>
-                                <span className="text-[10px] text-gray-500 font-medium">
-                                  Liters
-                                </span>
-                              </div>
-                            </TableCell>
-                          )}
-                          {visibleColumns.includes("steps") && (
-                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
-                              <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
-                                {(summary.steps || 0).toLocaleString()}
-                              </span>
-                            </TableCell>
-                          )}
-                          {visibleColumns.includes("sleep") && (
-                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
-                              <div className="flex flex-col items-center">
-                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
-                                  {summary.sleep_hours || 0}
-                                </span>
-                                <span className="text-[10px] text-gray-500 font-medium">
-                                  hours
-                                </span>
-                              </div>
-                            </TableCell>
-                          )}
-                          {visibleColumns.includes("weight") && (
-                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
-                              {summary.weight ? (
+                            {visibleColumns.includes("calories") && (
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-center">
                                 <div className="flex flex-col items-center">
                                   <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
-                                    {summary.weight}
+                                    {summary.total_calories || 0}
                                   </span>
                                   <span className="text-[10px] text-gray-500 font-medium">
-                                    kg
+                                    kcal
                                   </span>
                                 </div>
-                              ) : (
-                                <span className="text-sm text-gray-300 dark:text-gray-700 font-bold">
-                                  -
+                              </TableCell>
+                            )}
+                            {visibleColumns.includes("protein") && (
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                                <div className="flex flex-col items-center">
+                                  <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                    {summary.total_protein || 0}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500 font-medium">
+                                    grams
+                                  </span>
+                                </div>
+                              </TableCell>
+                            )}
+                            {visibleColumns.includes("carbs") && (
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                                <div className="flex flex-col items-center">
+                                  <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                    {summary.total_carbs || 0}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500 font-medium">
+                                    grams
+                                  </span>
+                                </div>
+                              </TableCell>
+                            )}
+                            {visibleColumns.includes("fats") && (
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                                <div className="flex flex-col items-center">
+                                  <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                    {summary.total_fats || 0}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500 font-medium">
+                                    grams
+                                  </span>
+                                </div>
+                              </TableCell>
+                            )}
+                            {visibleColumns.includes("water") && (
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                                <div className="flex flex-col items-center">
+                                  <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                    {summary.water_intake || 0}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500 font-medium">
+                                    Liters
+                                  </span>
+                                </div>
+                              </TableCell>
+                            )}
+                            {visibleColumns.includes("steps") && (
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                                <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                  {(summary.steps || 0).toLocaleString()}
                                 </span>
-                              )}
+                              </TableCell>
+                            )}
+                            {visibleColumns.includes("sleep") && (
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                                <div className="flex flex-col items-center">
+                                  <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                    {summary.sleep_hours || 0}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500 font-medium">
+                                    hours
+                                  </span>
+                                </div>
+                              </TableCell>
+                            )}
+                            {visibleColumns.includes("weight") && (
+                              <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                                {summary.weight ? (
+                                  <div className="flex flex-col items-center">
+                                    <span className="text-sm text-gray-900 dark:text-gray-100 font-bold">
+                                      {summary.weight}
+                                    </span>
+                                    <span className="text-[10px] text-gray-500 font-medium">
+                                      kg
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-gray-300 dark:text-gray-700 font-bold">
+                                    -
+                                  </span>
+                                )}
+                              </TableCell>
+                            )}
+                            <TableCell className="px-6 py-4 whitespace-nowrap text-center">
+                              <Badge
+                                className={`${getScoreColor(
+                                  summary.diet_quality_score
+                                )} border-none shadow-none font-bold text-[11px]`}
+                              >
+                                {summary.diet_quality_score}
+                              </Badge>
                             </TableCell>
+                          </TableRow>
+                          {expandedDate === summary.date && (
+                            <TableRow className="bg-gray-50/50 dark:bg-gray-900/50 hover:bg-gray-50/50 dark:hover:bg-gray-900/50">
+                              <TableCell
+                                colSpan={visibleColumns.length + 2}
+                                className="p-0 border-b border-emerald-100/50 dark:border-emerald-800/30"
+                              >
+                                <div className="px-6 py-4 bg-emerald-50/20 dark:bg-emerald-900/10 shadow-inner">
+                                  {logsLoading === summary.date ? (
+                                    <div className="flex items-center justify-center py-4 text-emerald-600 gap-2">
+                                      <div className="w-4 h-4 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+                                      <span className="text-sm font-medium">
+                                        Loading meals...
+                                      </span>
+                                    </div>
+                                  ) : !dailyLogs[summary.date] ||
+                                    dailyLogs[summary.date].length === 0 ? (
+                                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm italic">
+                                      No food logs found for this day.
+                                    </div>
+                                  ) : (
+                                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                      {[
+                                        "breakfast",
+                                        "lunch",
+                                        "dinner",
+                                        "snack",
+                                      ].map((mealType) => {
+                                        const meals = dailyLogs[
+                                          summary.date
+                                        ].filter(
+                                          (log) => log.meal_type === mealType
+                                        );
+                                        if (meals.length === 0) return null;
+
+                                        return (
+                                          <div
+                                            key={mealType}
+                                            className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-100 dark:border-gray-700 shadow-sm"
+                                          >
+                                            <h4 className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-100 dark:border-gray-700 pb-1">
+                                              {mealType}
+                                            </h4>
+                                            <div className="space-y-2">
+                                              {meals.map((meal) => (
+                                                <div
+                                                  key={meal.id}
+                                                  className="flex justify-between items-start text-sm"
+                                                >
+                                                  <div
+                                                    className="font-medium text-gray-700 dark:text-gray-200 line-clamp-1 mr-2"
+                                                    title={meal.food_name}
+                                                  >
+                                                    {meal.food_name}
+                                                  </div>
+                                                  <div className="text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap">
+                                                    {meal.calories} kcal
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
                           )}
-                          <TableCell className="px-6 py-4 whitespace-nowrap text-center">
-                            <Badge
-                              className={`${getScoreColor(
-                                summary.diet_quality_score
-                              )} border-none shadow-none font-bold text-[11px]`}
-                            >
-                              {summary.diet_quality_score}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
+                        </React.Fragment>
                       ))
                     )}
                   </TableBody>
