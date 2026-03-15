@@ -282,11 +282,65 @@ export default function LoginPage() {
         ref={heroRef}
         className="relative min-h-screen px-6 flex flex-col items-center justify-center text-center overflow-hidden"
       >
-        {/* Animated background blobs */}
+        {/* ── Floating particles ── */}
+        {[...Array(18)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full pointer-events-none"
+            style={{
+              width: `${4 + (i % 5) * 3}px`,
+              height: `${4 + (i % 5) * 3}px`,
+              left: `${5 + ((i * 37) % 90)}%`,
+              top: `${10 + ((i * 53) % 80)}%`,
+              background:
+                i % 3 === 0
+                  ? "hsl(var(--primary))"
+                  : i % 3 === 1
+                    ? "#a78bfa"
+                    : "#34d399",
+              opacity: 0.15 + (i % 4) * 0.06,
+            }}
+            animate={{
+              y: [0, -(20 + (i % 4) * 15), 0],
+              x: [0, (i % 2 === 0 ? 1 : -1) * (8 + (i % 3) * 6), 0],
+              opacity: [
+                0.1 + (i % 4) * 0.05,
+                0.25 + (i % 4) * 0.05,
+                0.1 + (i % 4) * 0.05,
+              ],
+              scale: [1, 1.3, 1],
+            }}
+            transition={{
+              duration: 4 + (i % 5) * 1.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: (i * 0.4) % 3,
+            }}
+          />
+        ))}
+
+        {/* ── Animated grid lines ── */}
         <motion.div
-          animate={{ scale: [1, 1.08, 1], opacity: [0.18, 0.24, 0.18] }}
+          className="absolute inset-0 pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 2, delay: 0.5 }}
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)
+            `,
+            backgroundSize: "60px 60px",
+            maskImage:
+              "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)",
+          }}
+        />
+
+        {/* ── Animated background blobs ── */}
+        <motion.div
+          animate={{ scale: [1, 1.12, 1], opacity: [0.18, 0.28, 0.18] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-3xl pointer-events-none"
+          className="absolute top-20 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl pointer-events-none"
           style={{
             background:
               "radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)",
@@ -294,100 +348,193 @@ export default function LoginPage() {
           }}
         />
         <motion.div
-          animate={{ x: [-20, 20, -20], opacity: [0.08, 0.14, 0.08] }}
+          animate={{
+            x: [-20, 20, -20],
+            scale: [1, 1.1, 1],
+            opacity: [0.1, 0.18, 0.1],
+          }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-40 -left-32 w-80 h-80 rounded-full blur-3xl pointer-events-none"
+          className="absolute top-40 -left-32 w-96 h-96 rounded-full blur-3xl pointer-events-none"
           style={{
             background: "radial-gradient(circle, #a78bfa 0%, transparent 70%)",
             y: blobY2,
           }}
         />
         <motion.div
-          animate={{ x: [20, -20, 20], opacity: [0.08, 0.14, 0.08] }}
+          animate={{
+            x: [20, -20, 20],
+            scale: [1, 1.15, 1],
+            opacity: [0.1, 0.18, 0.1],
+          }}
           transition={{
             duration: 12,
             repeat: Infinity,
             ease: "easeInOut",
             delay: 1,
           }}
-          className="absolute top-40 -right-32 w-80 h-80 rounded-full blur-3xl pointer-events-none"
+          className="absolute top-40 -right-32 w-96 h-96 rounded-full blur-3xl pointer-events-none"
           style={{
             background: "radial-gradient(circle, #34d399 0%, transparent 70%)",
           }}
         />
-
-        {/* Badge */}
+        {/* Extra accent blob bottom */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8, y: 10 }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.06, 0.12, 0.06] }}
+          transition={{
+            duration: 9,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2,
+          }}
+          className="absolute bottom-20 left-1/3 w-80 h-80 rounded-full blur-3xl pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, #f59e0b 0%, transparent 70%)",
+          }}
+        />
+
+        {/* ── Badge ── */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.7, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           className="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6"
         >
+          {/* Animated border shimmer */}
           <motion.span
-            animate={{ rotate: [0, 15, -10, 15, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            className="absolute inset-0 rounded-full"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)",
+              backgroundSize: "200% 100%",
+            }}
+            animate={{ backgroundPosition: ["-200% 0%", "200% 0%"] }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              ease: "linear",
+              repeatDelay: 1,
+            }}
+          />
+          <motion.span
+            animate={{ rotate: [0, 15, -10, 15, 0], scale: [1, 1.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 2.5 }}
           >
             <Sparkles className="h-3.5 w-3.5" />
           </motion.span>
           Powered by Baidu Ernie 5.0 Thinking
         </motion.div>
 
-        {/* Headline */}
+        {/* ── Headline — word by word ── */}
         <motion.h1
-          variants={fadeUp}
+          className="relative text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-tight max-w-4xl"
           initial="hidden"
           animate="visible"
-          custom={0.3}
-          className="relative text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-tight max-w-4xl"
+          variants={{
+            visible: {
+              transition: { staggerChildren: 0.12, delayChildren: 0.3 },
+            },
+          }}
         >
-          Eat Smarter,{" "}
+          {["Eat", "Smarter,"].map((word) => (
+            <motion.span
+              key={word}
+              className="inline-block mr-[0.25em]"
+              variants={{
+                hidden: { opacity: 0, y: 40, rotateX: -30 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  rotateX: 0,
+                  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+                },
+              }}
+              style={{ transformOrigin: "bottom center" }}
+            >
+              {word}
+            </motion.span>
+          ))}
+          {/* Gradient "Live Better" — animates in as one word, hover jiggles letters */}{" "}
           <motion.span
-            className="bg-clip-text text-transparent bg-linear-to-r from-primary via-violet-500 to-emerald-500"
-            animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-            style={{ backgroundSize: "200% 200%" }}
+            className="inline-block bg-clip-text text-transparent bg-linear-to-r from-primary via-violet-500 to-emerald-500"
+            variants={{
+              hidden: { opacity: 0, y: 40, scale: 0.9 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
+            whileHover={{
+              scale: 1.04,
+              transition: { type: "spring", stiffness: 300, damping: 15 },
+            }}
           >
             Live Better
           </motion.span>
         </motion.h1>
 
+        {/* ── Subtitle — word by word ── */}
         <motion.p
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={0.5}
           className="relative mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl leading-relaxed"
-        >
-          Your AI-powered nutrition companion. Track meals, analyze food with a
-          photo, plan your week, and chat with a smart nutritionist — all in one
-          beautifully designed app.
-        </motion.p>
-
-        {/* Highlights */}
-        <motion.ul
-          className="relative mt-8 flex flex-wrap justify-center gap-4"
           initial="hidden"
           animate="visible"
           variants={{
             visible: {
-              transition: { staggerChildren: 0.1, delayChildren: 0.7 },
+              transition: { staggerChildren: 0.03, delayChildren: 0.9 },
+            },
+          }}
+        >
+          {"Your AI-powered nutrition companion. Track meals, analyze food with a photo, plan your week, and chat with a smart nutritionist — all in one beautifully designed app."
+            .split(" ")
+            .map((word, i) => (
+              <motion.span
+                key={i}
+                className="inline-block mr-[0.3em]"
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+                }}
+              >
+                {word}
+              </motion.span>
+            ))}
+        </motion.p>
+
+        {/* ── Highlights ── */}
+        <motion.ul
+          className="relative mt-8 flex flex-wrap justify-center gap-3"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: { staggerChildren: 0.12, delayChildren: 1.4 },
             },
           }}
         >
           {highlights.map((h) => (
             <motion.li
               key={h}
-              variants={fadeUp}
-              className="flex items-center gap-2 text-sm text-muted-foreground"
+              variants={{
+                hidden: { opacity: 0, x: -20, scale: 0.9 },
+                visible: {
+                  opacity: 1,
+                  x: 0,
+                  scale: 1,
+                  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+                },
+              }}
+              whileHover={{ scale: 1.05, x: 3 }}
+              className="flex items-center gap-2 text-sm text-muted-foreground px-3 py-1.5 rounded-full border border-border/30 bg-muted/20 backdrop-blur-sm"
             >
               <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
                 transition={{
                   type: "spring",
-                  stiffness: 400,
+                  stiffness: 300,
                   damping: 15,
-                  delay: 0.8,
+                  delay: 1.5,
                 }}
               >
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -397,10 +544,103 @@ export default function LoginPage() {
           ))}
         </motion.ul>
 
+        {/* ── CTA Buttons in Hero ── */}
+        <motion.div
+          className="relative mt-10 flex flex-col sm:flex-row items-center gap-3"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: { staggerChildren: 0.12, delayChildren: 1.8 },
+            },
+          }}
+        >
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <Button
+              onClick={() => handleOAuthLogin("google")}
+              disabled={loading !== null}
+              size="lg"
+              variant="outline"
+              className="rounded-full px-8 h-12 border-border/60 hover:border-primary/50 hover:bg-primary/5 transition-all"
+            >
+              {loading === "google" ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span>Connecting…</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5">
+                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  Sign in with Google
+                </div>
+              )}
+            </Button>
+          </motion.div>
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <Button
+              onClick={() => handleOAuthLogin("github")}
+              disabled={loading !== null}
+              size="lg"
+              className="rounded-full px-8 h-12 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 transition-all"
+            >
+              {loading === "github" ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span>Connecting…</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5">
+                  <Github className="h-5 w-5" />
+                  Sign in with GitHub
+                </div>
+              )}
+            </Button>
+          </motion.div>
+        </motion.div>
+
         <AnimatePresence>
           {error && (
             <motion.div
-              className="relative mt-8"
+              className="relative mt-6"
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -414,19 +654,30 @@ export default function LoginPage() {
           )}
         </AnimatePresence>
 
-        {/* Scroll cue */}
+        {/* ── Scroll cue ── */}
         <motion.div
-          className="absolute bottom-10 left-1/2 -translate-x-1/2"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.6 }}
+          transition={{ delay: 2.2, duration: 0.8 }}
         >
+          <motion.span
+            className="text-xs text-muted-foreground/50 tracking-widest uppercase"
+            animate={{ opacity: [0.4, 0.8, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            scroll
+          </motion.span>
           <motion.div
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            className="w-5 h-8 rounded-full border-2 border-border/50 flex items-start justify-center pt-1.5"
+            className="w-5 h-8 rounded-full border-2 border-border/40 flex items-start justify-center pt-1.5"
           >
-            <div className="w-1 h-2 rounded-full bg-muted-foreground/50" />
+            <motion.div
+              className="w-1 h-2 rounded-full bg-muted-foreground/40"
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity }}
+            />
           </motion.div>
         </motion.div>
       </section>
