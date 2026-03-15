@@ -186,8 +186,7 @@ export default function LoginPage() {
       </nav>
 
       {/* ── Hero ── */}
-      <section className="relative pt-32 pb-20 px-6 flex flex-col items-center text-center overflow-hidden">
-        {/* Background blobs */}
+      <section className="relative min-h-screen px-6 flex flex-col items-center justify-center text-center overflow-hidden">
         <div
           className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl pointer-events-none"
           style={{
@@ -207,13 +206,11 @@ export default function LoginPage() {
             background: "radial-gradient(circle, #34d399 0%, transparent 70%)",
           }}
         />
-
         {/* Badge */}
         <div className="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
           <Sparkles className="h-3.5 w-3.5" />
           Powered by Baidu Ernie 5.0 Thinking
         </div>
-
         {/* Headline */}
         <h1 className="relative text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-tight max-w-4xl">
           Eat Smarter,{" "}
@@ -226,7 +223,6 @@ export default function LoginPage() {
           photo, plan your week, and chat with a smart nutritionist — all in one
           beautifully designed app.
         </p>
-
         {/* Highlights */}
         <ul className="relative mt-8 flex flex-wrap justify-center gap-4">
           {highlights.map((h) => (
@@ -239,7 +235,6 @@ export default function LoginPage() {
             </li>
           ))}
         </ul>
-
         {error && (
           <div className="relative mt-8">
             <Alert variant="destructive">
